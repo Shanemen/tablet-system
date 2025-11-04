@@ -604,14 +604,8 @@ const BatchExportFlow = () => {
         setExportProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval)
-            // Update stats when export completes
-            const exportedApplications = selectedCount.applications
-            const exportedTablets = selectedCount.tablets
-            setStats(prevStats => ({
-              ...prevStats,
-              exported: prevStats.exported + exportedApplications,
-              pending: prevStats.pending - exportedApplications
-            }))
+            // Note: In a real app, we would update the actual applicants data here
+            // For now, stats will be recalculated from the actual data when needed
             setTimeout(() => setStep(4), 500) // Move to step 4 after completion
             return 100
           }
