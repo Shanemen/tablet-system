@@ -61,38 +61,24 @@ const generateMockApplicants = (): Applicant[] => {
     const phoneNum3 = Math.floor(seededRandom(i * 19) * 1000).toString().padStart(3, '0')
     const phone = `09${phoneNum1}-${phoneNum2}-${phoneNum3}`
     
-    // 80%的申请人有全部6种牌位，20%有3-5种
+    // 80%的申请人有全部6种牌位，20%有部分类型
     const hasAllTypes = seededRandom(i * 23) < 0.8
-    const numTypes = hasAllTypes ? 6 : Math.floor(seededRandom(i * 23) * 3) + 3
     
     const selectedTypes = []
     const tabletNames = []
     let total = 0
     
-    if (hasAllTypes) {
-      // 全部6种牌位
-      for (let j = 0; j < tabletTypes.length; j++) {
-        const tabletType = tabletTypes[j]
+    // 遍历所有类型，保持固定顺序
+    for (let j = 0; j < tabletTypes.length; j++) {
+      const tabletType = tabletTypes[j]
+      
+      // 如果不是全部类型，随机决定是否包含这个类型
+      const includeThisType = hasAllTypes || seededRandom(i * 29 + j * 31) > 0.3
+      
+      if (includeThisType) {
         const countIndex = Math.floor(seededRandom(i * 37 + j * 41) * tabletType.count.length)
         const count = tabletType.count[countIndex]
-        selectedTypes.push(`${tabletType.type}（${count}）`)
-        total += count
-        
-        // 生成牌位上的名字
-        for (let k = 0; k < count; k++) {
-          const tSurnameIdx = Math.floor(seededRandom(i * 43 + j * 47 + k * 53) * surnames.length)
-          const tGivenNameIdx = Math.floor(seededRandom(i * 59 + j * 61 + k * 67) * givenNames.length)
-          tabletNames.push(surnames[tSurnameIdx] + givenNames[tGivenNameIdx])
-        }
-      }
-    } else {
-      // 部分牌位类型
-      for (let j = 0; j < numTypes; j++) {
-        const typeIndex = Math.floor(seededRandom(i * 29 + j * 31) * tabletTypes.length)
-        const tabletType = tabletTypes[typeIndex]
-        const countIndex = Math.floor(seededRandom(i * 37 + j * 41) * tabletType.count.length)
-        const count = tabletType.count[countIndex]
-        selectedTypes.push(`${tabletType.type}（${count}）`)
+        selectedTypes.push(`${tabletType.type}(${count})`)
         total += count
         
         // 生成牌位上的名字
@@ -118,7 +104,7 @@ const generateMockApplicants = (): Applicant[] => {
       id: i,
       name,
       phone,
-      tablet: selectedTypes.join(" "),
+      tablet: selectedTypes.join("  "),
       tabletNames,
       total,
       status
@@ -405,7 +391,7 @@ const Step1View = ({
                 <th className="px-4 py-3 text-left text-base font-bold text-foreground">牌位詳情</th>
                 <th className="px-4 py-3 text-left text-base font-bold text-foreground">總數</th>
                 <th className="px-4 py-3 text-left text-base font-bold text-foreground">狀態</th>
-                <th className="px-4 py-3 text-right text-base font-bold text-foreground">操作</th>
+                <th className="px-4 py-3 text-left text-base font-bold text-foreground">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -427,9 +413,10 @@ const Step1View = ({
                         {statusConfig[item.status].label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
+                    <td className="px-4 py-3">
+                      <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:border-primary hover:text-primary cursor-pointer">
+                        <Eye className="h-4 w-4 mr-1" />
+                        查看
                       </Button>
                     </td>
                   </tr>
