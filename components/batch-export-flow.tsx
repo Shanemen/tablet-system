@@ -191,7 +191,7 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
                 onClick={() => onSelectChange(0, 0)}
                 variant="ghost"
                 size="sm"
-                className="text-slate-600 hover:text-slate-900 underline hover:no-underline"
+                className="text-slate-600 hover:text-slate-900 hover:bg-muted underline hover:no-underline"
               >
                 清除選擇
               </Button>
