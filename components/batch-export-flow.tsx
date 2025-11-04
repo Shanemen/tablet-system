@@ -221,8 +221,6 @@ const Step1View = ({
   onClearSearch,
   activeCard,
   onCardClick,
-  filterTab,
-  onFilterTabChange,
   filtered,
   stats,
   onStepChange,
@@ -287,8 +285,8 @@ const Step1View = ({
         </div>
       </div>
 
-      {/* Batch Export Section - Only show when viewing pending filter and not searching */}
-      {(filterTab === "pending" || activeCard === "pending") && stats.pending > 0 && !searchActive && (
+      {/* Batch Export Section - Only show when viewing pending status and not searching */}
+      {activeCard === "pending" && stats.pending > 0 && !searchActive && (
         <BatchExportSection
           selectedCount={selectedCount}
           onSelectChange={onSelectChange}
@@ -303,10 +301,10 @@ const Step1View = ({
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-foreground">
             {searchActive && `搜索結果：找到 ${filtered.length} 個結果`}
-            {!searchActive && filterTab === "all" && "全部申請"}
-            {!searchActive && filterTab === "exported" && "已導出的申請"}
-            {!searchActive && filterTab === "pending" && "待處理的申請"}
-            {!searchActive && filterTab === "problematic" && "有問題的申請"}
+            {!searchActive && !activeCard && "全部申請"}
+            {!searchActive && activeCard === "exported" && "已導出申請表格"}
+            {!searchActive && activeCard === "pending" && "待處理申請表格"}
+            {!searchActive && activeCard === "problematic" && "有問題申請表格"}
           </h3>
         </div>
         <div className="overflow-x-auto">
@@ -584,7 +582,6 @@ const BatchExportFlow = () => {
   const [step, setStep] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchActive, setSearchActive] = useState(false)
-  const [filterTab, setFilterTab] = useState("all")
   const [activeCard, setActiveCard] = useState(null)
   const [selectedCount, setSelectedCount] = useState({ applications: 0, tablets: 0 })
   const [exportProgress, setExportProgress] = useState(0)
@@ -638,11 +635,6 @@ const BatchExportFlow = () => {
           item.phone.includes(searchQuery) ||
           item.tabletNames.some(name => name.toLowerCase().includes(searchQuery.toLowerCase()))
       )
-    }
-
-    // Status filter
-    if (filterTab !== "all") {
-      result = result.filter((item) => item.status === filterTab)
     }
 
     // Active card filter
@@ -701,8 +693,6 @@ const BatchExportFlow = () => {
             onClearSearch={handleClearSearch}
             activeCard={activeCard}
             onCardClick={handleCardClick}
-            filterTab={filterTab}
-            onFilterTabChange={setFilterTab}
             filtered={filtered}
             stats={stats}
             onStepChange={setStep}
