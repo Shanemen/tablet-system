@@ -315,22 +315,6 @@ const Step1View = ({
       <div>
         <h2 className="mb-4 text-lg font-semibold text-foreground">統計總覽</h2>
         <div className="grid grid-cols-4 gap-4">
-          <StatCard 
-            label="全部申請" 
-            value={stats.total} 
-            status={null} 
-            activeCard={activeCard} 
-            onCardClick={onCardClick}
-            highlight={false}
-          />
-          <StatCard
-            label="已導出"
-            value={stats.exported}
-            status="exported"
-            activeCard={activeCard}
-            onCardClick={onCardClick}
-            highlight={highlightExported}
-          />
           <StatCard
             label="待處理"
             value={stats.pending}
@@ -344,6 +328,22 @@ const Step1View = ({
             value={stats.problematic}
             status="problematic"
             activeCard={activeCard}
+            onCardClick={onCardClick}
+            highlight={false}
+          />
+          <StatCard
+            label="已導出"
+            value={stats.exported}
+            status="exported"
+            activeCard={activeCard}
+            onCardClick={onCardClick}
+            highlight={highlightExported}
+          />
+          <StatCard 
+            label="全部申請" 
+            value={stats.total} 
+            status={null} 
+            activeCard={activeCard} 
             onCardClick={onCardClick}
             highlight={false}
           />
