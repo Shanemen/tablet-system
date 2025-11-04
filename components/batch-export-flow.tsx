@@ -287,16 +287,6 @@ const Step1View = ({
 
       {/* Data Table */}
       <Card className="p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-foreground">
-            {searchActive && `搜索結果：找到 ${filtered.length} 個結果`}
-            {!searchActive && !activeCard && "全部申請表格"}
-            {!searchActive && activeCard === "exported" && "已導出申請表格"}
-            {!searchActive && activeCard === "pending" && "待處理申請表格"}
-            {!searchActive && activeCard === "problematic" && "有問題申請表格"}
-          </h3>
-        </div>
-
         {/* Batch Export Section - Integrated into table, only show when viewing pending status and not searching */}
         {activeCard === "pending" && stats.pending > 0 && !searchActive && (
           <BatchExportSection
@@ -307,6 +297,16 @@ const Step1View = ({
             pendingApplications={filtered}
           />
         )}
+
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-foreground">
+            {searchActive && `搜索結果：找到 ${filtered.length} 個結果`}
+            {!searchActive && !activeCard && "全部申請表格"}
+            {!searchActive && activeCard === "exported" && "已導出申請表格"}
+            {!searchActive && activeCard === "pending" && "待處理申請表格"}
+            {!searchActive && activeCard === "problematic" && "有問題申請表格"}
+          </h3>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
