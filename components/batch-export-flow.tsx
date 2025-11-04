@@ -144,7 +144,7 @@ const SearchBar = ({ searchQuery, onSearchQueryChange, onSearch, onClear, search
         搜索
       </Button>
       {searchActive && (
-        <Button onClick={onClear} variant="outline" className="whitespace-nowrap">
+        <Button onClick={onClear} variant="outline" className="whitespace-nowrap hover:bg-muted hover:text-foreground">
           <X className="mr-2 h-4 w-4" />
           清除
         </Button>
@@ -371,7 +371,7 @@ const Step2View = ({ onStepChange, selectedCount }) => {
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-foreground">批量導出 PDF</h3>
-            <Button onClick={() => onStepChange(1)} variant="ghost" size="sm">
+            <Button onClick={() => onStepChange(1)} variant="ghost" size="sm" className="hover:bg-muted">
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -415,7 +415,7 @@ const Step2View = ({ onStepChange, selectedCount }) => {
 
           {/* Action Buttons */}
           <div className="flex gap-3 mt-6">
-            <Button onClick={() => onStepChange(1)} variant="outline" className="flex-1">
+            <Button onClick={() => onStepChange(1)} variant="outline" className="flex-1 hover:bg-muted hover:text-foreground">
               取消
             </Button>
             <Button onClick={() => onStepChange(3)} className="flex-1 bg-primary hover:bg-primary/90">
@@ -548,7 +548,7 @@ const Step4View = ({ onClose, selectedCount }) => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="hover:bg-muted hover:text-foreground">
                       <Eye className="mr-1 h-4 w-4" />
                       預覽
                     </Button>
@@ -567,7 +567,7 @@ const Step4View = ({ onClose, selectedCount }) => {
               <Download className="mr-2 h-5 w-5" />
               全部下載 (ZIP)
             </Button>
-            <Button onClick={onClose} variant="outline">
+            <Button onClick={onClose} variant="outline" className="hover:bg-muted hover:text-foreground">
               關閉
             </Button>
           </div>
