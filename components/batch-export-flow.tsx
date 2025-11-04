@@ -86,11 +86,11 @@ const generateMockApplicants = () => {
 
 const applicants = generateMockApplicants()
 
-// Status badge styling
+// Status badge styling - 柔和配色
 const statusConfig = {
-  exported: { label: "已導出", color: "text-green-600 bg-green-50" },
-  pending: { label: "待處理", color: "text-orange-600 bg-orange-50" },
-  problematic: { label: "有問題", color: "text-red-600 bg-red-50" },
+  exported: { label: "已導出", color: "text-primary bg-primary/10" },
+  pending: { label: "待處理", color: "text-muted-foreground bg-muted" },
+  problematic: { label: "有問題", color: "text-slate-700 bg-slate-100" },
 }
 
 // StatCard component - moved outside to prevent re-creation
@@ -104,7 +104,7 @@ const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }) 
         isActive 
           ? "bg-primary text-white shadow-lg" 
           : highlight 
-            ? "bg-green-50 border-2 border-green-400 animate-pulse" 
+            ? "bg-primary/10 border-2 border-primary/40 animate-pulse" 
             : "bg-white border border-border hover:shadow-md hover:border-primary/50"
       }`}
     >
@@ -161,7 +161,7 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
   const first100Tablets = pendingApplications.slice(0, first100Count).reduce((sum, app) => sum + app.total, 0)
   
   return (
-    <Card className="p-6 bg-orange-50 border-orange-200">
+    <Card className="p-6 bg-primary/5 border-l-4 border-primary">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {selectedCount.applications === 0 ? (
@@ -170,14 +170,14 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
               <Button
                 onClick={() => onSelectChange(first100Count, first100Tablets)}
                 variant="outline"
-                className="border-orange-500 text-orange-600 hover:bg-orange-100"
+                className="border-primary/50 text-primary hover:bg-primary/10"
               >
                 前100個 ({first100Count}份申請，{first100Tablets}個牌位)
               </Button>
               <Button
                 onClick={() => onSelectChange(pendingApplications.length, totalPendingTablets)}
                 variant="outline"
-                className="border-orange-500 text-orange-600 hover:bg-orange-100"
+                className="border-primary/50 text-primary hover:bg-primary/10"
               >
                 全部申請 ({pendingApplications.length}份申請，{totalPendingTablets}個牌位)
               </Button>
@@ -191,7 +191,7 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
                 onClick={() => onSelectChange(0, 0)}
                 variant="ghost"
                 size="sm"
-                className="text-orange-600 hover:text-orange-800 underline"
+                className="text-muted-foreground hover:text-foreground underline"
               >
                 清除選擇
               </Button>
@@ -202,7 +202,7 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
         <Button
           onClick={onExport}
           disabled={selectedCount.applications === 0}
-          className={selectedCount.applications > 0 ? "bg-orange-500 hover:bg-orange-600" : ""}
+          className={selectedCount.applications > 0 ? "bg-primary hover:bg-primary/90" : ""}
         >
           <Download className="mr-2 h-4 w-4" />
           批量導出PDF
@@ -301,7 +301,7 @@ const Step1View = ({
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-foreground">
             {searchActive && `搜索結果：找到 ${filtered.length} 個結果`}
-            {!searchActive && !activeCard && "全部申請"}
+            {!searchActive && !activeCard && "全部申請表格"}
             {!searchActive && activeCard === "exported" && "已導出申請表格"}
             {!searchActive && activeCard === "pending" && "待處理申請表格"}
             {!searchActive && activeCard === "problematic" && "有問題申請表格"}
@@ -378,14 +378,14 @@ const Step2View = ({ onStepChange, selectedCount }) => {
 
           <div className="space-y-4">
             {/* Selection Summary */}
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+            <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-foreground">已選擇申請：</span>
-                <span className="font-bold text-blue-600">{selectedCount.applications} 份</span>
+                <span className="font-bold text-primary">{selectedCount.applications} 份</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-foreground">總牌位數：</span>
-                <span className="font-bold text-blue-600">{selectedCount.tablets} 個</span>
+                <span className="font-bold text-primary">{selectedCount.tablets} 個</span>
               </div>
             </div>
 
@@ -418,7 +418,7 @@ const Step2View = ({ onStepChange, selectedCount }) => {
             <Button onClick={() => onStepChange(1)} variant="outline" className="flex-1">
               取消
             </Button>
-            <Button onClick={() => onStepChange(3)} className="flex-1 bg-orange-500 hover:bg-orange-600">
+            <Button onClick={() => onStepChange(3)} className="flex-1 bg-primary hover:bg-primary/90">
               開始生成
             </Button>
           </div>
@@ -444,8 +444,8 @@ const Step3View = ({ exportProgress }) => {
       <Card className="max-w-md w-full">
         <div className="p-6">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-3">
-              <Loader className="animate-spin text-orange-500" size={32} />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-3">
+              <Loader className="animate-spin text-primary" size={32} />
             </div>
             <h3 className="text-xl font-bold text-foreground">正在生成牌位...</h3>
             <p className="text-sm text-muted-foreground mt-1">請稍候，這可能需要幾分鐘</p>
@@ -456,11 +456,11 @@ const Step3View = ({ exportProgress }) => {
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="font-medium text-foreground">整體進度</span>
-                <span className="text-orange-600 font-bold">{exportProgress}%</span>
+                <span className="text-primary font-bold">{exportProgress}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div 
-                  className="bg-orange-500 h-full transition-all duration-300 rounded-full" 
+                  className="bg-primary h-full transition-all duration-300 rounded-full" 
                   style={{ width: `${exportProgress}%` }} 
                 />
               </div>
@@ -478,15 +478,15 @@ const Step3View = ({ exportProgress }) => {
                   <div key={i} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       {isCompleted ? (
-                        <Check size={16} className="text-green-500" />
+                        <Check size={16} className="text-primary" />
                       ) : isInProgress ? (
-                        <Loader size={16} className="animate-spin text-orange-500" />
+                        <Loader size={16} className="animate-spin text-primary" />
                       ) : (
                         <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
                       )}
                       <span className={
-                        isCompleted ? 'text-green-600' :
-                        isInProgress ? 'text-orange-600 font-medium' :
+                        isCompleted ? 'text-primary' :
+                        isInProgress ? 'text-primary font-medium' :
                         'text-muted-foreground'
                       }>
                         {item.name}
@@ -529,8 +529,8 @@ const Step4View = ({ onClose, selectedCount }) => {
       <Card className="max-w-2xl w-full max-h-[80vh] overflow-y-auto">
         <div className="p-6">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
-              <Check className="text-green-500" size={32} />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-3">
+              <Check className="text-primary" size={32} />
             </div>
             <h3 className="text-2xl font-bold text-foreground">✅ 生成完成！</h3>
             <p className="text-sm text-muted-foreground mt-1">已成功生成 6 個 PDF 文件</p>
@@ -541,7 +541,7 @@ const Step4View = ({ onClose, selectedCount }) => {
               <div key={i} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-grow">
-                    <FileText className="text-red-500" size={32} />
+                    <FileText className="text-slate-600" size={32} />
                     <div>
                       <div className="font-medium text-foreground">2024-03-15_觀音法會_{file.name}</div>
                       <div className="text-sm text-muted-foreground">{file.count}個牌位 • {file.size} • {file.paper}打印</div>
@@ -552,7 +552,7 @@ const Step4View = ({ onClose, selectedCount }) => {
                       <Eye className="mr-1 h-4 w-4" />
                       預覽
                     </Button>
-                    <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                    <Button size="sm" className="bg-primary hover:bg-primary/90">
                       <Download className="mr-1 h-4 w-4" />
                       下載
                     </Button>
@@ -563,7 +563,7 @@ const Step4View = ({ onClose, selectedCount }) => {
           </div>
 
           <div className="flex gap-3 mt-6">
-            <Button className="flex-1 bg-orange-500 hover:bg-orange-600">
+            <Button className="flex-1 bg-primary hover:bg-primary/90">
               <Download className="mr-2 h-5 w-5" />
               全部下載 (ZIP)
             </Button>
