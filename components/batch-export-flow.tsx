@@ -34,12 +34,12 @@ const generateMockApplicants = (): Applicant[] => {
   const surnames = ["王", "李", "張", "劉", "陳", "楊", "黃", "趙", "吳", "周", "徐", "孫", "馬", "朱", "胡", "郭", "林", "何", "高", "梁"]
   const givenNames = ["小明", "美玲", "建國", "怡君", "家豪", "佳琪", "志強", "淑芬", "文華", "雅婷", "俊傑", "麗華", "偉明", "秀英", "明哲", "慧珍", "國強", "淑惠", "宗翰", "雅芳"]
   const tabletTypes = [
-    { type: "長生祿位", count: [1, 2, 3] },
-    { type: "往生蓮位", count: [1, 3, 5, 8, 10] },
-    { type: "歷代祖先", count: [1] },
-    { type: "冤親債主", count: [1, 2] },
-    { type: "墮胎嬰靈", count: [1, 2] },
-    { type: "地基主", count: [1] }
+    { type: "長生", fullName: "長生祿位", count: [1, 2, 3, 4] },
+    { type: "往生", fullName: "往生蓮位", count: [1, 2, 3, 5, 8] },
+    { type: "祖先", fullName: "歷代祖先", count: [1, 2] },
+    { type: "冤親", fullName: "冤親債主", count: [1, 2, 3] },
+    { type: "嬰靈", fullName: "墮胎嬰靈", count: [1, 2] },
+    { type: "地基主", fullName: "地基主", count: [1] }
   ]
   
   const applicants = []
@@ -61,25 +61,46 @@ const generateMockApplicants = (): Applicant[] => {
     const phoneNum3 = Math.floor(seededRandom(i * 19) * 1000).toString().padStart(3, '0')
     const phone = `09${phoneNum1}-${phoneNum2}-${phoneNum3}`
     
-    // 随机选择1-3种牌位类型
-    const numTypes = Math.floor(seededRandom(i * 23) * 3) + 1
+    // 80%的申请人有全部6种牌位，20%有3-5种
+    const hasAllTypes = seededRandom(i * 23) < 0.8
+    const numTypes = hasAllTypes ? 6 : Math.floor(seededRandom(i * 23) * 3) + 3
+    
     const selectedTypes = []
     const tabletNames = []
     let total = 0
     
-    for (let j = 0; j < numTypes; j++) {
-      const typeIndex = Math.floor(seededRandom(i * 29 + j * 31) * tabletTypes.length)
-      const tabletType = tabletTypes[typeIndex]
-      const countIndex = Math.floor(seededRandom(i * 37 + j * 41) * tabletType.count.length)
-      const count = tabletType.count[countIndex]
-      selectedTypes.push(`${tabletType.type}(${count})`)
-      total += count
-      
-      // 生成牌位上的名字
-      for (let k = 0; k < count; k++) {
-        const tSurnameIdx = Math.floor(seededRandom(i * 43 + j * 47 + k * 53) * surnames.length)
-        const tGivenNameIdx = Math.floor(seededRandom(i * 59 + j * 61 + k * 67) * givenNames.length)
-        tabletNames.push(surnames[tSurnameIdx] + givenNames[tGivenNameIdx])
+    if (hasAllTypes) {
+      // 全部6种牌位
+      for (let j = 0; j < tabletTypes.length; j++) {
+        const tabletType = tabletTypes[j]
+        const countIndex = Math.floor(seededRandom(i * 37 + j * 41) * tabletType.count.length)
+        const count = tabletType.count[countIndex]
+        selectedTypes.push(`${tabletType.type}（${count}）`)
+        total += count
+        
+        // 生成牌位上的名字
+        for (let k = 0; k < count; k++) {
+          const tSurnameIdx = Math.floor(seededRandom(i * 43 + j * 47 + k * 53) * surnames.length)
+          const tGivenNameIdx = Math.floor(seededRandom(i * 59 + j * 61 + k * 67) * givenNames.length)
+          tabletNames.push(surnames[tSurnameIdx] + givenNames[tGivenNameIdx])
+        }
+      }
+    } else {
+      // 部分牌位类型
+      for (let j = 0; j < numTypes; j++) {
+        const typeIndex = Math.floor(seededRandom(i * 29 + j * 31) * tabletTypes.length)
+        const tabletType = tabletTypes[typeIndex]
+        const countIndex = Math.floor(seededRandom(i * 37 + j * 41) * tabletType.count.length)
+        const count = tabletType.count[countIndex]
+        selectedTypes.push(`${tabletType.type}（${count}）`)
+        total += count
+        
+        // 生成牌位上的名字
+        for (let k = 0; k < count; k++) {
+          const tSurnameIdx = Math.floor(seededRandom(i * 43 + j * 47 + k * 53) * surnames.length)
+          const tGivenNameIdx = Math.floor(seededRandom(i * 59 + j * 61 + k * 67) * givenNames.length)
+          tabletNames.push(surnames[tSurnameIdx] + givenNames[tGivenNameIdx])
+        }
       }
     }
     
@@ -97,7 +118,7 @@ const generateMockApplicants = (): Applicant[] => {
       id: i,
       name,
       phone,
-      tablet: selectedTypes.join("、"),
+      tablet: selectedTypes.join(" "),
       tabletNames,
       total,
       status
@@ -111,9 +132,9 @@ const applicants = generateMockApplicants()
 
 // Status badge styling - 柔和配色
 const statusConfig = {
-  exported: { label: "已導出", color: "text-primary bg-primary/10" },
-  pending: { label: "待處理", color: "text-muted-foreground bg-muted" },
-  problematic: { label: "有問題", color: "text-slate-700 bg-slate-100" },
+  exported: { label: "已導出", color: "text-slate-700 bg-muted" },
+  pending: { label: "待處理", color: "text-primary bg-primary/10" },
+  problematic: { label: "有問題", color: "text-[#770002] bg-[#770002]/10" },
 }
 
 // StatCard component - moved outside to prevent re-creation
@@ -143,7 +164,7 @@ const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }: 
       <div className={`text-4xl font-bold ${isActive ? "text-white" : "text-primary/70"}`}>
         {value}
       </div>
-      <div className={`mt-2 text-sm font-medium ${isActive ? "text-white" : "text-foreground"}`}>
+      <div className={`mt-2 text-base font-semibold ${isActive ? "text-white" : "text-foreground"}`}>
         {label}
       </div>
     </button>
@@ -177,14 +198,14 @@ const SearchBar = ({ searchQuery, onSearchQueryChange, onSearch, onClear, search
           onChange={(e) => onSearchQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="搜索申請人姓名、電話或牌位上親友名字..."
-          className="pl-10 bg-white dark:bg-card border border-border"
+          className="pl-10 bg-white dark:bg-card border border-border text-lg h-12 placeholder:text-lg placeholder:text-foreground/60"
         />
       </div>
-      <Button onClick={onSearch} className="whitespace-nowrap">
+      <Button onClick={onSearch} className="whitespace-nowrap h-12 text-lg">
         搜索
       </Button>
       {searchActive && (
-        <Button onClick={onClear} variant="outline" className="whitespace-nowrap hover:bg-muted hover:text-foreground">
+        <Button onClick={onClear} variant="outline" className="whitespace-nowrap hover:bg-muted hover:text-foreground h-12 text-lg">
           <X className="mr-2 h-4 w-4" />
           清除
         </Button>
@@ -214,31 +235,33 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
         <div className="flex items-center gap-4">
           {selectedCount.applications === 0 ? (
             <>
-              <span className="text-sm font-medium text-foreground">選擇要導出的申請：</span>
-              <Button
-                onClick={() => onSelectChange(first100Count, first100Tablets)}
-                variant="outline"
-                className="border-primary/50 text-primary hover:bg-primary/10"
-              >
-                前100個 ({first100Count}份申請，{first100Tablets}個牌位)
-              </Button>
-              <Button
-                onClick={() => onSelectChange(pendingApplications.length, totalPendingTablets)}
-                variant="outline"
-                className="border-primary/50 text-primary hover:bg-primary/10"
-              >
-                全部申請 ({pendingApplications.length}份申請，{totalPendingTablets}個牌位)
-              </Button>
+              <span className="text-lg font-semibold text-foreground">選擇要導出的申請：</span>
+        <Button
+          onClick={() => onSelectChange(first100Count, first100Tablets)}
+          variant="outline"
+          size="lg"
+          className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-lg"
+        >
+          前100份 ({first100Tablets}個牌位)
+        </Button>
+        <Button
+          onClick={() => onSelectChange(pendingApplications.length, totalPendingTablets)}
+          variant="outline"
+          size="lg"
+          className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-lg"
+        >
+          全部 ({pendingApplications.length}份，{totalPendingTablets}個牌位)
+        </Button>
             </>
           ) : (
             <>
-              <span className="text-sm font-semibold text-primary">
+              <span className="text-lg font-bold text-primary">
                 已選擇 {selectedCount.applications} 份申請，共 {selectedCount.tablets} 個牌位
               </span>
               <Button
                 onClick={() => onSelectChange(0, 0)}
                 variant="ghost"
-                size="sm"
+                size="lg"
                 className="text-slate-600 hover:text-slate-900 hover:bg-muted underline hover:no-underline"
               >
                 清除選擇
@@ -250,9 +273,10 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
         <Button
           onClick={onExport}
           disabled={selectedCount.applications === 0}
-          className={selectedCount.applications > 0 ? "bg-primary hover:bg-primary/90" : ""}
+          size="lg"
+          className={selectedCount.applications > 0 ? "bg-primary hover:bg-primary/90 text-lg" : "text-lg"}
         >
-          <Download className="mr-2 h-4 w-4" />
+          <Download className="mr-2 h-5 w-5" />
           批量導出PDF
         </Button>
       </div>
@@ -299,7 +323,7 @@ const Step1View = ({
       {/* Header */}
       <div className="pb-6">
         <h1 className="text-3xl font-bold text-foreground">牌位申請管理</h1>
-        <p className="mt-2 text-sm text-muted-foreground">當前法會：2024年3月15日 三時繫念法會</p>
+        <p className="mt-2 text-base text-foreground/80">當前法會：2024年3月15日 三時繫念法會</p>
       </div>
 
       {/* Search Bar */}
@@ -376,12 +400,12 @@ const Step1View = ({
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left font-semibold text-foreground">申請人</th>
-                <th className="px-4 py-3 text-left font-semibold text-foreground">電話</th>
-                <th className="px-4 py-3 text-left font-semibold text-foreground">牌位詳情</th>
-                <th className="px-4 py-3 text-left font-semibold text-foreground">總數</th>
-                <th className="px-4 py-3 text-left font-semibold text-foreground">狀態</th>
-                <th className="px-4 py-3 text-right font-semibold text-foreground">操作</th>
+                <th className="px-4 py-3 text-left text-base font-bold text-foreground">申請人</th>
+                <th className="px-4 py-3 text-left text-base font-bold text-foreground">電話</th>
+                <th className="px-4 py-3 text-left text-base font-bold text-foreground">牌位詳情</th>
+                <th className="px-4 py-3 text-left text-base font-bold text-foreground">總數</th>
+                <th className="px-4 py-3 text-left text-base font-bold text-foreground">狀態</th>
+                <th className="px-4 py-3 text-right text-base font-bold text-foreground">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -394,12 +418,12 @@ const Step1View = ({
               ) : (
                 filtered.map((item: Applicant) => (
                   <tr key={item.id} className="border-b border-border hover:bg-muted">
-                    <td className="px-4 py-3 text-foreground font-medium">{item.name}</td>
-                    <td className="px-4 py-3 text-foreground">{item.phone}</td>
-                    <td className="px-4 py-3 text-foreground text-sm">{item.tablet}</td>
-                    <td className="px-4 py-3 text-foreground">{item.total}</td>
+                    <td className="px-4 py-3 text-base text-foreground font-medium">{item.name}</td>
+                    <td className="px-4 py-3 text-base text-foreground">{item.phone}</td>
+                    <td className="px-4 py-3 text-base text-foreground">{item.tablet}</td>
+                    <td className="px-4 py-3 text-base text-foreground">{item.total}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${statusConfig[item.status].color}`}>
+                      <span className={`px-2 py-1 text-sm rounded-full font-medium ${statusConfig[item.status].color}`}>
                         {statusConfig[item.status].label}
                       </span>
                     </td>
@@ -449,11 +473,11 @@ const Step2View = ({ onStepChange, selectedCount }: Step2ViewProps) => {
           <div className="space-y-4">
             {/* Selection Summary */}
             <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
-              <div className="flex justify-between text-sm mb-2">
+              <div className="flex justify-between text-base mb-2">
                 <span className="text-foreground">已選擇申請：</span>
                 <span className="font-bold text-primary">{selectedCount.applications} 份</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-base">
                 <span className="text-foreground">總牌位數：</span>
                 <span className="font-bold text-primary">{selectedCount.tablets} 個</span>
               </div>
@@ -461,8 +485,8 @@ const Step2View = ({ onStepChange, selectedCount }: Step2ViewProps) => {
 
             {/* Processing Rules */}
             <div className="bg-muted p-3 rounded-lg">
-              <div className="text-sm font-medium text-foreground mb-2">📋 自動處理規則：</div>
-              <ul className="text-xs text-muted-foreground space-y-1 ml-4">
+              <div className="text-base font-medium text-foreground mb-2">📋 自動處理規則：</div>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                 <li>• 按6種牌位類型自動分組</li>
                 <li>• 同類型牌位按申請人姓名拼音排序</li>
                 <li>• 每頁排版 6-8 個牌位，自動分頁</li>
@@ -471,12 +495,12 @@ const Step2View = ({ onStepChange, selectedCount }: Step2ViewProps) => {
 
             {/* Files to Generate */}
             <div className="bg-muted p-4 rounded-lg">
-              <div className="font-medium mb-2 text-sm text-foreground">將生成以下文件：</div>
+              <div className="font-medium mb-2 text-base text-foreground">將生成以下文件：</div>
               <div className="space-y-1.5">
                 {files.map((file, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
+                  <div key={i} className="flex items-center justify-between text-sm">
                     <span className="text-foreground">{i + 1}. 2024-03-15_觀音法會_{file.name}</span>
-                    <span className="text-muted-foreground text-[10px]">({file.paper}打印)</span>
+                    <span className="text-muted-foreground text-xs">({file.paper}打印)</span>
                   </div>
                 ))}
               </div>
@@ -528,7 +552,7 @@ const Step3View = ({ exportProgress }: Step3ViewProps) => {
           <div className="space-y-4">
             {/* Overall Progress */}
             <div>
-              <div className="flex justify-between text-sm mb-2">
+              <div className="flex justify-between text-base mb-2">
                 <span className="font-medium text-foreground">整體進度</span>
                 <span className="text-primary font-bold">{exportProgress}%</span>
               </div>
@@ -542,14 +566,14 @@ const Step3View = ({ exportProgress }: Step3ViewProps) => {
 
             {/* Individual File Progress */}
             <div className="bg-muted p-4 rounded-lg space-y-2">
-              <div className="text-sm font-medium text-foreground mb-3">當前進度：</div>
+              <div className="text-base font-medium text-foreground mb-3">當前進度：</div>
               {files.map((item, i) => {
                 const itemProgress = Math.max(0, exportProgress - (i * 17))
                 const isCompleted = itemProgress >= 100
                 const isInProgress = itemProgress > 0 && itemProgress < 100
 
                 return (
-                  <div key={i} className="flex items-center justify-between text-sm">
+                  <div key={i} className="flex items-center justify-between text-base">
                     <div className="flex items-center gap-2">
                       {isCompleted ? (
                         <Check size={16} className="text-primary" />
@@ -566,7 +590,7 @@ const Step3View = ({ exportProgress }: Step3ViewProps) => {
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       {isCompleted ? `${item.count}個` :
                        isInProgress ? `${Math.floor(item.count * itemProgress / 100)}/${item.count}` :
                        '等待中'}
@@ -577,7 +601,7 @@ const Step3View = ({ exportProgress }: Step3ViewProps) => {
             </div>
 
             {/* Estimated Time */}
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-base text-muted-foreground">
               預計剩餘時間：{Math.max(0, Math.ceil((100 - exportProgress) / 50))} 分鐘
             </div>
           </div>
@@ -622,8 +646,8 @@ const Step4View = ({ onClose, selectedCount }: Step4ViewProps) => {
                   <div className="flex items-center gap-3 flex-grow">
                     <FileText className="text-slate-600" size={32} />
                     <div>
-                      <div className="font-medium text-foreground">2024-03-15_觀音法會_{file.name}</div>
-                      <div className="text-sm text-muted-foreground">{file.count}個牌位 • {file.size} • {file.paper}打印</div>
+                      <div className="font-semibold text-base text-foreground">2024-03-15_觀音法會_{file.name}</div>
+                      <div className="text-base text-muted-foreground">{file.count}個牌位 • {file.size} • {file.paper}打印</div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -661,7 +685,7 @@ const BatchExportFlow = () => {
   const [step, setStep] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchActive, setSearchActive] = useState(false)
-  const [activeCard, setActiveCard] = useState<"exported" | "pending" | "problematic" | null>(null)
+  const [activeCard, setActiveCard] = useState<"exported" | "pending" | "problematic" | null>("pending")
   const [selectedCount, setSelectedCount] = useState<SelectedCount>({ applications: 0, tablets: 0 })
   const [exportProgress, setExportProgress] = useState(0)
   const [highlightExported, setHighlightExported] = useState(false)
@@ -713,6 +737,12 @@ const BatchExportFlow = () => {
     // Active card filter
     if (activeCard) {
       result = result.filter((item) => item.status === activeCard)
+    }
+
+    // Sort by priority when showing all applications
+    if (!activeCard && !searchActive) {
+      const statusPriority = { pending: 1, problematic: 2, exported: 3 }
+      result = [...result].sort((a, b) => statusPriority[a.status] - statusPriority[b.status])
     }
 
     return result
