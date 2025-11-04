@@ -663,9 +663,20 @@ const BatchExportFlow = () => {
   }
 
   const handleCloseStep4 = () => {
+    // Update stats after successful export
+    // In a real app, the database would be updated and we'd refetch the data
+    // For mock data, we manually update the stats
+    const exportedCount = selectedCount.applications
+    setStats(prevStats => ({
+      ...prevStats,
+      exported: prevStats.exported + exportedCount,
+      pending: Math.max(0, prevStats.pending - exportedCount) // Ensure no negative numbers
+    }))
+    
     setStep(1)
     setSelectedCount({ applications: 0, tablets: 0 })
     setExportProgress(0)
+    
     // Trigger highlight animation
     setHighlightExported(true)
     setHighlightPending(true)
