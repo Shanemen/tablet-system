@@ -161,7 +161,7 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
   const first100Tablets = pendingApplications.slice(0, first100Count).reduce((sum, app) => sum + app.total, 0)
   
   return (
-    <Card className="p-6 bg-primary/5 border-l-4 border-primary">
+    <div className="mb-4 p-4 bg-muted/30 border-l-4 border-primary rounded-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {selectedCount.applications === 0 ? (
@@ -208,7 +208,7 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
           批量導出PDF
         </Button>
       </div>
-    </Card>
+    </div>
   )
 }
 
@@ -285,17 +285,6 @@ const Step1View = ({
         </div>
       </div>
 
-      {/* Batch Export Section - Only show when viewing pending status and not searching */}
-      {activeCard === "pending" && stats.pending > 0 && !searchActive && (
-        <BatchExportSection
-          selectedCount={selectedCount}
-          onSelectChange={onSelectChange}
-          onExport={() => onStepChange(2)}
-          stats={stats}
-          pendingApplications={filtered}
-        />
-      )}
-
       {/* Data Table */}
       <Card className="p-6">
         <div className="mb-4">
@@ -307,6 +296,17 @@ const Step1View = ({
             {!searchActive && activeCard === "problematic" && "有問題申請表格"}
           </h3>
         </div>
+
+        {/* Batch Export Section - Integrated into table, only show when viewing pending status and not searching */}
+        {activeCard === "pending" && stats.pending > 0 && !searchActive && (
+          <BatchExportSection
+            selectedCount={selectedCount}
+            onSelectChange={onSelectChange}
+            onExport={() => onStepChange(2)}
+            stats={stats}
+            pendingApplications={filtered}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
