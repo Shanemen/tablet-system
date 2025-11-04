@@ -6,8 +6,31 @@ import { Search, Upload, FileDown, CheckCircle2, Eye, X, Download, Loader, Check
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
+// Type definitions
+interface Applicant {
+  id: number
+  name: string
+  phone: string
+  tablet: string
+  tabletNames: string[]
+  total: number
+  status: "exported" | "pending" | "problematic"
+}
+
+interface Stats {
+  total: number
+  exported: number
+  pending: number
+  problematic: number
+}
+
+interface SelectedCount {
+  applications: number
+  tablets: number
+}
+
 // Sample data - 使用固定的伪随机种子生成一致的数据
-const generateMockApplicants = () => {
+const generateMockApplicants = (): Applicant[] => {
   const surnames = ["王", "李", "張", "劉", "陳", "楊", "黃", "趙", "吳", "周", "徐", "孫", "馬", "朱", "胡", "郭", "林", "何", "高", "梁"]
   const givenNames = ["小明", "美玲", "建國", "怡君", "家豪", "佳琪", "志強", "淑芬", "文華", "雅婷", "俊傑", "麗華", "偉明", "秀英", "明哲", "慧珍", "國強", "淑惠", "宗翰", "雅芳"]
   const tabletTypes = [
@@ -61,7 +84,7 @@ const generateMockApplicants = () => {
     }
     
     // 状态分布：已导出=25, 待处理=168, 有问题=7 (总共200)
-    let status
+    let status: "exported" | "pending" | "problematic"
     if (i <= 25) {
       status = "exported"
     } else if (i <= 193) {  // 25 + 168 = 193
@@ -94,7 +117,16 @@ const statusConfig = {
 }
 
 // StatCard component - moved outside to prevent re-creation
-const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }) => {
+interface StatCardProps {
+  label: string
+  value: number
+  status: "exported" | "pending" | "problematic" | null
+  activeCard: "exported" | "pending" | "problematic" | null
+  onCardClick: (status: "exported" | "pending" | "problematic" | null) => void
+  highlight: boolean
+}
+
+const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }: StatCardProps) => {
   const isActive = activeCard === status
 
   return (
@@ -119,8 +151,16 @@ const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }) 
 }
 
 // SearchBar component - completely isolated
-const SearchBar = ({ searchQuery, onSearchQueryChange, onSearch, onClear, searchActive }) => {
-  const handleKeyDown = (e) => {
+interface SearchBarProps {
+  searchQuery: string
+  onSearchQueryChange: (value: string) => void
+  onSearch: () => void
+  onClear: () => void
+  searchActive: boolean
+}
+
+const SearchBar = ({ searchQuery, onSearchQueryChange, onSearch, onClear, searchActive }: SearchBarProps) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
       onSearch()
@@ -154,11 +194,19 @@ const SearchBar = ({ searchQuery, onSearchQueryChange, onSearch, onClear, search
 }
 
 // Batch Export Section Component
-const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pendingApplications }) => {
+interface BatchExportSectionProps {
+  selectedCount: SelectedCount
+  onSelectChange: (applications: number, tablets: number) => void
+  onExport: () => void
+  stats: Stats
+  pendingApplications: Applicant[]
+}
+
+const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pendingApplications }: BatchExportSectionProps) => {
   // Calculate total tablets for pending applications
-  const totalPendingTablets = pendingApplications.reduce((sum, app) => sum + app.total, 0)
+  const totalPendingTablets = pendingApplications.reduce((sum: number, app: Applicant) => sum + app.total, 0)
   const first100Count = Math.min(100, pendingApplications.length)
-  const first100Tablets = pendingApplications.slice(0, first100Count).reduce((sum, app) => sum + app.total, 0)
+  const first100Tablets = pendingApplications.slice(0, first100Count).reduce((sum: number, app: Applicant) => sum + app.total, 0)
   
   return (
     <div className="mb-4 p-4 bg-muted/30 rounded-md">
@@ -213,6 +261,23 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
 }
 
 // Main step 1 component
+interface Step1ViewProps {
+  searchQuery: string
+  onSearchQueryChange: (value: string) => void
+  searchActive: boolean
+  onSearch: () => void
+  onClearSearch: () => void
+  activeCard: "exported" | "pending" | "problematic" | null
+  onCardClick: (status: "exported" | "pending" | "problematic" | null) => void
+  filtered: Applicant[]
+  stats: Stats
+  onStepChange: (step: number) => void
+  selectedCount: SelectedCount
+  onSelectChange: (applications: number, tablets: number) => void
+  highlightExported: boolean
+  highlightPending: boolean
+}
+
 const Step1View = ({
   searchQuery,
   onSearchQueryChange,
@@ -228,7 +293,7 @@ const Step1View = ({
   onSelectChange,
   highlightExported,
   highlightPending,
-}) => {
+}: Step1ViewProps) => {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -327,7 +392,7 @@ const Step1View = ({
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => (
+                filtered.map((item: Applicant) => (
                   <tr key={item.id} className="border-b border-border hover:bg-muted">
                     <td className="px-4 py-3 text-foreground font-medium">{item.name}</td>
                     <td className="px-4 py-3 text-foreground">{item.phone}</td>
@@ -355,7 +420,12 @@ const Step1View = ({
 }
 
 // Step 2 - Export Confirmation Modal
-const Step2View = ({ onStepChange, selectedCount }) => {
+interface Step2ViewProps {
+  onStepChange: (step: number) => void
+  selectedCount: SelectedCount
+}
+
+const Step2View = ({ onStepChange, selectedCount }: Step2ViewProps) => {
   const files = [
     { name: '長生祿位.pdf', paper: '紅紙' },
     { name: '往生蓮位.pdf', paper: '黃紙' },
@@ -429,7 +499,11 @@ const Step2View = ({ onStepChange, selectedCount }) => {
 }
 
 // Step 3 - Generation Progress Modal
-const Step3View = ({ exportProgress }) => {
+interface Step3ViewProps {
+  exportProgress: number
+}
+
+const Step3View = ({ exportProgress }: Step3ViewProps) => {
   const files = [
     { name: '長生祿位', count: 300 },
     { name: '往生蓮位', count: 800 },
@@ -514,7 +588,12 @@ const Step3View = ({ exportProgress }) => {
 }
 
 // Step 4 - Completion Modal
-const Step4View = ({ onClose, selectedCount }) => {
+interface Step4ViewProps {
+  onClose: () => void
+  selectedCount: SelectedCount
+}
+
+const Step4View = ({ onClose, selectedCount }: Step4ViewProps) => {
   const files = [
     { name: '長生祿位.pdf', count: 300, size: '8.2MB', paper: '紅紙' },
     { name: '往生蓮位.pdf', count: 800, size: '21.5MB', paper: '黃紙' },
@@ -582,8 +661,8 @@ const BatchExportFlow = () => {
   const [step, setStep] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchActive, setSearchActive] = useState(false)
-  const [activeCard, setActiveCard] = useState(null)
-  const [selectedCount, setSelectedCount] = useState({ applications: 0, tablets: 0 })
+  const [activeCard, setActiveCard] = useState<"exported" | "pending" | "problematic" | null>(null)
+  const [selectedCount, setSelectedCount] = useState<SelectedCount>({ applications: 0, tablets: 0 })
   const [exportProgress, setExportProgress] = useState(0)
   const [highlightExported, setHighlightExported] = useState(false)
   const [highlightPending, setHighlightPending] = useState(false)
@@ -651,14 +730,14 @@ const BatchExportFlow = () => {
     setSearchQuery("")
   }
 
-  const handleCardClick = (status) => {
+  const handleCardClick = (status: "exported" | "pending" | "problematic" | null) => {
     setActiveCard(activeCard === status ? null : status)
     setSearchActive(false)
     setSearchQuery("")
     setSelectedCount({ applications: 0, tablets: 0 }) // Clear selection when changing card
   }
 
-  const handleSelectChange = (applications, tablets) => {
+  const handleSelectChange = (applications: number, tablets: number) => {
     setSelectedCount({ applications, tablets })
   }
 
