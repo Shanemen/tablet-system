@@ -184,14 +184,14 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
             </>
           ) : (
             <>
-              <span className="text-sm font-semibold text-foreground">
-                ✅ 已選擇 {selectedCount.applications} 份申請，共 {selectedCount.tablets} 個牌位
+              <span className="text-sm font-semibold text-primary">
+                已選擇 {selectedCount.applications} 份申請，共 {selectedCount.tablets} 個牌位
               </span>
               <Button
                 onClick={() => onSelectChange(0, 0)}
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground hover:text-foreground underline"
+                className="text-slate-600 hover:text-slate-900 underline hover:no-underline"
               >
                 清除選擇
               </Button>
@@ -493,7 +493,7 @@ const Step3View = ({ exportProgress }) => {
                       </span>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {isCompleted ? `✅ ${item.count}個` :
+                      {isCompleted ? `${item.count}個` :
                        isInProgress ? `${Math.floor(item.count * itemProgress / 100)}/${item.count}` :
                        '等待中'}
                     </span>
@@ -532,7 +532,7 @@ const Step4View = ({ onClose, selectedCount }) => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-3">
               <Check className="text-primary" size={32} />
             </div>
-            <h3 className="text-2xl font-bold text-foreground">✅ 生成完成！</h3>
+            <h3 className="text-2xl font-bold text-foreground">生成完成！</h3>
             <p className="text-sm text-muted-foreground mt-1">已成功生成 6 個 PDF 文件</p>
           </div>
 
