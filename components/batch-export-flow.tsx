@@ -161,7 +161,7 @@ const BatchExportSection = ({ selectedCount, onSelectChange, onExport, stats, pe
   const first100Tablets = pendingApplications.slice(0, first100Count).reduce((sum, app) => sum + app.total, 0)
   
   return (
-    <div className="mb-4 p-4 bg-muted/30 border border-border rounded-md">
+    <div className="mb-4 p-4 bg-muted/30 rounded-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {selectedCount.applications === 0 ? (
