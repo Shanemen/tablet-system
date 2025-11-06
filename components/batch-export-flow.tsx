@@ -638,7 +638,7 @@ const Step4View = ({ onClose, selectedCount }: Step4ViewProps) => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="hover:bg-muted hover:text-foreground">
+                    <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
                       <Eye className="mr-1 h-4 w-4" />
                       預覽
                     </Button>
@@ -657,7 +657,7 @@ const Step4View = ({ onClose, selectedCount }: Step4ViewProps) => {
               <Download className="mr-2 h-5 w-5" />
               全部下載 (ZIP)
             </Button>
-            <Button onClick={onClose} variant="outline" className="hover:bg-muted hover:text-foreground">
+            <Button onClick={onClose} variant="outline" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
               關閉
             </Button>
           </div>
