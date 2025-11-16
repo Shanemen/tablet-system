@@ -1,6 +1,7 @@
-import BatchExportFlow from "@/components/batch-export-flow"
+import { redirect } from 'next/navigation'
 
 export default function Home() {
-  return <BatchExportFlow />
+  // Redirect to admin dashboard
+  redirect('/admin/dashboard')
 }
 

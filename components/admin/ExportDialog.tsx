@@ -1,0 +1,245 @@
+"use client"
+
+import { X, Loader, Check, FileText, Download, Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { SelectedCount } from "@/lib/types/application"
+
+// Step 2 - Export Confirmation
+interface ExportConfirmationProps {
+  selectedCount: SelectedCount
+  onCancel: () => void
+  onConfirm: () => void
+}
+
+export function ExportConfirmation({ selectedCount, onCancel, onConfirm }: ExportConfirmationProps) {
+  const files = [
+    { name: '長生祿位.pdf', paper: '紅紙' },
+    { name: '往生蓮位.pdf', paper: '黃紙' },
+    { name: '歷代祖先.pdf', paper: '黃紙' },
+    { name: '冤親債主.pdf', paper: '黃紙' },
+    { name: '墮胎嬰靈.pdf', paper: '黃紙' },
+    { name: '地基主.pdf', paper: '黃紙' }
+  ]
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <Card className="max-w-lg w-full">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-foreground">批量導出 PDF</h3>
+            <Button onClick={onCancel} variant="ghost" size="sm" className="hover:bg-muted">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Selection Summary */}
+            <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
+              <div className="flex justify-between text-base mb-2">
+                <span className="text-foreground">已選擇申請：</span>
+                <span className="font-bold text-primary">{selectedCount.applications} 份</span>
+              </div>
+              <div className="flex justify-between text-base">
+                <span className="text-foreground">總牌位數：</span>
+                <span className="font-bold text-primary">{selectedCount.tablets} 個</span>
+              </div>
+            </div>
+
+            {/* Processing Rules */}
+            <div className="bg-muted p-3 rounded-lg">
+              <div className="text-base font-medium text-foreground mb-2">📋 自動處理規則：</div>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+                <li>• 按6種牌位類型自動分組</li>
+                <li>• 同類型牌位按申請人姓名拼音排序</li>
+                <li>• 每頁排版 6-8 個牌位，自動分頁</li>
+              </ul>
+            </div>
+
+            {/* Files to Generate */}
+            <div className="bg-muted p-4 rounded-lg">
+              <div className="font-medium mb-2 text-base text-foreground">將生成以下文件：</div>
+              <div className="space-y-1.5">
+                {files.map((file, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-foreground">{i + 1}. 2024-03-15_觀音法會_{file.name}</span>
+                    <span className="text-muted-foreground text-xs">({file.paper}打印)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-6">
+            <Button onClick={onCancel} variant="outline" className="flex-1 hover:bg-muted hover:text-foreground">
+              取消
+            </Button>
+            <Button onClick={onConfirm} className="flex-1 bg-primary hover:bg-primary/90">
+              開始生成
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+// Step 3 - Generation Progress
+interface ExportProgressProps {
+  progress: number
+}
+
+export function ExportProgress({ progress }: ExportProgressProps) {
+  const files = [
+    { name: '長生祿位', count: 300 },
+    { name: '往生蓮位', count: 800 },
+    { name: '歷代祖先', count: 150 },
+    { name: '冤親債主', count: 100 },
+    { name: '墮胎嬰靈', count: 50 },
+    { name: '地基主', count: 30 }
+  ]
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <Card className="max-w-md w-full">
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-3">
+              <Loader className="animate-spin text-primary" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">正在生成牌位...</h3>
+            <p className="text-sm text-muted-foreground mt-1">請稍候，這可能需要幾分鐘</p>
+          </div>
+
+          <div className="space-y-4">
+            {/* Overall Progress */}
+            <div>
+              <div className="flex justify-between text-base mb-2">
+                <span className="font-medium text-foreground">整體進度</span>
+                <span className="text-primary font-bold">{progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div 
+                  className="bg-primary h-full transition-all duration-300 rounded-full" 
+                  style={{ width: `${progress}%` }} 
+                />
+              </div>
+            </div>
+
+            {/* Individual File Progress */}
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <div className="text-base font-medium text-foreground mb-3">當前進度：</div>
+              {files.map((item, i) => {
+                const itemProgress = Math.max(0, progress - (i * 17))
+                const isCompleted = itemProgress >= 100
+                const isInProgress = itemProgress > 0 && itemProgress < 100
+
+                return (
+                  <div key={i} className="flex items-center justify-between text-base">
+                    <div className="flex items-center gap-2">
+                      {isCompleted ? (
+                        <Check size={16} className="text-primary" />
+                      ) : isInProgress ? (
+                        <Loader size={16} className="animate-spin text-primary" />
+                      ) : (
+                        <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
+                      )}
+                      <span className={
+                        isCompleted ? 'text-primary' :
+                        isInProgress ? 'text-primary font-medium' :
+                        'text-muted-foreground'
+                      }>
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {isCompleted ? `${item.count}個` :
+                       isInProgress ? `${Math.floor(item.count * itemProgress / 100)}/${item.count}` :
+                       '等待中'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Estimated Time */}
+            <div className="text-center text-base text-muted-foreground">
+              預計剩餘時間：{Math.max(0, Math.ceil((100 - progress) / 50))} 分鐘
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+// Step 4 - Completion
+interface ExportCompletionProps {
+  selectedCount: SelectedCount
+  onClose: () => void
+}
+
+export function ExportCompletion({ selectedCount, onClose }: ExportCompletionProps) {
+  const files = [
+    { name: '長生祿位.pdf', count: 300, size: '8.2MB', paper: '紅紙' },
+    { name: '往生蓮位.pdf', count: 800, size: '21.5MB', paper: '黃紙' },
+    { name: '歷代祖先.pdf', count: 150, size: '4.1MB', paper: '黃紙' },
+    { name: '冤親債主.pdf', count: 100, size: '2.8MB', paper: '黃紙' },
+    { name: '墮胎嬰靈.pdf', count: 50, size: '1.4MB', paper: '黃紙' },
+    { name: '地基主.pdf', count: 30, size: '0.9MB', paper: '黃紙' }
+  ]
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <Card className="max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-3">
+              <Check className="text-primary" size={32} />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground">生成完成！</h3>
+            <p className="text-sm text-muted-foreground mt-1">已成功生成 6 個 PDF 文件</p>
+          </div>
+
+          <div className="space-y-3">
+            {files.map((file, i) => (
+              <div key={i} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-grow">
+                    <FileText className="text-slate-600" size={32} />
+                    <div>
+                      <div className="font-semibold text-base text-foreground">2024-03-15_觀音法會_{file.name}</div>
+                      <div className="text-base text-muted-foreground">{file.count}個牌位 • {file.size} • {file.paper}打印</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
+                      <Eye className="mr-1 h-4 w-4" />
+                      預覽
+                    </Button>
+                    <Button size="sm" className="bg-primary hover:bg-primary/90">
+                      <Download className="mr-1 h-4 w-4" />
+                      下載
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <Button className="flex-1 bg-primary hover:bg-primary/90">
+              <Download className="mr-2 h-5 w-5" />
+              全部下載 (ZIP)
+            </Button>
+            <Button onClick={onClose} variant="outline" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
+              關閉
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}
+
