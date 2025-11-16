@@ -1,7 +1,7 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Search, Upload, FileDown, CheckCircle2, Eye, X, Download, Loader, Check, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -114,8 +114,6 @@ const generateMockApplicants = (): Applicant[] => {
   return applicants
 }
 
-const applicants = generateMockApplicants()
-
 // Status badge styling - 柔和配色
 const statusConfig = {
   exported: { label: "已導出", color: "text-slate-700 bg-muted" },
@@ -139,15 +137,15 @@ const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }: 
   return (
     <button
       onClick={() => onCardClick(status)}
-      className={`w-full rounded-lg p-6 text-left transition-all ${
+      className={`w-full rounded-lg p-6 text-left transition-colors border-2 ${
         isActive 
-          ? "bg-primary text-white shadow-lg" 
+          ? "bg-primary text-white shadow-lg border-primary" 
           : highlight 
-            ? "bg-primary/10 border-2 border-primary/40 animate-pulse" 
-            : "bg-white border border-border hover:shadow-md hover:border-primary/50"
+            ? "stat-card-pulse border-primary/40 shadow-lg" 
+            : "bg-white border-border/50 hover:shadow-md hover:border-primary/30"
       }`}
     >
-      <div className={`text-4xl font-bold ${isActive ? "text-white" : "text-primary/70"}`}>
+      <div className={`text-4xl font-bold ${highlight ? "stat-number-animate" : ""} ${isActive ? "text-white" : "text-primary/70"}`}>
         {value}
       </div>
       <div className={`mt-2 text-base font-semibold ${isActive ? "text-white" : "text-foreground"}`}>
@@ -184,10 +182,14 @@ const SearchBar = ({ searchQuery, onSearchQueryChange, onSearch, onClear, search
           onChange={(e) => onSearchQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="搜索申請人姓名、電話或牌位上親友名字..."
-          className="pl-10 bg-white dark:bg-card border border-border text-lg h-12 placeholder:text-lg placeholder:text-foreground/60"
+          className="pl-10 bg-white dark:bg-card border border-border text-base h-12 placeholder:text-base placeholder:text-foreground/60"
         />
       </div>
-      <Button onClick={onSearch} className="whitespace-nowrap h-12 text-lg">
+      <Button 
+        onClick={onSearch} 
+        disabled={searchQuery.trim() === ""}
+        className={searchQuery.trim() !== "" ? "whitespace-nowrap h-12 text-lg bg-primary hover:bg-primary/90" : "whitespace-nowrap h-12 text-lg"}
+      >
         搜索
       </Button>
       {searchActive && (
@@ -308,7 +310,7 @@ const Step1View = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="pb-6">
-        <h1 className="text-3xl font-bold text-foreground">牌位申請管理</h1>
+        <h1 className="text-3xl font-bold text-primary">牌位申請管理</h1>
         <p className="mt-2 text-base text-foreground/80">當前法會：2024年3月15日 三時繫念法會</p>
       </div>
 
@@ -669,6 +671,9 @@ const Step4View = ({ onClose, selectedCount }: Step4ViewProps) => {
 
 // Main component
 const BatchExportFlow = () => {
+  // Generate mock data once on client side using useMemo
+  const applicants = useMemo(() => generateMockApplicants(), [])
+  
   const [step, setStep] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchActive, setSearchActive] = useState(false)
@@ -678,13 +683,13 @@ const BatchExportFlow = () => {
   const [highlightExported, setHighlightExported] = useState(false)
   const [highlightPending, setHighlightPending] = useState(false)
   
-  // Statistics state
-  const [stats, setStats] = useState({
+  // Statistics state - initialized after applicants is generated
+  const [stats, setStats] = useState(() => ({
     total: applicants.length,
     exported: applicants.filter((a) => a.status === "exported").length,
     pending: applicants.filter((a) => a.status === "pending").length,
     problematic: applicants.filter((a) => a.status === "problematic").length,
-  })
+  }))
 
   // Simulate export progress and update stats
   useEffect(() => {
@@ -779,7 +784,7 @@ const BatchExportFlow = () => {
     setTimeout(() => {
       setHighlightExported(false)
       setHighlightPending(false)
-    }, 1500)
+    }, 3000)
   }
 
   return (
