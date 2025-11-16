@@ -25,17 +25,21 @@ export function BatchExportSection({
   const first100Tablets = pendingApplications.slice(0, first100Count).reduce((sum, app) => sum + app.total, 0)
   
   return (
-    <div className="mb-4 p-4 bg-muted/30 rounded-md">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="p-4 bg-muted/30 rounded-md">
+      {/* Responsive flex layout - vertical on small screens, horizontal on large */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        {/* Left side - selection controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
           {selectedCount.applications === 0 ? (
             <>
-              <span className="text-lg font-semibold text-foreground">選擇要導出的申請：</span>
+              <span className="text-base font-normal text-foreground/60 whitespace-nowrap">
+                選擇要導出的申請：
+              </span>
               <Button
                 onClick={() => onSelectChange(first100Count, first100Tablets)}
                 variant="outline"
                 size="lg"
-                className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-lg"
+                className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-base sm:text-lg whitespace-nowrap"
               >
                 前100份 ({first100Tablets}個牌位)
               </Button>
@@ -43,21 +47,21 @@ export function BatchExportSection({
                 onClick={() => onSelectChange(pendingApplications.length, totalPendingTablets)}
                 variant="outline"
                 size="lg"
-                className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-lg"
+                className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-base sm:text-lg whitespace-nowrap"
               >
                 全部 ({pendingApplications.length}份，{totalPendingTablets}個牌位)
               </Button>
             </>
           ) : (
             <>
-              <span className="text-lg font-bold text-primary">
+              <span className="text-base sm:text-lg font-bold text-primary">
                 已選擇 {selectedCount.applications} 份申請，共 {selectedCount.tablets} 個牌位
               </span>
               <Button
                 onClick={() => onSelectChange(0, 0)}
                 variant="ghost"
                 size="lg"
-                className="text-slate-600 hover:text-slate-900 hover:bg-muted underline hover:no-underline"
+                className="text-slate-600 hover:text-slate-900 hover:bg-muted underline hover:no-underline whitespace-nowrap"
               >
                 清除選擇
               </Button>
@@ -65,11 +69,12 @@ export function BatchExportSection({
           )}
         </div>
 
+        {/* Right side - export button */}
         <Button
           onClick={onExport}
           disabled={selectedCount.applications === 0}
           size="lg"
-          className={selectedCount.applications > 0 ? "bg-primary hover:bg-primary/90 text-lg" : "text-lg"}
+          className={`${selectedCount.applications > 0 ? "bg-primary hover:bg-primary/85 hover:shadow-md transition-all" : ""} text-base sm:text-lg whitespace-nowrap w-full sm:w-auto`}
         >
           <Download className="mr-2 h-5 w-5" />
           批量導出PDF

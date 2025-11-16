@@ -17,7 +17,7 @@ const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }: 
   return (
     <button
       onClick={() => onCardClick(status)}
-      className={`w-full rounded-lg p-6 text-left transition-colors border-2 ${
+      className={`w-full rounded-lg p-4 sm:p-6 text-left transition-colors border-2 ${
         isActive 
           ? "bg-primary text-white shadow-lg border-primary" 
           : highlight 
@@ -25,10 +25,10 @@ const StatCard = ({ label, value, status, activeCard, onCardClick, highlight }: 
             : "bg-white border-border/50 hover:shadow-md hover:border-primary/30"
       }`}
     >
-      <div className={`text-4xl font-bold ${highlight ? "stat-number-animate" : ""} ${isActive ? "text-white" : "text-primary/70"}`}>
+      <div className={`text-3xl sm:text-4xl font-bold ${highlight ? "stat-number-animate" : ""} ${isActive ? "text-white" : "text-primary/70"}`}>
         {value}
       </div>
-      <div className={`mt-2 text-base font-semibold ${isActive ? "text-white" : "text-foreground"}`}>
+      <div className={`mt-2 text-sm sm:text-base font-semibold ${isActive ? "text-white" : "text-foreground"}`}>
         {label}
       </div>
     </button>
@@ -53,7 +53,7 @@ export function ApplicationStats({
   return (
     <div>
       <h2 className="mb-4 text-lg font-semibold text-foreground">統計總覽</h2>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           label="待處理"
           value={stats.pending}

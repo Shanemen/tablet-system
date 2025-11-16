@@ -75,7 +75,7 @@ export function ExportConfirmation({ selectedCount, onCancel, onConfirm }: Expor
             <Button onClick={onCancel} variant="outline" className="flex-1 hover:bg-muted hover:text-foreground">
               取消
             </Button>
-            <Button onClick={onConfirm} className="flex-1 bg-primary hover:bg-primary/90">
+            <Button onClick={onConfirm} className="flex-1 bg-primary hover:bg-primary/85 hover:shadow-md transition-all">
               開始生成
             </Button>
           </div>
@@ -218,7 +218,7 @@ export function ExportCompletion({ selectedCount, onClose }: ExportCompletionPro
                       <Eye className="mr-1 h-4 w-4" />
                       預覽
                     </Button>
-                    <Button size="sm" className="bg-primary hover:bg-primary/90">
+                    <Button size="sm" className="bg-primary hover:bg-primary/85 hover:shadow-md transition-all">
                       <Download className="mr-1 h-4 w-4" />
                       下載
                     </Button>
@@ -229,7 +229,7 @@ export function ExportCompletion({ selectedCount, onClose }: ExportCompletionPro
           </div>
 
           <div className="flex gap-3 mt-6">
-            <Button className="flex-1 bg-primary hover:bg-primary/90">
+            <Button className="flex-1 bg-primary hover:bg-primary/85 hover:shadow-md transition-all">
               <Download className="mr-2 h-5 w-5" />
               全部下載 (ZIP)
             </Button>

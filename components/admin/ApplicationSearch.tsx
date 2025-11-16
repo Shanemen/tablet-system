@@ -42,7 +42,7 @@ export function ApplicationSearch({
       <Button 
         onClick={onSearch} 
         disabled={searchQuery.trim() === ""}
-        className={searchQuery.trim() !== "" ? "whitespace-nowrap h-12 text-lg bg-primary hover:bg-primary/90" : "whitespace-nowrap h-12 text-lg"}
+        className={searchQuery.trim() !== "" ? "whitespace-nowrap h-12 text-lg bg-primary hover:bg-primary/85 hover:shadow-md transition-all" : "whitespace-nowrap h-12 text-lg"}
       >
         搜索
       </Button>

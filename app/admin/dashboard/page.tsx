@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { ApplicationStats } from "@/components/admin/ApplicationStats"
 import { ApplicationSearch } from "@/components/admin/ApplicationSearch"
 import { ApplicationTable } from "@/components/admin/ApplicationTable"
-import { BatchExportSection } from "@/components/admin/BatchExportSection"
 import { ExportConfirmation, ExportProgress, ExportCompletion } from "@/components/admin/ExportDialog"
 import { Applicant, Stats, SelectedCount, ApplicationStatus } from "@/lib/types/application"
 import { getApplications } from "./actions"
@@ -187,22 +186,16 @@ export default function AdminDashboardPage() {
               highlightPending={highlightPending}
             />
 
-            {/* Batch Export Section */}
-            {activeCard === "pending" && stats.pending > 0 && !searchActive && (
-              <BatchExportSection
-                selectedCount={selectedCount}
-                onSelectChange={handleSelectChange}
-                onExport={() => setStep(2)}
-                stats={stats}
-                pendingApplications={filtered}
-              />
-            )}
-
-            {/* Application Table */}
+            {/* Application Table - with integrated batch export section */}
             <ApplicationTable
               applications={filtered}
               searchActive={searchActive}
               activeCard={activeCard}
+              showBatchExport={activeCard === "pending" && stats.pending > 0 && !searchActive}
+              selectedCount={selectedCount}
+              onSelectChange={handleSelectChange}
+              onExport={() => setStep(2)}
+              stats={stats}
             />
           </div>
         )}
