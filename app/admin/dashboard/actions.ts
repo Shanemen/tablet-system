@@ -1,10 +1,84 @@
 "use server"
 
-import { Applicant } from "@/lib/types/application"
+import { Applicant, Stats } from "@/lib/types/application"
+import { createClient } from "@/lib/supabase/server"
 
-// Mock data generator - will be replaced with Supabase queries later
-// 使用固定的伪随机种子生成一致的数据
-export async function getApplications(): Promise<Applicant[]> {
+// Configuration: Set to 'supabase' to use real database, 'mock' for demo data
+const DATA_SOURCE = process.env.NEXT_PUBLIC_DATA_SOURCE || 'mock'
+
+// ============================================================================
+// SUPABASE DATA FETCHERS
+// ============================================================================
+
+async function getApplicationsFromSupabase(): Promise<Applicant[]> {
+  const supabase = await createClient()
+  
+  // Fetch applications with their names, joined from application_name table
+  const { data: applications, error } = await supabase
+    .from('application')
+    .select(`
+      id,
+      applicant_name,
+      phone,
+      plaque_type,
+      status,
+      application_name (
+        display_name
+      )
+    `)
+    .order('created_at', { ascending: false })
+  
+  if (error) {
+    console.error('Error fetching applications:', error)
+    throw new Error('Failed to fetch applications from database')
+  }
+  
+  if (!applications) {
+    return []
+  }
+  
+  // Transform Supabase data to Applicant interface
+  const applicants: Applicant[] = applications.map((app: any) => {
+    const names = app.application_name || []
+    const tabletNames = names.map((n: any) => n.display_name)
+    
+    // Map plaque_type to Chinese display
+    const plaqueTypeMap: Record<string, string> = {
+      'longevity': '長生祿位',
+      'deceased': '往生蓮位',
+      'ancestors': '歷代祖先',
+      'karmic_creditors': '冤親債主',
+      'aborted_spirits': '墮胎嬰靈',
+      'land_deity': '地基主'
+    }
+    
+    // Map status to our frontend format
+    const statusMap: Record<string, "exported" | "pending" | "problematic"> = {
+      'generated': 'exported',
+      'pending': 'pending',
+      'reviewed': 'pending',
+      'problem': 'problematic'
+    }
+    
+    return {
+      id: app.id,
+      name: app.applicant_name,
+      phone: app.phone,
+      tablet: `${plaqueTypeMap[app.plaque_type] || app.plaque_type}(${tabletNames.length})`,
+      tabletNames,
+      total: tabletNames.length,
+      status: statusMap[app.status] || 'pending'
+    }
+  })
+  
+  return applicants
+}
+
+// ============================================================================
+// MOCK DATA GENERATOR (for development/demo)
+// ============================================================================
+
+async function getApplicationsFromMock(): Promise<Applicant[]> {
   const surnames = ["王", "李", "張", "劉", "陳", "楊", "黃", "趙", "吳", "周", "徐", "孫", "馬", "朱", "胡", "郭", "林", "何", "高", "梁"]
   const givenNames = ["小明", "美玲", "建國", "怡君", "家豪", "佳琪", "志強", "淑芬", "文華", "雅婷", "俊傑", "麗華", "偉明", "秀英", "明哲", "慧珍", "國強", "淑惠", "宗翰", "雅芳"]
   const tabletTypes = [
@@ -88,8 +162,25 @@ export async function getApplications(): Promise<Applicant[]> {
   return applicants
 }
 
-// Calculate statistics from applications
-export async function getApplicationStats() {
+// ============================================================================
+// PUBLIC API - Main data fetchers
+// ============================================================================
+
+/**
+ * Fetch all applications (uses configured DATA_SOURCE)
+ */
+export async function getApplications(): Promise<Applicant[]> {
+  if (DATA_SOURCE === 'supabase') {
+    return getApplicationsFromSupabase()
+  } else {
+    return getApplicationsFromMock()
+  }
+}
+
+/**
+ * Calculate statistics from applications
+ */
+export async function getStats(): Promise<Stats> {
   const applications = await getApplications()
   
   return {
