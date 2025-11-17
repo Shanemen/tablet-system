@@ -23,8 +23,8 @@ CREATE TABLE ceremony (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ceremony_temple_status ON ceremony(temple_id, status);
-CREATE INDEX idx_ceremony_deadline ON ceremony(deadline_at);
+CREATE INDEX IF NOT EXISTS idx_ceremony_temple_status ON ceremony(temple_id, status);
+CREATE INDEX IF NOT EXISTS idx_ceremony_deadline ON ceremony(deadline_at);
 
 COMMENT ON TABLE ceremony IS 'Buddhist ceremonies where devotees can sponsor memorial tablets';
 COMMENT ON COLUMN ceremony.slug IS 'Unique URL for sharing (e.g., tablets.temple.org/apply/2025-guanyin-ceremony)';
@@ -61,16 +61,16 @@ CREATE TABLE application (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_application_ceremony ON application(ceremony_id, created_at DESC);
-CREATE INDEX idx_application_status ON application(status);
-CREATE INDEX idx_application_pinyin ON application(pinyin_key);
+CREATE INDEX IF NOT EXISTS idx_application_ceremony ON application(ceremony_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_application_status ON application(status);
+CREATE INDEX IF NOT EXISTS idx_application_pinyin ON application(pinyin_key);
 
 -- Full-text search with trigrams
-CREATE INDEX idx_application_name_trgm ON application USING GIN (applicant_name gin_trgm_ops);
-CREATE INDEX idx_application_phone_trgm ON application USING GIN (phone gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_application_name_trgm ON application USING GIN (applicant_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_application_phone_trgm ON application USING GIN (phone gin_trgm_ops);
 
 -- Prevent duplicate submissions
-CREATE UNIQUE INDEX idx_application_idempotency ON application(ceremony_id, idempotency_key);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_application_idempotency ON application(ceremony_id, idempotency_key);
 
 COMMENT ON TABLE application IS 'Devotee applications (one row per applicant per ceremony)';
 COMMENT ON COLUMN application.idempotency_key IS 'Hash of (ceremony_id + phone + plaque_type + main_name) to prevent accidental double-clicks';
@@ -94,10 +94,10 @@ CREATE TABLE application_name (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_application_name_app ON application_name(application_id);
-CREATE INDEX idx_application_name_pinyin ON application_name(pinyin_key);
-CREATE INDEX idx_application_name_trgm ON application_name USING GIN (display_name gin_trgm_ops);
-CREATE INDEX idx_application_name_image_status ON application_name(image_generation_status) WHERE image_generation_status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_application_name_app ON application_name(application_id);
+CREATE INDEX IF NOT EXISTS idx_application_name_pinyin ON application_name(pinyin_key);
+CREATE INDEX IF NOT EXISTS idx_application_name_trgm ON application_name USING GIN (display_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_application_name_image_status ON application_name(image_generation_status) WHERE image_generation_status = 'pending';
 
 COMMENT ON TABLE application_name IS 'Tablet names (one application can have multiple tablets)';
 COMMENT ON COLUMN application_name.image_url IS 'Generated tablet image URL from Supabase Storage';
@@ -120,7 +120,7 @@ CREATE TABLE plaque_job (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_plaque_job_ceremony ON plaque_job(ceremony_id, status);
+CREATE INDEX IF NOT EXISTS idx_plaque_job_ceremony ON plaque_job(ceremony_id, status);
 
 COMMENT ON TABLE plaque_job IS 'Batch tablet generation jobs (tracks overall progress)';
 
@@ -142,8 +142,8 @@ CREATE TABLE plaque_chunk (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_plaque_chunk_job ON plaque_chunk(job_id, status);
-CREATE INDEX idx_plaque_chunk_status ON plaque_chunk(status) WHERE status IN ('pending', 'claimed');
+CREATE INDEX IF NOT EXISTS idx_plaque_chunk_job ON plaque_chunk(job_id, status);
+CREATE INDEX IF NOT EXISTS idx_plaque_chunk_status ON plaque_chunk(status) WHERE status IN ('pending', 'claimed');
 
 COMMENT ON TABLE plaque_chunk IS 'Individual processing chunks for parallel execution';
 
@@ -178,7 +178,7 @@ CREATE TABLE plaque_asset (
   generated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_plaque_asset_ceremony ON plaque_asset(ceremony_id, plaque_type);
+CREATE INDEX IF NOT EXISTS idx_plaque_asset_ceremony ON plaque_asset(ceremony_id, plaque_type);
 
 COMMENT ON TABLE plaque_asset IS 'Generated PDF files (6 types per ceremony)';
 
@@ -198,9 +198,9 @@ CREATE TABLE audit_log (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_audit_log_user ON audit_log(user_id, created_at DESC);
-CREATE INDEX idx_audit_log_resource ON audit_log(resource_type, resource_id);
-CREATE INDEX idx_audit_log_action ON audit_log(action, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_user ON audit_log(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_resource ON audit_log(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action, created_at DESC);
 
 COMMENT ON TABLE audit_log IS 'Audit trail for all system actions (GDPR compliance, security, tracking)';
 
