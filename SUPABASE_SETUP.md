@@ -141,12 +141,49 @@ Once your dashboard shows real data from Supabase:
 2. ✅ Move on to implementing admin authentication
 3. ✅ Add batch export functionality with real database queries
 
+## Step 8: Create Admin Users Manually (Security)
+
+⚠️ **Important**: Public sign-ups should be disabled to prevent unauthorized access.
+
+### 8.1: Disable Public Registration
+
+1. In Supabase Dashboard, go to **Authentication** → **Providers**
+2. Click on **Email** provider
+3. **Uncheck** "Allow new users to sign up"
+4. Click **Save**
+
+Now only you can create admin accounts from the Supabase dashboard.
+
+### 8.2: Manually Create Admin Users
+
+For each admin user (e.g., Sally, Hank):
+
+1. In Supabase Dashboard, go to **Authentication** → **Users**
+2. Click **"Add user"** → **"Create new user"**
+3. Fill in:
+   - **Email**: `sally@templea.com` (use real email)
+   - **Password**: Auto-generate or set a secure password
+   - **Auto Confirm User**: Check this (or disable email confirmation in Providers)
+4. Click **"Create user"**
+5. Repeat for each admin user
+
+### 8.3: Share Credentials Securely
+
+Send the login credentials to your admin users via secure channel:
+- Use password manager (1Password, LastPass)
+- Or encrypted messaging (Signal, WhatsApp)
+- **Never** send passwords via plain email
+
+They can change their password after first login if needed.
+
 ## Security Checklist
 
 - ✅ `.env.local` is in `.gitignore`
 - ✅ Never commit API keys to Git
 - ✅ Use `NEXT_PUBLIC_` prefix only for anon key (safe for browser)
 - ✅ Keep `SUPABASE_SERVICE_ROLE_KEY` secret (server-only)
+- ✅ Disable public sign-ups in Supabase
+- ✅ Only create admin users manually
 - ❌ Don't share your service role key in public channels
 
 ## Resources

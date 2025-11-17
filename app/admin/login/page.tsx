@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { login, signup } from './actions'
+import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 
 export default function LoginPage() {
-  const [isSignUp, setIsSignUp] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -16,12 +15,10 @@ export default function LoginPage() {
     setMessage(null)
 
     try {
-      const result = isSignUp ? await signup(formData) : await login(formData)
+      const result = await login(formData)
       
       if (result?.error) {
         setMessage({ type: 'error', text: result.error })
-      } else if (result?.success) {
-        setMessage({ type: 'success', text: result.message || '登录成功！' })
       }
     } catch (error) {
       setMessage({ type: 'error', text: '发生错误，请重试' })
@@ -39,7 +36,7 @@ export default function LoginPage() {
             牌位管理系統
           </h1>
           <p className="text-muted-foreground">
-            {isSignUp ? '创建管理员账号' : '管理员登录'}
+            管理员登录
           </p>
         </div>
 
@@ -80,9 +77,9 @@ export default function LoginPage() {
               id="password"
               name="password"
               type="password"
-              autoComplete={isSignUp ? 'new-password' : 'current-password'}
+              autoComplete="current-password"
               required
-              placeholder={isSignUp ? '至少 6 个字符' : '输入密码'}
+              placeholder="输入密码"
               className="w-full"
               disabled={isLoading}
             />
@@ -93,33 +90,16 @@ export default function LoginPage() {
             className="w-full bg-primary hover:bg-primary/85 hover:shadow-md transition-all text-lg h-12"
             disabled={isLoading}
           >
-            {isLoading ? '处理中...' : (isSignUp ? '注册' : '登录')}
+            {isLoading ? '登录中...' : '登录'}
           </Button>
         </form>
 
-        {/* Toggle Sign Up / Login */}
+        {/* Help Text */}
         <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp)
-              setMessage(null)
-            }}
-            className="text-sm text-primary hover:text-primary/80 transition-colors underline"
-            disabled={isLoading}
-          >
-            {isSignUp ? '已有账号？点击登录' : '没有账号？点击注册'}
-          </button>
+          <p className="text-sm text-muted-foreground">
+            需要账号？请联系系统管理员
+          </p>
         </div>
-
-        {/* Development Note */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-xs text-yellow-800">
-              <strong>开发提示：</strong> 首次使用请先注册管理员账号。注册后需要在 Supabase 后台验证邮箱（或禁用邮箱验证）。
-            </p>
-          </div>
-        )}
       </Card>
     </div>
   )
