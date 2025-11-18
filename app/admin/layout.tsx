@@ -1,6 +1,5 @@
 import { Sidebar } from '@/components/admin/Sidebar'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 
 export default async function AdminLayout({
   children,
@@ -9,12 +8,13 @@ export default async function AdminLayout({
 }) {
   const supabase = await createClient()
   
-  // Get current user
+  // Get current user - middleware already protects these routes
+  // So we can safely assume user exists here
   const { data: { user } } = await supabase.auth.getUser()
   
-  // If no user, redirect to login (middleware should catch this, but just in case)
+  // If no user (shouldn't happen due to middleware), just return children without sidebar
   if (!user) {
-    redirect('/admin/login')
+    return children
   }
 
   return (
