@@ -20,7 +20,7 @@ export function Sidebar({ userEmail }: SidebarProps) {
 
   const navigation = [
     {
-      name: '法会编辑',
+      name: '表格編輯',
       href: '/admin/ceremonies',
       icon: Calendar,
     },
@@ -47,7 +47,7 @@ export function Sidebar({ userEmail }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-4 pb-4">
+      <nav className="flex-1 space-y-4 px-4 pb-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
