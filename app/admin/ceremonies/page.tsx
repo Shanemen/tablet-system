@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { PageLayout } from '@/components/admin/PageLayout'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { FormField } from '@/components/admin/FormField'
-import { getCurrentCeremony, updateCeremony, createCeremony, activateCeremony, Ceremony } from './actions'
+import { getCurrentCeremony, updateCeremony, createCeremony, Ceremony } from './actions'
 import { Loader2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -47,6 +47,7 @@ export default function CeremoniesPage() {
     if (!ceremony) {
       // Create new ceremony
       const result = await createCeremony(formData)
+      
       if (result.error) {
         setMessage({ type: 'error', text: result.error })
       } else {
@@ -56,30 +57,13 @@ export default function CeremoniesPage() {
     } else {
       // Update existing ceremony
       const result = await updateCeremony(ceremony.id, formData)
+      
       if (result.error) {
         setMessage({ type: 'error', text: result.error })
       } else {
         setMessage({ type: 'success', text: result.success || '法會信息已成功更新！' })
         await loadCeremony()
       }
-    }
-    
-    setSaving(false)
-  }
-
-  const handleActivate = async () => {
-    if (!ceremony) return
-    
-    setSaving(true)
-    setMessage(null)
-    
-    const result = await activateCeremony(ceremony.id)
-    
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error })
-    } else {
-      setMessage({ type: 'success', text: result.success || '申請表連結已生成！' })
-      await loadCeremony()
     }
     
     setSaving(false)
@@ -95,10 +79,6 @@ export default function CeremoniesPage() {
       </div>
     )
   }
-
-  // Show create form if no ceremony exists
-  const isDraft = ceremony?.status === 'draft'
-  const isActive = ceremony?.status === 'active'
 
   return (
     <PageLayout narrow>
@@ -120,14 +100,14 @@ export default function CeremoniesPage() {
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="form-section">
           {/* Chinese Name */}
-          <FormField label="法會名稱（中文）" required htmlFor="name_zh">
+          <FormField label="法會名稱（中文 + 英文）" required htmlFor="name_zh">
             <Input
               id="name_zh"
               name="name_zh"
               type="text"
               required
               defaultValue={ceremony?.name_zh || ''}
-              placeholder="例如：2024年3月15日 三時繫念法會"
+              placeholder="例如：三時繫念法會 Amitabha Service"
               className="form-input"
             />
           </FormField>
@@ -140,7 +120,7 @@ export default function CeremoniesPage() {
               type="text"
               required
               defaultValue={ceremony?.location || ''}
-              placeholder="例如：淨土道場"
+              placeholder="例如：123 Main Street, City, State, 10000"
               className="form-input"
             />
           </FormField>
@@ -149,6 +129,9 @@ export default function CeremoniesPage() {
           <div>
             <label className="form-label">
               法會日期和時間<span className="text-red-500 ml-1">*</span>
+              <span className="text-sm text-muted-foreground font-normal ml-2">
+                （點擊選擇或直接輸入，例如：2024/03/15 9:00 AM）
+              </span>
             </label>
             <div className="flex items-center gap-3">
               <div className="flex-1">
@@ -194,8 +177,8 @@ export default function CeremoniesPage() {
             />
           </FormField>
 
-          {/* Public URL and QR Code - Only show if active */}
-          {isActive && ceremony && (
+          {/* Public URL and QR Code - Show when ceremony exists */}
+          {ceremony && (
             <div>
               <label className="form-label">
                 信眾申請鏈接
@@ -251,18 +234,6 @@ export default function CeremoniesPage() {
             </div>
           )}
 
-          {/* Draft Status Notice */}
-          {isDraft && (
-            <div className="p-4 bg-muted/30 rounded-lg border border-border">
-              <p className="text-base text-foreground mb-2">
-                <strong>草稿狀態</strong>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                法會信息已保存為草稿。填寫完成後，點擊「生成申請表連結」按鈕來激活申請表單。
-              </p>
-            </div>
-          )}
-
           {/* Submit Button */}
           <div className="button-group">
             {ceremony && (
@@ -284,31 +255,14 @@ export default function CeremoniesPage() {
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  保存中...
+                  {ceremony ? '保存中...' : '創建中...'}
                 </>
               ) : ceremony ? (
                 '保存修改'
               ) : (
-                '創建法會'
+                '創建申請表格'
               )}
             </Button>
-            {isDraft && ceremony && (
-              <Button
-                type="button"
-                onClick={handleActivate}
-                disabled={saving}
-                className="btn-primary-large"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    處理中...
-                  </>
-                ) : (
-                  '生成申請表連結'
-                )}
-              </Button>
-            )}
           </div>
         </form>
       </Card>

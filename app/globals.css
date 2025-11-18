@@ -240,8 +240,40 @@
   .loading-container {
     @apply flex items-center justify-center min-h-screen bg-background p-6 sm:p-8;
   }
-  
+
   .loading-text {
     @apply flex items-center gap-3 text-xl text-foreground;
+  }
+
+  /* DateTime Picker Custom Styling */
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    @apply cursor-pointer opacity-60 hover:opacity-100;
+    filter: brightness(0) saturate(100%) invert(45%) sepia(85%) saturate(2435%) hue-rotate(201deg) brightness(95%) contrast(92%);
+  }
+
+  input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+    @apply text-foreground;
+  }
+
+  input[type="datetime-local"]::-webkit-datetime-edit-text {
+    @apply text-muted-foreground;
+  }
+
+  input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-year-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-minute-field,
+  input[type="datetime-local"]::-webkit-datetime-edit-ampm-field {
+    @apply text-foreground;
+  }
+
+  input[type="datetime-local"]:focus::-webkit-datetime-edit-month-field:focus,
+  input[type="datetime-local"]:focus::-webkit-datetime-edit-day-field:focus,
+  input[type="datetime-local"]:focus::-webkit-datetime-edit-year-field:focus,
+  input[type="datetime-local"]:focus::-webkit-datetime-edit-hour-field:focus,
+  input[type="datetime-local"]:focus::-webkit-datetime-edit-minute-field:focus,
+  input[type="datetime-local"]:focus::-webkit-datetime-edit-ampm-field:focus {
+    @apply bg-primary/10 text-primary rounded px-1;
   }
 }

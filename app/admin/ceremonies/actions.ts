@@ -51,7 +51,7 @@ export async function getCurrentCeremony(): Promise<Ceremony | null> {
 }
 
 /**
- * Create a new ceremony in draft status
+ * Create a new ceremony in active status (with link and QR code)
  */
 export async function createCeremony(formData: FormData) {
   const supabase = await createClient()
@@ -59,7 +59,7 @@ export async function createCeremony(formData: FormData) {
   const nameZh = formData.get('name_zh') as string
   const startAt = formData.get('start_at') as string
   
-  // Generate slug even for draft (required by DB)
+  // Generate slug for the application form link
   let slug = generateSlug(nameZh, startAt)
   
   // Ensure uniqueness
@@ -80,7 +80,7 @@ export async function createCeremony(formData: FormData) {
     start_at: startAt,
     end_at: formData.get('end_at') as string || startAt,
     deadline_at: formData.get('deadline_at') as string,
-    status: 'draft' as const,
+    status: 'active' as const, // Directly create as active
     slug: slug,
     temple_id: 1, // Default temple_id
   }
@@ -96,7 +96,7 @@ export async function createCeremony(formData: FormData) {
   }
   
   revalidatePath('/admin/ceremonies')
-  return { success: '法會已創建！', ceremony: data }
+  return { success: '申請表格已創建！鏈接和二維碼已生成。', ceremony: data }
 }
 
 /**
