@@ -34,21 +34,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect /admin/* routes (except /admin/login)
-  if (request.nextUrl.pathname.startsWith('/admin') && 
-      !request.nextUrl.pathname.startsWith('/admin/login')) {
-    if (!user) {
-      // Redirect to login if not authenticated
-      const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = '/admin/login'
-      return NextResponse.redirect(redirectUrl)
-    }
-  }
-
-  // Redirect to dashboard if already logged in and trying to access login
-  if (request.nextUrl.pathname === '/admin/login' && user) {
+  // If no user, redirect to login (middleware only runs on protected routes)
+  if (!user) {
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/admin/dashboard'
+    redirectUrl.pathname = '/admin/login'
     return NextResponse.redirect(redirectUrl)
   }
 
@@ -57,7 +46,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin/:path*',
+    /*
+     * Match all admin routes except:
+     * - /admin/login (to prevent redirect loops)
+     */
+    '/admin/((?!login).*)',
   ],
 }
 
