@@ -5,7 +5,6 @@ import { ApplicationStats } from "@/components/admin/ApplicationStats"
 import { ApplicationSearch } from "@/components/admin/ApplicationSearch"
 import { ApplicationTable } from "@/components/admin/ApplicationTable"
 import { ExportConfirmation, ExportProgress, ExportCompletion } from "@/components/admin/ExportDialog"
-import { LogoutButton } from "@/components/admin/LogoutButton"
 import { Applicant, Stats, SelectedCount, ApplicationStatus } from "@/lib/types/application"
 import { getApplications } from "./actions"
 
@@ -164,12 +163,9 @@ export default function AdminDashboardPage() {
         {step === 1 && (
           <div className="space-y-6">
             {/* Header */}
-            <div className="pb-6 flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-primary">牌位申請管理</h1>
-                <p className="mt-2 text-base text-foreground/80">當前法會：2024年3月15日 三時繫念法會</p>
-              </div>
-              <LogoutButton />
+            <div className="pb-6">
+              <h1 className="text-3xl font-bold text-primary">牌位管理</h1>
+              <p className="mt-2 text-base text-foreground/80">当前法会：2024年3月15日 三時繫念法會</p>
             </div>
 
             {/* Search Bar */}
