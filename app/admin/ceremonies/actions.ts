@@ -217,44 +217,53 @@ export async function getCeremonyBySlug(slug: string): Promise<Ceremony | null> 
 }
 
 /**
- * Clear all ceremonies and applications (FOR TESTING ONLY)
+ * Delete a specific ceremony and all its applications
  */
-export async function clearAllCeremonies() {
+export async function deleteCeremony(ceremonyId: number) {
   const supabase = await createClient()
   
   // Delete in correct order (respecting foreign keys)
-  // Use .gte('id', 0) to delete all rows (id is always >= 0)
-  const { error: namesError } = await supabase
-    .from('application_name')
-    .delete()
-    .gte('id', 0)
-  
-  if (namesError) {
-    console.error('Error deleting application_name:', namesError)
-    return { error: `刪除失敗：${namesError.message}` }
-  }
-  
-  const { error: appsError } = await supabase
+  // First, get all applications for this ceremony
+  const { data: applications } = await supabase
     .from('application')
-    .delete()
-    .gte('id', 0)
+    .select('id')
+    .eq('ceremony_id', ceremonyId)
   
-  if (appsError) {
-    console.error('Error deleting application:', appsError)
-    return { error: `刪除失敗：${appsError.message}` }
+  if (applications && applications.length > 0) {
+    const applicationIds = applications.map(app => app.id)
+    
+    // Delete application names
+    const { error: namesError } = await supabase
+      .from('application_name')
+      .delete()
+      .in('application_id', applicationIds)
+    
+    if (namesError) {
+      return { error: `刪除失敗：${namesError.message}` }
+    }
+    
+    // Delete applications
+    const { error: appsError } = await supabase
+      .from('application')
+      .delete()
+      .eq('ceremony_id', ceremonyId)
+    
+    if (appsError) {
+      return { error: `刪除失敗：${appsError.message}` }
+    }
   }
   
+  // Delete ceremony
   const { error: ceremonyError } = await supabase
     .from('ceremony')
     .delete()
-    .gte('id', 0)
+    .eq('id', ceremonyId)
   
   if (ceremonyError) {
-    console.error('Error deleting ceremony:', ceremonyError)
     return { error: `刪除失敗：${ceremonyError.message}` }
   }
   
   revalidatePath('/admin/ceremonies')
-  return { success: '所有法會數據已清空！' }
+  return { success: '表格已成功刪除！' }
 }
 

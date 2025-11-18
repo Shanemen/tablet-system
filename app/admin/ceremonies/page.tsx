@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { PageLayout } from '@/components/admin/PageLayout'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { FormField } from '@/components/admin/FormField'
-import { getCurrentCeremony, updateCeremony, createCeremony, Ceremony } from './actions'
+import { getCurrentCeremony, updateCeremony, createCeremony, deleteCeremony, Ceremony } from './actions'
 import { Loader2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -67,6 +67,32 @@ export default function CeremoniesPage() {
     }
     
     setSaving(false)
+  }
+
+  const handleDelete = async () => {
+    if (!ceremony) return
+    
+    // Show confirmation dialog
+    const confirmed = confirm(
+      '確定要刪除此表格嗎？\n\n此操作將永久刪除：\n• 法會信息\n• 所有相關的申請記錄\n• 申請表單鏈接將失效\n\n此操作無法撤銷！'
+    )
+    
+    if (!confirmed) return
+    
+    setSaving(true)
+    setMessage(null)
+    
+    const result = await deleteCeremony(ceremony.id)
+    
+    if (result.error) {
+      setMessage({ type: 'error', text: result.error })
+      setSaving(false)
+    } else {
+      // Clear ceremony state to show empty STARTING STATE
+      setCeremony(null)
+      setMessage({ type: 'success', text: result.success || '表格已刪除！' })
+      setSaving(false)
+    }
   }
 
   if (loading) {
@@ -240,11 +266,11 @@ export default function CeremoniesPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => loadCeremony()}
+                onClick={handleDelete}
                 disabled={saving}
-                className="btn-secondary-large"
+                className="btn-secondary-large hover:text-red-600 hover:border-red-300 hover:bg-red-50"
               >
-                重置
+                刪除表格
               </Button>
             )}
             <Button
