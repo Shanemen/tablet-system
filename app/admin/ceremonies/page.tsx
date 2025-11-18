@@ -26,7 +26,9 @@ export default function CeremoniesPage() {
   useEffect(() => {
     // Set full URL once ceremony is loaded (client-side only)
     if (typeof window !== 'undefined' && ceremony?.slug) {
-      setFullUrl(`${window.location.origin}/apply/${ceremony.slug}`)
+      // Use environment variable if available, otherwise use current origin
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      setFullUrl(`${baseUrl}/apply/${ceremony.slug}`)
     }
   }, [ceremony?.slug])
 
@@ -242,7 +244,8 @@ export default function CeremoniesPage() {
                     type="button" 
                     variant="outline"
                     onClick={() => {
-                      const urlToCopy = fullUrl || `${window.location.origin}/apply/${ceremony.slug}`
+                      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+                      const urlToCopy = fullUrl || `${baseUrl}/apply/${ceremony.slug}`
                       navigator.clipboard.writeText(urlToCopy)
                       alert('鏈接已複製到剪貼板！')
                     }}
