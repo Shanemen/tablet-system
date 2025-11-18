@@ -42,12 +42,12 @@ export function Sidebar({ userEmail }: SidebarProps) {
   return (
     <div className="flex h-screen w-64 flex-col bg-card border-r border-border">
       {/* Logo */}
-      <div className="p-6 border-b border-border">
+      <div className="p-6">
         <h1 className="text-xl font-bold text-primary">牌位管理系統</h1>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 space-y-1 px-4 pb-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -72,7 +72,7 @@ export function Sidebar({ userEmail }: SidebarProps) {
       </nav>
 
       {/* User Info */}
-      <div className="border-t border-border p-4">
+      <div className="p-4">
         <div className="flex flex-col items-center gap-3">
           {/* Avatar Circle */}
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-semibold">

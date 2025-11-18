@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { PageLayout } from "@/components/admin/PageLayout"
+import { PageHeader } from "@/components/admin/PageHeader"
 import { ApplicationStats } from "@/components/admin/ApplicationStats"
 import { ApplicationSearch } from "@/components/admin/ApplicationSearch"
 import { ApplicationTable } from "@/components/admin/ApplicationTable"
@@ -150,23 +152,22 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-6 sm:p-8 flex items-center justify-center">
-        <div className="text-lg text-foreground">載入中...</div>
+      <div className="loading-container">
+        <div className="loading-text">載入中...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 sm:p-8">
-      <div className="mx-auto max-w-6xl">
-        {/* Main Dashboard View */}
-        {step === 1 && (
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="pb-6">
-              <h1 className="text-3xl font-bold text-primary">牌位管理</h1>
-              <p className="mt-2 text-base text-foreground/80">当前法会：2024年3月15日 三時繫念法會</p>
-            </div>
+    <PageLayout>
+      {/* Main Dashboard View */}
+      {step === 1 && (
+        <div className="space-y-6">
+          {/* Header */}
+          <PageHeader 
+            title="牌位管理" 
+            subtitle="当前法会：2024年3月15日 三時繫念法會"
+          />
 
             {/* Search Bar */}
             <ApplicationSearch
@@ -215,8 +216,7 @@ export default function AdminDashboardPage() {
             onClose={handleCloseStep4}
           />
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }
 
