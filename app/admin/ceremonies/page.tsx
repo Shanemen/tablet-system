@@ -124,7 +124,7 @@ export default function CeremoniesPage() {
       )}
 
       <Card className="p-6">
-        <form onSubmit={handleSubmit} className="form-section">
+        <form key={ceremony?.id || 'new'} onSubmit={handleSubmit} className="form-section">
           {/* Chinese Name */}
           <FormField label="法會名稱（中文 + 英文）" required htmlFor="name_zh">
             <Input
