@@ -50,10 +50,10 @@ export async function updateCeremony(ceremonyId: number, formData: FormData) {
     .eq('id', ceremonyId)
   
   if (error) {
-    return { error: `更新失败：${error.message}` }
+    return { error: `更新失敗：${error.message}` }
   }
   
   revalidatePath('/admin/ceremonies')
-  return { success: '法会信息已成功更新！' }
+  return { success: '法會信息已成功更新！' }
 }
 

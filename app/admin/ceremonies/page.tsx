@@ -49,7 +49,7 @@ export default function CeremoniesPage() {
     if (result.error) {
       setMessage({ type: 'error', text: result.error })
     } else {
-      setMessage({ type: 'success', text: result.success || '法会信息已成功更新！' })
+      setMessage({ type: 'success', text: result.success || '法會信息已成功更新！' })
       await loadCeremony()
     }
     
@@ -61,7 +61,7 @@ export default function CeremoniesPage() {
       <div className="loading-container">
         <div className="loading-text">
           <Loader2 className="h-6 w-6 animate-spin" />
-          载入中...
+          載入中...
         </div>
       </div>
     )
@@ -70,9 +70,9 @@ export default function CeremoniesPage() {
   if (!ceremony) {
     return (
       <PageLayout narrow>
-        <PageHeader title="法会编辑" />
+        <PageHeader title="法會編輯" />
         <Card className="p-8 text-center">
-          <p className="text-lg text-muted-foreground">未找到活动法会。请在数据库中创建一个法会。</p>
+          <p className="text-lg text-muted-foreground">未找到活動法會。請在數據庫中創建一個法會。</p>
         </Card>
       </PageLayout>
     )
@@ -80,7 +80,7 @@ export default function CeremoniesPage() {
 
   return (
     <PageLayout narrow>
-      <PageHeader title="法会编辑" subtitle="编辑当前法会信息" />
+      <PageHeader title="法會編輯" subtitle="編輯當前法會信息" />
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg text-lg ${
@@ -95,7 +95,7 @@ export default function CeremoniesPage() {
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="form-section">
           {/* Chinese Name */}
-          <FormField label="法会名称（中文）" required htmlFor="name_zh">
+          <FormField label="法會名稱（中文）" required htmlFor="name_zh">
             <Input
               id="name_zh"
               name="name_zh"
@@ -108,11 +108,12 @@ export default function CeremoniesPage() {
           </FormField>
 
           {/* Location */}
-          <FormField label="法会地点" htmlFor="location">
+          <FormField label="法會地點" required htmlFor="location">
             <Input
               id="location"
               name="location"
               type="text"
+              required
               defaultValue={ceremony.location || ''}
               placeholder="例如：淨土道場"
               className="form-input"
@@ -122,11 +123,11 @@ export default function CeremoniesPage() {
           {/* Ceremony Duration */}
           <div>
             <label className="form-label">
-              法会日期和时间<span className="text-red-500 ml-1">*</span>
+              法會日期和時間<span className="text-red-500 ml-1">*</span>
             </label>
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <label htmlFor="start_at" className="sr-only">开始时间</label>
+                <label htmlFor="start_at" className="sr-only">開始時間</label>
                 <Input
                   id="start_at"
                   name="start_at"
@@ -138,7 +139,7 @@ export default function CeremoniesPage() {
               </div>
               <span className="text-lg text-muted-foreground font-medium">—</span>
               <div className="flex-1">
-                <label htmlFor="end_at" className="sr-only">结束时间</label>
+                <label htmlFor="end_at" className="sr-only">結束時間</label>
                 <Input
                   id="end_at"
                   name="end_at"
@@ -156,7 +157,7 @@ export default function CeremoniesPage() {
             label="網上申請截止時間" 
             required 
             htmlFor="deadline_at"
-            helpText="超过此时间后，申请表单将自动关闭"
+            helpText="超過此時間後，申請表單將自動關閉"
           >
             <Input
               id="deadline_at"
@@ -171,7 +172,7 @@ export default function CeremoniesPage() {
           {/* Public URL and QR Code */}
           <div>
             <label className="form-label">
-              信众申请链接
+              信眾申請鏈接
             </label>
             
             {/* URL Copy Section */}
@@ -183,7 +184,7 @@ export default function CeremoniesPage() {
                   type="text"
                   value={fullUrl || `/apply/${ceremony.slug}`}
                   readOnly
-                  className="form-input bg-primary/10 text-primary font-mono border-primary/20 py-2"
+                  className="bg-primary/10 text-primary font-mono border-primary/20 h-9 py-2 text-base"
                 />
                 <Button 
                   type="button" 
@@ -191,11 +192,11 @@ export default function CeremoniesPage() {
                   onClick={() => {
                     const urlToCopy = fullUrl || `${window.location.origin}/apply/${ceremony.slug}`
                     navigator.clipboard.writeText(urlToCopy)
-                    alert('链接已复制到剪贴板！')
+                    alert('鏈接已複製到剪貼板！')
                   }}
                   className="btn-secondary-large whitespace-nowrap"
                 >
-                  复制链接
+                  複製鏈接
                 </Button>
               </div>
             </div>
@@ -214,10 +215,10 @@ export default function CeremoniesPage() {
               </div>
               <div className="flex-1 pt-2">
                 <p className="text-base text-primary mb-2">
-                  <strong className="text-primary">二维码分享</strong>
+                  <strong className="text-primary">二維碼分享</strong>
                 </p>
                 <p className="text-sm text-primary">
-                  扫描二维码即可访问申请表单，方便信众使用手机填写
+                  掃描二維碼即可訪問申請表單，方便信眾使用手機填寫
                 </p>
               </div>
             </div>
