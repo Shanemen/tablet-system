@@ -17,6 +17,7 @@ export default function CeremoniesPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [fullUrl, setFullUrl] = useState<string>('')
+  const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
     loadCeremony()
@@ -33,7 +34,22 @@ export default function CeremoniesPage() {
     setLoading(true)
     const data = await getCurrentCeremony()
     setCeremony(data)
+    setHasChanges(false) // Reset changes flag when loading
     setLoading(false)
+  }
+
+  const handleFormChange = () => {
+    if (ceremony) {
+      setHasChanges(true)
+    }
+  }
+
+  const handleCancel = async () => {
+    if (!ceremony) return
+    
+    // Reload ceremony data to discard changes
+    await loadCeremony()
+    setMessage(null)
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -62,6 +78,7 @@ export default function CeremoniesPage() {
         setMessage({ type: 'error', text: result.error })
       } else {
         setMessage({ type: 'success', text: result.success || '法會信息已成功更新！' })
+        setHasChanges(false) // Reset changes flag after successful save
         await loadCeremony()
       }
     }
@@ -124,7 +141,7 @@ export default function CeremoniesPage() {
       )}
 
       <Card className="p-6">
-        <form key={ceremony?.id || 'new'} onSubmit={handleSubmit} className="form-section">
+        <form key={ceremony?.id || 'new'} onSubmit={handleSubmit} onChange={handleFormChange} className="form-section">
           {/* Chinese Name */}
           <FormField label="法會名稱（中文 + 英文）" required htmlFor="name_zh">
             <Input
@@ -261,34 +278,52 @@ export default function CeremoniesPage() {
           )}
 
           {/* Submit Button */}
-          <div className="button-group">
-            {ceremony && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleDelete}
-                disabled={saving}
-                className="btn-secondary-large hover:text-red-600 hover:border-red-300 hover:bg-red-50"
-              >
-                刪除表格
-              </Button>
-            )}
-            <Button
-              type="submit"
-              disabled={saving}
-              className="btn-primary-large"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  {ceremony ? '保存中...' : '創建中...'}
-                </>
-              ) : ceremony ? (
-                '保存修改'
-              ) : (
-                '創建申請表格'
+          <div className="flex items-center justify-between pt-6">
+            {/* Left: Delete button */}
+            <div>
+              {ceremony && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleDelete}
+                  disabled={saving}
+                  className="text-muted-foreground hover:text-red-600 hover:bg-red-50 underline underline-offset-4 text-base px-6 py-3 font-normal"
+                >
+                  刪除表格
+                </Button>
               )}
-            </Button>
+            </div>
+
+            {/* Right: Cancel and Save buttons */}
+            <div className="flex gap-4">
+              {ceremony && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={saving || !hasChanges}
+                  className="btn-secondary-large"
+                >
+                  放棄修改
+                </Button>
+              )}
+              <Button
+                type="submit"
+                disabled={saving || (!!ceremony && !hasChanges)}
+                className="btn-primary-large"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    {ceremony ? '保存中...' : '創建中...'}
+                  </>
+                ) : ceremony ? (
+                  '保存修改'
+                ) : (
+                  '創建申請表格'
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </Card>
