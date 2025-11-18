@@ -6,9 +6,9 @@ import { revalidatePath } from 'next/cache'
 export interface Ceremony {
   id: number
   name_zh: string
-  name_en: string | null
   slug: string
   start_at: string
+  end_at: string
   location: string | null
   deadline_at: string
   status: string
@@ -38,9 +38,9 @@ export async function updateCeremony(ceremonyId: number, formData: FormData) {
   
   const updates = {
     name_zh: formData.get('name_zh') as string,
-    name_en: formData.get('name_en') as string || null,
     location: formData.get('location') as string || null,
     start_at: formData.get('start_at') as string,
+    end_at: formData.get('end_at') as string,
     deadline_at: formData.get('deadline_at') as string,
   }
   
