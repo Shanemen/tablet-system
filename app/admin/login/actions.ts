@@ -26,9 +26,10 @@ export async function login(formData: FormData) {
     return { error: '登录失败：邮箱或密码错误' }
   }
 
-  // Revalidate cache and redirect
+  // Revalidate cache
   revalidatePath('/admin/dashboard', 'layout')
-  redirect('/admin/dashboard')
+  
+  return { success: true }
 }
 
 export async function signup(formData: FormData) {

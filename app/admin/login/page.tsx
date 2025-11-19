@@ -36,10 +36,14 @@ export default function LoginPage() {
       
       if (result?.error) {
         setMessage({ type: 'error', text: result.error })
+        setIsLoading(false)
+      } else if (result?.success) {
+        // Redirect on success
+        router.push('/admin/dashboard')
+        // Don't set loading to false here to prevent UI flash during redirect
       }
     } catch (error) {
       setMessage({ type: 'error', text: '发生错误，请重试' })
-    } finally {
       setIsLoading(false)
     }
   }
