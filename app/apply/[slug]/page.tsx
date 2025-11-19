@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ const PLAQUE_TYPES = [
 
 export default function ApplicationFormPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
   
   const [ceremony, setCeremony] = useState<Ceremony | null>(null)
@@ -128,16 +129,11 @@ export default function ApplicationFormPage() {
     
     if (result.error) {
       setMessage({ type: 'error', text: result.error })
+      setSubmitting(false)
     } else {
-      setMessage({ type: 'success', text: result.success || '申請已成功提交！' })
-      // Reset form
-      setApplicantName('')
-      setPhone('')
-      setPlaqueType('')
-      setNames([''])
+      // Redirect to success page with preview
+      router.push(`/apply/success/${result.applicationId}`)
     }
-    
-    setSubmitting(false)
   }
   
   if (loading) {

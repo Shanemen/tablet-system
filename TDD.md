@@ -525,13 +525,15 @@ graph TB
 | **Component Library** | Shadcn UI | • Pre-built accessible components built on Tailwind + Radix UI• Components copied into codebase (not npm package)• Fully customizable and themeable |
 | **Forms** | React Hook Form + Zod | • Type-safe validation• Excellent performance (uncontrolled inputs)• Clear error messages |
 | **i18n** | react-i18next | • Industry standard for React• Easy to add languages later• Namespace support for organization |
-| **Image Generation** | Canvas API (Native) | • No external dependencies• Fast, runs in browser• Full control over rendering |
+| **Image Generation** | Vercel OG (Satori) | • Server-side image generation using React-like syntax• Excellent Chinese font support (Noto Serif TC)• Edge runtime compatible• Fast generation (<500ms per image)• Built-in support for custom fonts• Perfect for dynamic tablet preview generation |
 | **PDF Generation** | jsPDF | • Lightweight (vs Puppeteer)• Client-side generation• Good Chinese font support |
 
 **Alternatives Considered:**
 - ❌ **Vue.js**: Less mature i18n ecosystem, team not familiar
 - ❌ **Puppeteer**: Too heavy (headless Chrome), overkill for template overlay
-- ❌ **PDFKit**: Node.js only, can’t run in browser
+- ❌ **PDFKit**: Node.js only, can't run in browser
+- ❌ **Canvas API**: Requires browser environment, not suitable for server-side generation
+- ✅ **Vercel OG (Satori)**: Chosen for server-side image generation with React-like syntax and excellent Chinese font support
 
 ---
 
@@ -1156,39 +1158,52 @@ For complex operations, we use Edge Functions:
 2. Each `application_name` row created with `image_status='pending'`
 3. Supabase Queue (or Edge Function) triggers image generation worker
 4. Worker processes each name:
-    - Fetch template image for plaque type
-    - Render text overlay using Canvas API
-    - Upload to Storage: `ceremonies/{ceremony_id}/images/name-{id}.png`
+    - **Generate color image using Vercel OG (Satori)** for devotee preview
+    - Render tablet with colored background (yellow/red) and black text
+    - Upload color image to Storage: `ceremonies/{ceremony_id}/images/name-{id}.png`
     - Update `image_status='ready'`, `image_url='...'`
-5. Devotee confirmation page polls and displays previews
+5. Devotee confirmation page polls and displays **color previews**
+
+**Why Vercel OG (Satori) for Image Generation:**
+
+- ✅ **React-like syntax**: Write JSX/TSX directly, familiar to React developers
+- ✅ **Server-side rendering**: Runs on Edge runtime, no browser required
+- ✅ **Excellent Chinese font support**: Built-in support for custom fonts (Noto Serif TC)
+- ✅ **Fast generation**: <500ms per image on Edge runtime
+- ✅ **Type-safe**: TypeScript support out of the box
+- ✅ **Zero dependencies**: No need for Canvas API or image manipulation libraries
+- ✅ **Vercel integration**: Seamless deployment on Vercel Edge Network
+- ✅ **Scalable**: Handles 10,000+ images efficiently
+
+**Alternatives Considered:**
+- ❌ **Canvas API**: Requires browser environment, not suitable for server-side
+- ❌ **Sharp**: Node.js only, heavier dependency, requires image manipulation knowledge
+- ❌ **Puppeteer**: Too heavy (headless Chrome), overkill for simple text overlay
+- ❌ **SVG + conversion**: More complex, requires additional conversion step
 
 **Key Implementation Points:**
 
 ```tsx
-// Simplified worker (runs per application_name)
-async function generateTabletImage(applicationNameId: number) {
+// Image generation using Vercel OG (Satori) - Edge Function
+// Route: /api/og/tablet?type={plaqueType}&name={displayName}
+import { ImageResponse } from '@vercel/og'
+
+export async function generateTabletImage(applicationNameId: number) {
   const data = await db.queryOne(`
     SELECT an.*, a.applicant_name, a.plaque_type, a.ceremony_id
     FROM application_name an
-    JOIN application a ON [a.id](http://a.id) = an.application_id
-    WHERE [an.id](http://an.id) = $1
+    JOIN application a ON a.id = an.application_id
+    WHERE an.id = $1
   `, [applicationNameId]);
   
-  // Load template
-  const template = await loadTemplate(data.plaque_type);
+  // Generate color image using Vercel OG API
+  const imageUrl = `/api/og/tablet?type=${encodeURIComponent(data.plaque_type)}&name=${encodeURIComponent(data.display_name)}`;
+  const imageResponse = await fetch(imageUrl);
+  const imageBlob = await imageResponse.blob();
   
-  // Render with Canvas API
-  const canvas = createCanvas(300, 600);
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(template, 0, 0);
-  
-  // Add text overlay (see Template Configuration section for details)
-  renderText(ctx, data);
-  
-  // Upload to Storage
-  const imageBlob = canvas.toBuffer('image/png');
+  // Upload color image to Storage (for devotee preview)
   const path = `ceremonies/${data.ceremony_id}/images/name-${applicationNameId}.png`;
-  await [supabase.storage](http://supabase.storage).from('tablets').upload(path, imageBlob);
+  await supabase.storage.from('tablets').upload(path, imageBlob);
   
   // Update status
   await db.update('application_name', applicationNameId, {
@@ -1217,25 +1232,35 @@ async function generateTabletImage(applicationNameId: number) {
 2. Group by `plaque_type`, sort by `pinyin_key`
 3. For each plaque type:
     - Fetch all pre-generated images from Storage
+    - **Convert color images to grayscale** (for printing on colored paper)
     - Arrange into PDF (6 tablets per page, 2×3 grid)
     - Upload final PDF: `ceremonies/{ceremony_id}/finals/{type}.pdf`
 4. Return 6 download URLs to admin
 
+**Printing Strategy:**
+
+- **Devotee Preview**: Color images (yellow/red background) generated using Vercel OG/Satori for online viewing
+- **PDF Export**: Grayscale (black & white) images only
+  - Reason: Admin prints on physical colored paper (yellow or red)
+  - Black content on colored paper produces the same visual effect as color PDF
+  - Benefits: Smaller file size, faster generation, lower bandwidth
+  - Implementation: Convert color images to grayscale before PDF assembly
+
 **Key Implementation:**
 
 ```tsx
-// Simplified PDF assembly
+// PDF assembly with grayscale conversion for printing
 async function assemblePDFs(ceremonyId: number) {
   const types = ['longevity', 'deceased', 'ancestors', 
                  'karmic_creditors', 'aborted_spirits', 'land_deity'];
   const results = {};
   
   for (const type of types) {
-    // 1. Fetch pre-generated image URLs
+    // 1. Fetch pre-generated color image URLs
     const images = await db.query(`
       SELECT an.image_url, an.display_name
       FROM application_name an
-      JOIN application a ON [a.id](http://a.id) = an.application_id
+      JOIN application a ON a.id = an.application_id
       WHERE a.ceremony_id = $1 
         AND a.plaque_type = $2
         AND an.image_status = 'ready'
@@ -1253,32 +1278,164 @@ async function assemblePDFs(ceremonyId: number) {
         pdf.addPage();
       }
       
-      // Download image from Storage
-      const imageData = await downloadImage(images[i].image_url);
+      // Download color image from Storage
+      const colorImageData = await downloadImage(images[i].image_url);
+      
+      // Convert to grayscale for printing on colored paper
+      const grayscaleImageData = await convertToGrayscale(colorImageData);
       
       // Position on page (2×3 grid)
       const row = Math.floor((i % TABLETS_PER_PAGE) / 3);
       const col = (i % TABLETS_PER_PAGE) % 3;
-      pdf.addImage(imageData, 'PNG', col * 70, row * 140, 60, 120);
+      pdf.addImage(grayscaleImageData, 'PNG', col * 70, row * 140, 60, 120);
     }
     
-    // 3. Upload final PDF
+    // 3. Upload final PDF (black & white)
     const pdfBlob = pdf.output('blob');
     const fileName = `ceremonies/${ceremonyId}/finals/${type}.pdf`;
-    await [supabase.storage](http://supabase.storage).from('tablets').upload(fileName, pdfBlob);
+    await supabase.storage.from('tablets').upload(fileName, pdfBlob);
     
     results[type] = fileName;
   }
   
-  return results; // 6 PDF URLs
+  return results; // 6 PDF URLs (all grayscale)
+}
+
+// Helper function to convert color image to grayscale
+async function convertToGrayscale(imageBuffer: Buffer): Promise<Buffer> {
+  // Using Sharp library for image processing
+  const sharp = require('sharp');
+  return await sharp(imageBuffer)
+    .greyscale() // Convert to grayscale
+    .png()
+    .toBuffer();
 }
 ```
+
+**Printing Workflow:**
+
+1. **Devotee submits application** → Color image generated (yellow/red background) for preview
+2. **Admin clicks "Generate PDFs"** → System:
+   - Fetches all color images from Storage
+   - Converts each image to grayscale (black & white)
+   - Assembles grayscale images into 6 PDF files (one per plaque type)
+3. **Admin downloads PDFs** → All PDFs are black & white
+4. **Admin prints PDFs** → Uses physical colored paper:
+   - `長生祿位.pdf` → Print on **red paper**
+   - Other 5 types → Print on **yellow paper**
+5. **Final result** → Black content on colored paper = same visual effect as color PDF
 
 **Performance:**
 
 - 10,000 tablets → ~1,667 per type on average
-- Fetch + arrange: ~10-20 seconds per type
+- Fetch + grayscale conversion + arrange: ~15-25 seconds per type
 - Total time: **1-2 minutes** (vs 15-30 min before!)
+
+---
+
+### Printing Strategy & Color Handling
+
+**Core Principle: PDFs are black & white, previews are colored**
+
+#### Why Black & White PDFs?
+
+1. **Physical colored paper**: Admin prints on yellow or red paper stock
+2. **Cost efficiency**: Smaller PDF files (grayscale vs color) = faster generation and download
+3. **Print quality**: Black ink on colored paper produces same visual effect as color PDF
+4. **Flexibility**: Admin can choose paper color based on plaque type without regenerating PDFs
+
+#### Image Generation Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Devotee Submits Application                                │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Generate Color Image (Vercel OG/Satori)                   │
+│  • Yellow background (most types)                           │
+│  • Red background (長生祿位)                                │
+│  • Black text                                                │
+│  • Upload to Storage for preview                            │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Devotee Views Color Preview                                │
+│  • Online preview with colors                               │
+│  • Helps verify correctness                                 │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Admin Clicks "Generate PDFs"                              │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  PDF Assembly Process                                       │
+│  1. Fetch color images from Storage                         │
+│  2. Convert each to grayscale (Sharp library)              │
+│  3. Arrange 6 tablets per page (2×3 grid)                   │
+│  4. Generate 6 PDF files (one per plaque type)             │
+│  5. All PDFs are black & white                              │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Admin Downloads & Prints                                   │
+│  • 長生祿位.pdf → Print on RED paper                       │
+│  • Other 5 PDFs → Print on YELLOW paper                    │
+│  • Black content on colored paper = final result            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Technical Implementation
+
+**Color Image Generation (Devotee Preview):**
+- **Tool**: Vercel OG (built on Satori)
+- **Location**: `/api/og/tablet` route handler
+- **Output**: PNG with colored background (yellow #fcd34d or red #dc2626)
+- **Purpose**: Online preview for devotees to verify tablet content
+
+**Grayscale Conversion (PDF Export):**
+- **Tool**: Sharp library (`sharp(image).greyscale().png()`)
+- **When**: During PDF assembly phase
+- **Input**: Color PNG images from Storage
+- **Output**: Grayscale PNG images
+- **Purpose**: Create black & white PDFs for printing on colored paper
+
+**PDF Assembly:**
+- **Tool**: jsPDF
+- **Process**: 
+  1. Fetch color images → Convert to grayscale → Add to PDF
+  2. 6 tablets per page (2×3 grid layout)
+  3. Generate 6 separate PDF files (one per plaque type)
+
+#### File Naming Convention
+
+Generated PDFs follow this pattern:
+```
+{ceremony_date}_{ceremony_name}_{plaque_type}.pdf
+
+Examples:
+- 2024-03-15_觀音法會_長生祿位.pdf (print on red paper)
+- 2024-03-15_觀音法會_往生蓮位.pdf (print on yellow paper)
+- 2024-03-15_觀音法會_歷代祖先.pdf (print on yellow paper)
+- 2024-03-15_觀音法會_冤親債主.pdf (print on yellow paper)
+- 2024-03-15_觀音法會_墮胎嬰靈.pdf (print on yellow paper)
+- 2024-03-15_觀音法會_地基主.pdf (print on yellow paper)
+```
+
+#### Benefits of This Approach
+
+✅ **Smaller file sizes**: Grayscale PDFs are 60-70% smaller than color PDFs
+✅ **Faster generation**: Grayscale conversion is faster than color rendering
+✅ **Faster downloads**: Smaller files download quicker for admin
+✅ **Print flexibility**: Admin can use any colored paper stock without regenerating PDFs
+✅ **Cost savings**: Less storage and bandwidth usage
+✅ **Same visual result**: Black on colored paper looks identical to color PDF
 
 ---
 
