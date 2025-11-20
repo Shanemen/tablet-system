@@ -2597,6 +2597,84 @@ Store in Supabase Storage for easier updates. Template fetch happens once per ba
 
 ---
 
+### 2.1 **SVG Template Optimization** (Option: Use SVGO)
+
+**Problem:**
+
+SVG template files from design tools (e.g., `vectorizer.ai`) can be very large (500KB+), containing many redundant paths and unnecessary metadata. This impacts:
+- Edge Runtime memory limits (Satori runs on Edge)
+- Image generation performance
+- Storage and bandwidth costs
+
+**Solution: SVGO Optimization**
+
+Use [SVGO](https://github.com/svgo/svgo) to automatically optimize SVG files without sacrificing visual quality.
+
+**Configuration:**
+
+```javascript
+// svgo.config.js
+module.exports = {
+  plugins: [
+    {
+      name: 'preset-default',
+      params: {
+        overrides: {
+          removeViewBox: false, // Keep viewBox (important!)
+          convertPathData: {
+            floatPrecision: 2, // Balance quality and size
+          },
+          mergePaths: true, // Merge paths with same styles
+          removeUselessStrokeAndFill: true,
+          removeMetadata: true,
+          removeComments: true,
+        }
+      }
+    },
+    'removeDimensions', // Remove width/height, keep viewBox
+  ]
+}
+```
+
+**Usage:**
+
+```bash
+# Install SVGO
+npm install --save-dev svgo
+
+# Optimize SVG
+npx svgo --config svgo.config.js -i template.svg -o template-optimized.svg
+```
+
+**Expected Results:**
+
+- **Original**: 581 KB (175 paths, many redundant elements)
+- **Optimized**: 154 KB (reduced by 73.5%)
+- **Visual Quality**: Maintained (no visible difference)
+- **Performance**: Faster loading, lower memory usage
+
+**When to Use:**
+
+- ✅ **Always optimize** SVG templates before using in production
+- ✅ **Test visually** after optimization to ensure quality is maintained
+- ✅ **Use conservative settings** (`floatPrecision: 2`) to preserve detail
+- ⚠️ **If still > 100KB after optimization**: Consider converting to PNG (320×848, quality 90%)
+
+**Testing:**
+
+1. Optimize SVG using SVGO with conservative settings
+2. Compare original vs optimized visually (use `/test-svg` page)
+3. Test in Satori to ensure compatibility
+4. If quality is acceptable, use optimized version in production
+
+**Files:**
+
+- Original: `public/long-living-template-original.svg` (581 KB)
+- Optimized: `public/long-living-template-optimized.svg` (154 KB)
+- Test page: `/app/test-svg/page.tsx` (visual comparison)
+
+---
+
 ### 3. **Pinyin Library Selection** (Decision needed: M1 Day 2)
 
 **Question:**
