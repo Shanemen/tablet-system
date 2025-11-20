@@ -54,10 +54,9 @@ export async function GET(request: NextRequest) {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
             position: 'relative',
-            backgroundColor: '#f5f5dc', // Beige background for visibility
-            padding: '40px 30px',
+            backgroundColor: '#ffffff', // White background
           }}
         >
           {/* SVG Background - Test if Satori supports backgroundImage */}
@@ -70,7 +69,7 @@ export async function GET(request: NextRequest) {
                 width: '100%',
                 height: '100%',
                 backgroundImage: `url(${svgDataUri})`,
-                backgroundSize: 'cover', // Changed from 'contain' to 'cover' to fill entire area
+                backgroundSize: 'cover', // Fill the entire area
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
                 opacity: 1,
