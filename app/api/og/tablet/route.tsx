@@ -41,6 +41,10 @@ export async function GET(request: NextRequest) {
       ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
       : null
 
+    // Load Chinese font (Noto Serif TC subset)
+    const fontUrl = `${request.nextUrl.origin}/fonts/NotoSerifTC-Subset.otf`
+    const fontData = await fetch(fontUrl).then((res) => res.arrayBuffer())
+
     return new ImageResponse(
       (
         <div
@@ -94,6 +98,7 @@ export async function GET(request: NextRequest) {
                 flexDirection: 'column',
                 fontSize: 46,
                 fontWeight: 400,
+                fontFamily: 'Noto Serif TC',
                 color: textColor,
                 letterSpacing: '0.05em',
                 lineHeight: '44px',
@@ -107,9 +112,16 @@ export async function GET(request: NextRequest) {
       ),
       {
         // Match SVG template dimensions: 320x848
-        // But use slightly larger for better quality
         width: 320,
         height: 848,
+        fonts: [
+          {
+            name: 'Noto Serif TC',
+            data: fontData,
+            weight: 400,
+            style: 'normal',
+          },
+        ],
       }
     )
   } catch (e: any) {
