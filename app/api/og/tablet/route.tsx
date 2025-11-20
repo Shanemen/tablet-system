@@ -6,20 +6,40 @@ export const runtime = 'edge'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type') || '往生蓮位'
-    const name = searchParams.get('name') || '某某某'
+    const type = searchParams.get('type') || '長生祿位'
+    const name = searchParams.get('name') || 'TEST'
 
-    // Colors based on type
-    // 長生祿位 (Longevity) -> Red background
-    // All others -> Yellow background
-    const isLongevity = type === '長生祿位'
-    const bgColor = isLongevity ? '#fca5a5' : '#fde68a' // red-300 : yellow-200 (lighter for better contrast)
-    const borderColor = isLongevity ? '#dc2626' : '#d97706' // red-600 : amber-600
+    // Debug: Log parameters
+    console.log('Type:', type, 'Name:', name)
+
+    // For now, only support 長生祿位 (Longevity Tablet)
+    const isLongevity = type === '長生祿位' || type === 'longevity'
+    
+    if (!isLongevity) {
+      return new Response('Only 長生祿位 is supported for now', { status: 400 })
+    }
+
+    // According to IMAGE_GENERATION_GUIDE.md:
+    // - SVG template already contains "佛光注照" (top) and "長生祿位" (bottom)
+    // - We ONLY need to add the user's name in the center (46px, line-height 44)
     const textColor = '#000000'
 
-    // Top and bottom text based on type
-    const topText = isLongevity ? '佛光注照' : '佛力超薦'
-    const bottomText = isLongevity ? '陽上' : '往生'
+    // Load SVG template with pre-rendered text
+    const svgUrl = `${request.nextUrl.origin}/long-living-template-optimized.svg`
+    
+    let svgContent = ''
+    try {
+      const svgResponse = await fetch(svgUrl)
+      if (svgResponse.ok) {
+        svgContent = await svgResponse.text()
+      }
+    } catch (e) {
+      console.warn('Could not fetch SVG:', e)
+    }
+
+    const svgDataUri = svgContent 
+      ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
+      : null
 
     return new ImageResponse(
       (
@@ -31,64 +51,65 @@ export async function GET(request: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: bgColor,
+            position: 'relative',
+            backgroundColor: '#f5f5dc', // Beige background for visibility
             padding: '40px 30px',
-            border: `12px double ${borderColor}`,
           }}
         >
-          {/* Top Text */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              fontSize: 28,
-              fontWeight: 'bold',
-              color: textColor,
-              letterSpacing: '0.1em',
-            }}
-          >
-            {topText.split('').map((char, i) => (
-              <span key={i}>{char}</span>
-            ))}
-          </div>
+          {/* SVG Background - Test if Satori supports backgroundImage */}
+          {svgDataUri && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundImage: `url(${svgDataUri})`,
+                backgroundSize: 'cover', // Changed from 'contain' to 'cover' to fill entire area
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                opacity: 1,
+              }}
+            />
+          )}
 
-          {/* Center - Name (Vertical) */}
+          {/* Content Layer - ONLY render user's name in center */}
           <div
             style={{
+              position: 'relative',
+              zIndex: 1,
+              height: '100%',
+              width: '100%',
               display: 'flex',
               flexDirection: 'column',
-              fontSize: 72,
-              fontWeight: 'bold',
-              color: textColor,
-              letterSpacing: '0.05em',
-              lineHeight: 1.2,
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {name.split('').map((char, i) => (
-              <span key={i}>{char}</span>
-            ))}
-          </div>
-
-          {/* Bottom Text */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              fontSize: 32,
-              fontWeight: 'bold',
-              color: textColor,
-              letterSpacing: '0.1em',
-            }}
-          >
-            {bottomText.split('').map((char, i) => (
-              <span key={i}>{char}</span>
-            ))}
+            {/* Center - Name (Vertical) - 46px, line-height 44 */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                fontSize: 46,
+                fontWeight: 400,
+                color: textColor,
+                letterSpacing: '0.05em',
+                lineHeight: '44px',
+                textAlign: 'center',
+              }}
+            >
+              {name}
+            </div>
           </div>
         </div>
       ),
       {
-        width: 400,
-        height: 800,
+        // Match SVG template dimensions: 320x848
+        // But use slightly larger for better quality
+        width: 320,
+        height: 848,
       }
     )
   } catch (e: any) {
