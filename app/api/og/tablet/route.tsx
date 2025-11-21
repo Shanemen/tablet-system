@@ -1,7 +1,67 @@
 import { ImageResponse } from '@vercel/og'
 import { NextRequest } from 'next/server'
+import { 
+  getTemplateConfig, 
+  calculateFontSize, 
+  type ActiveArea 
+} from '@/lib/active-areas-config'
 
 export const runtime = 'edge'
+
+/**
+ * Render vertical text character by character
+ * Each character is rendered separately in a vertical column
+ */
+function renderVerticalText(
+  text: string,
+  activeArea: ActiveArea,
+  color: string = '#000000'
+) {
+  // Split text into individual characters
+  const characters = text.split('')
+  
+  // Calculate font size based on text length
+  const fontSize = calculateFontSize(text, activeArea)
+  const lineHeight = (fontSize / activeArea.fontSize) * activeArea.lineHeight
+  
+  // Calculate total height needed
+  const totalHeight = characters.length * lineHeight
+  
+  // Calculate starting Y position to center the text vertically
+  const startY = activeArea.y + (activeArea.height - totalHeight) / 2
+  
+  // Calculate X position (center horizontally in active area)
+  const centerX = activeArea.x + activeArea.width / 2
+  
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: centerX,
+        top: startY,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      {characters.map((char, index) => (
+        <div
+          key={index}
+          style={{
+            fontSize,
+            fontWeight: 400,
+            fontFamily: 'Noto Serif TC',
+            color,
+            lineHeight: `${lineHeight}px`,
+            textAlign: 'center',
+          }}
+        >
+          {char}
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,9 +79,14 @@ export async function GET(request: NextRequest) {
       return new Response('Only 長生祿位 is supported for now', { status: 400 })
     }
 
-    // According to IMAGE_GENERATION_GUIDE.md:
-    // - SVG template already contains "佛光注照" (top) and "長生祿位" (bottom)
-    // - We ONLY need to add the user's name in the center (46px, line-height 44)
+    // Get template configuration
+    const config = getTemplateConfig('longevity')
+    const centerArea = config.activeAreas.find(area => area.id === 'center')
+    
+    if (!centerArea) {
+      throw new Error('Center active area not found in config')
+    }
+
     const textColor = '#000000'
 
     // Load SVG template with pre-rendered text
@@ -52,67 +117,33 @@ export async function GET(request: NextRequest) {
             height: '100%',
             width: '100%',
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
             position: 'relative',
-            backgroundColor: '#ffffff', // White background
+            backgroundColor: '#ffffff',
           }}
         >
-          {/* SVG Background - Test if Satori supports backgroundImage */}
+          {/* SVG Background */}
           {svgDataUri && (
-            <div
+            <img
+              src={svgDataUri}
+              alt="template"
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
                 height: '100%',
-                backgroundImage: `url(${svgDataUri})`,
-                backgroundSize: 'cover', // Fill the entire area
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
-                opacity: 1,
               }}
             />
           )}
 
-          {/* Content Layer - ONLY render user's name in center */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 1,
-              height: '100%',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {/* Center - Name (Vertical) - 46px, line-height 44 */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                fontSize: 46,
-                fontWeight: 400,
-                fontFamily: 'Noto Serif TC',
-                color: textColor,
-                letterSpacing: '0.05em',
-                lineHeight: '44px',
-                textAlign: 'center',
-              }}
-            >
-              {name}
-            </div>
-          </div>
+          {/* Content Layer - Render vertical text in active area */}
+          {renderVerticalText(name, centerArea, textColor)}
         </div>
       ),
       {
         // Match SVG template dimensions: 320x848
-        width: 320,
-        height: 848,
+        width: config.svgWidth,
+        height: config.svgHeight,
         fonts: [
           {
             name: 'Noto Serif TC',
