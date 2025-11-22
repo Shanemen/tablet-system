@@ -375,6 +375,264 @@ SVG 模板文件中**已经预先绘制了**：
    - **被超荐者的名字要更突出**（视觉上更显眼）
    - 其他文字（如"陽上"行）相对较小
 
+---
+
+## ⚠️ 关键技术原则 (VERY IMPORTANT)
+
+### 1. 左右居中 vs 上下居中的实现差异
+
+#### 左右居中（水平居中）
+- ✅ **实现方式**：在 `route.tsx` 中使用 Flexbox 的 `alignItems: 'center'`
+- ✅ **依赖**：活动区域容器的 `width` 属性
+- ✅ **优点**：自动居中，不需要手动计算偏移
+- ✅ **适用性**：所有模板通用，因为左右边界由华盖和卍字边框框定
+
+```tsx
+// route.tsx 中的实现
+<div style={{
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',      // ← 左右居中靠这个
+  justifyContent: 'center',
+}}>
+```
+
+#### 上下居中（垂直居中）
+- ⚠️ **实现方式**：在 `route.tsx` 中使用 Flexbox 的 `justifyContent: 'center'`
+- ⚠️ **依赖**：活动区域的 `y`（起始坐标）和 `height`（高度）
+- ⚠️ **关键**：`y` 和 `height` 必须精确对应模板上固定文字之间的空间
+- ⚠️ **差异**：**不同模板的固定文字位置不同，所以 y 和 height 会不同**
+
+```tsx
+// 活动区域配置决定了上下居中的范围
+{
+  y: 295,        // ← 固定文字下方的起始点
+  height: 345,   // ← 到下方固定文字上方的距离
+}
+```
+
+### 2. SVG 优化后坐标会变化
+
+⚠️ **重要警告**：
+- SVG 模板会经过优化（SVGO），优化后所有坐标值都会改变
+- **不能依赖硬编码的绝对坐标**
+- 必须理解**相对比例关系**
+
+#### 如何正确确定活动区域？
+
+**步骤 1：在设计工具中测量**
+```
+打开优化后的 SVG（如 long-living-template-optimized.svg）
+使用 Figma / Illustrator / 浏览器开发者工具
+
+测量以下值：
+1. 上方固定文字（如"佛光注照"）的底部 Y 坐标 = Y_top
+2. 下方固定文字（如"長生祿位"）的顶部 Y 坐标 = Y_bottom
+3. SVG 总高度 = svgHeight
+
+计算活动区域：
+- y = Y_top + 小间距（如 25px，留出呼吸空间）
+- height = (Y_bottom - Y_top) - 2×小间距
+```
+
+**步骤 2：在配置文件中定义**
+```typescript
+// lib/active-areas-config.ts
+export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
+  svgWidth: 320,
+  svgHeight: 848,
+  activeAreas: [
+    {
+      id: 'center',
+      x: 45,           // 左右边界（相对固定）
+      y: 295,          // ⚠️ 上方固定文字的底部 + 间距
+      width: 230,      // 左右边界宽度（相对固定）
+      height: 345,     // ⚠️ Y_bottom - y - 间距
+      purpose: 'main',
+      fontSize: 44,
+      lineHeight: 44,
+    },
+  ],
+}
+```
+
+**步骤 3：验证和微调**
+```bash
+# 测试不同长度的名字
+http://localhost:3000/api/og/tablet?type=longevity&name=王明           # 2字
+http://localhost:3000/api/og/tablet?type=longevity&name=买买提江·熱合曼  # 7字
+
+# 检查点：
+✓ 短名字：上下空间是否相等？
+✓ 长名字：是否在活动区域内，不与固定文字重叠？
+✓ 视觉平衡：整体是否居中？
+```
+
+### 3. 不同模板需要不同的 y 和 height
+
+⚠️ **每个模板的配置都不同**，因为：
+- "佛光注照" vs "佛力超薦" 的位置不同
+- "長生祿位" vs "往生蓮位" 的位置不同
+- 华盖装饰的高度可能不同
+
+**示例对比**：
+```typescript
+// Longevity (长生禄位)
+y: 295, height: 345  // "佛光注照" 到 "長生祿位"
+
+// Deceased (往生莲位)
+y: 280, height: 360  // "佛力超薦" 到 "往生蓮位"（可能不同！）
+```
+
+### 4. 调试技巧
+
+如果活动区域不准确：
+1. **上方空间大** → 增大 `y`（向下移动起始点）
+2. **下方空间大** → 减小 `y`（向上移动起始点）
+3. **上下都重叠** → 减小 `height` 或 `fontSize`
+4. **文字太小** → 增大 `height`（扩大可用空间）
+
+**黄金法则**：
+```
+活动区域的中心点 = (y + height/2)
+应该等于
+固定文字之间视觉空间的中心点
+```
+
+---
+
+## 📐 实战案例：长生禄位活动区域配置流程
+
+### 成功案例记录 (2024-11-22)
+
+以下是我们为 **长生禄位 (Longevity Tablet)** 配置活动区域的完整流程，这个策略虽然比较 manual，但是**成功了**！
+
+#### 步骤 1：导出 SVG 文件
+
+文件位置：
+```
+/Users/sicongliang/Tablet-system/tablet-system/public/long-living-template-optimized.svg
+```
+
+复制到桌面：
+```bash
+cp /path/to/long-living-template-optimized.svg ~/Desktop/
+```
+
+#### 步骤 2：在 Figma 中测量
+
+1. **打开 Figma**，导入 `long-living-template-optimized.svg`
+2. **验证 SVG 尺寸**：320 × 848 px ✓
+3. **选中上方固定文字**（"佛光注照"）
+   - 查看右侧 Position 面板
+   - 记录：**底部 Y 坐标 = 306**
+4. **选中下方固定文字**（"長生祿位"）
+   - 查看右侧 Position 面板  
+   - 记录：**顶部 Y 坐标 = 618**
+
+#### 步骤 3：计算活动区域
+
+**理论可用空间**：
+```
+从 Y=306（"佛光注照"底部）
+到 Y=618（"長生祿位"顶部）
+总高度 = 618 - 306 = 312px
+```
+
+**留出呼吸空间**（padding）：
+- 我们选择**上下各留 6px** 的间距
+- 这样文字不会紧贴固定文字，视觉更舒适
+
+**最终配置**：
+```typescript
+{
+  y: 306 + 6 = 312,           // 顶部留 6px
+  height: 312 - 12 = 300,     // 总高度减去上下各 6px
+}
+```
+
+验证：
+```
+顶部边界：Y = 312 (距离"佛光注照"底部 6px) ✓
+底部边界：Y = 312 + 300 = 612 (距离"長生祿位"顶部 6px) ✓
+```
+
+#### 步骤 4：更新配置文件
+
+编辑 `lib/active-areas-config.ts`：
+
+```typescript
+export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
+  templateId: 'longevity',
+  svgWidth: 320,
+  svgHeight: 848,
+  activeAreas: [
+    {
+      id: 'center',
+      // Measured from Figma:
+      // "佛光注照" bottom: Y=306
+      // "長生祿位" top: Y=618
+      // With symmetric 6px padding
+      x: 45,           
+      y: 312,          // 306 + 6px
+      width: 230,      
+      height: 300,     // (618 - 6) - (306 + 6) = 300
+      purpose: 'main',
+      fontSize: 44,
+      lineHeight: 44,
+    },
+  ],
+}
+```
+
+#### 步骤 5：测试验证
+
+测试不同长度的名字：
+
+| 名字 | 字数 | 测试结果 |
+|------|------|---------|
+| 王明 | 2字 | ✅ 上下空间对称 |
+| 王小明华 | 4字 | ✅ 上下空间对称 |
+| 上弘下唯法師 | 6字 | ✅ 上下空间工整 |
+| 买买提江·熱合曼 | 7字 | ✅ 很漂亮！字体自动缩小，不重叠 |
+
+**测试 URL**：
+```
+http://localhost:3000/api/og/tablet?type=longevity&name=王明
+http://localhost:3000/api/og/tablet?type=longevity&name=上弘下唯法師
+http://localhost:3000/api/og/tablet?type=longevity&name=买买提江·熱合曼
+```
+
+#### 关键要点总结
+
+✅ **成功因素**：
+1. **精确测量**：使用 Figma 获取准确的 Y 坐标
+2. **留出间距**：上下各留 6px，避免文字紧贴
+3. **对称设计**：padding 上下相等，视觉平衡
+4. **充分测试**：测试 2-7 字的各种长度
+
+⚠️ **注意事项**：
+- 每个模板的固定文字位置不同，需要**单独测量**
+- SVG 优化后坐标会变，不能硬编码
+- 间距大小（6px）可以根据视觉效果调整（建议 3-10px）
+
+---
+
+## 🔄 其他模板配置指南
+
+为其他 5 个模板（往生莲位、历代祖先、冤亲债主、婴灵排位、地基主）配置活动区域时，遵循同样的流程：
+
+1. 导出并在 Figma 中打开对应的 SVG
+2. 测量**上方固定文字底部**和**下方固定文字顶部**的 Y 坐标
+3. 计算活动区域：`y = Y_top + padding`, `height = (Y_bottom - padding) - (Y_top + padding)`
+4. 更新 `lib/active-areas-config.ts` 中对应的配置
+5. 测试不同长度的名字，确保上下空间对称
+
+**预期配置差异**：
+- "佛力超薦" 的位置可能和 "佛光注照" 不同
+- "往生蓮位" 的位置可能和 "長生祿位" 不同
+- 左侧活动区域（"陽上"到"敬薦"）需要单独测量
+
 ### 快速参考表
 
 | 模板类型 | 活动区域数量 | 中心区域 | 左侧区域 |

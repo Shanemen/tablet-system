@@ -51,15 +51,16 @@ export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      // Center area coordinates (estimated from images)
-      // Red dashed box is between fixed texts
-      x: 45,           // Left padding from border
-      y: 280,          // Below "佛光注照"
+      // Center area coordinates (measured from Figma)
+      // "佛光注照" bottom: Y=306, "長生祿位" top: Y=618
+      // With 6px padding on top and bottom
+      x: 45,           // Left padding from border (horizontal centering)
+      y: 312,          // 306 + 6px top padding
       width: 230,      // Width between borders
-      height: 340,     // To "長生祿位"
+      height: 300,     // 618 - 6px - 312 = 300 (symmetric 6px padding)
       purpose: 'main',
-      fontSize: 46,    // As per IMAGE_GENERATION_GUIDE.md
-      lineHeight: 44,  // As per IMAGE_GENERATION_GUIDE.md
+      fontSize: 44,    // Base font size
+      lineHeight: 44,  // Same as fontSize for consistent spacing
     },
   ],
 }
@@ -259,6 +260,9 @@ export function getTemplateConfig(templateId: string): TabletTemplateConfig {
 /**
  * Calculate dynamic font size based on text length
  * If text is too long, reduce font size to fit within active area
+ * 
+ * Important: This function assumes lineHeight = fontSize in rendering
+ * which matches the actual rendering logic in route.tsx
  */
 export function calculateFontSize(
   text: string,
@@ -268,10 +272,14 @@ export function calculateFontSize(
   const charCount = text.length
   const availableHeight = activeArea.height
   const baseSize = activeArea.fontSize
-  const lineHeight = activeArea.lineHeight
+  
+  // IMPORTANT: We use fontSize as lineHeight to match rendering logic
+  // In renderVerticalText, we set lineHeight = fontSize
+  // So each character takes up approximately fontSize pixels
+  const estimatedLineHeight = baseSize
   
   // Calculate required height with base font size
-  const requiredHeight = charCount * lineHeight
+  const requiredHeight = charCount * estimatedLineHeight
   
   // If it fits, use base size
   if (requiredHeight <= availableHeight) {

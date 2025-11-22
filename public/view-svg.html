@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG 查看器 - 长生禄位模板</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    img {
+      display: block;
+      /* 放大到原始尺寸的 2 倍 */
+      width: 640px;  /* 320 × 2 */
+      height: 1696px; /* 848 × 2 */
+      border: 1px solid #ddd;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #0070f3;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .info p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="/long-living-template-optimized.svg" alt="长生禄位模板">
+    
+    <div class="info">
+      <p><strong>模板信息：</strong></p>
+      <p>原始尺寸: 320 × 848 px</p>
+      <p>显示尺寸: 640 × 1696 px (2x 放大)</p>
+      <p>---</p>
+      <p>右键点击 → 检查元素 → 查看 &lt;path&gt; 的坐标</p>
+    </div>
+  </div>
+</body>
+</html>
+
