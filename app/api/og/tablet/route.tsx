@@ -11,6 +11,7 @@ export const runtime = 'edge'
 /**
  * Render vertical text character by character
  * Each character is rendered separately in a vertical column
+ * Uses Flexbox for precise centering
  */
 function renderVerticalText(
   text: string,
@@ -22,26 +23,21 @@ function renderVerticalText(
   
   // Calculate font size based on text length
   const fontSize = calculateFontSize(text, activeArea)
-  const lineHeight = (fontSize / activeArea.fontSize) * activeArea.lineHeight
-  
-  // Calculate total height needed
-  const totalHeight = characters.length * lineHeight
-  
-  // Calculate starting Y position to center the text vertically
-  const startY = activeArea.y + (activeArea.height - totalHeight) / 2
-  
-  // Calculate X position (center horizontally in active area)
-  const centerX = activeArea.x + activeArea.width / 2
+  // Use lineHeight same as fontSize for better alignment
+  const lineHeight = fontSize
   
   return (
     <div
       style={{
         position: 'absolute',
-        left: centerX,
-        top: startY,
+        left: activeArea.x,
+        top: activeArea.y,
+        width: activeArea.width,
+        height: activeArea.height,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
+        justifyContent: 'center',  // Center vertically
+        alignItems: 'center',       // Center horizontally
       }}
     >
       {characters.map((char, index) => (
