@@ -14,11 +14,6 @@ import { Loader2, Calendar, MapPin, Clock, Plus, X } from 'lucide-react'
 
 const PLAQUE_TYPES = [
   { value: 'longevity', label: '長生祿位', description: '為在世親友祈福' },
-  { value: 'deceased', label: '往生蓮位', description: '為已故親友超薦' },
-  { value: 'ancestors', label: '歷代祖先', description: '為歷代祖先超薦' },
-  { value: 'karmic_creditors', label: '冤親債主', description: '為冤親債主超薦' },
-  { value: 'aborted_spirits', label: '墮胎嬰靈', description: '為墮胎嬰靈超薦' },
-  { value: 'land_deity', label: '地基主', description: '為地基主祈福' },
 ]
 
 export default function ApplicationFormPage() {
@@ -38,6 +33,10 @@ export default function ApplicationFormPage() {
   const [plaqueType, setPlaqueType] = useState('')
   const [names, setNames] = useState<string[]>([''])
   
+  // Preview state
+  const [previewName, setPreviewName] = useState('')
+  const [showPreview, setShowPreview] = useState(false)
+  
   useEffect(() => {
     loadCeremony()
   }, [slug])
@@ -49,6 +48,11 @@ export default function ApplicationFormPage() {
       setIsDeadlinePassed(now > deadline)
     }
   }, [ceremony])
+  
+  useEffect(() => {
+    // Auto-select longevity type since it's the only option
+    setPlaqueType('longevity')
+  }, [])
   
   const loadCeremony = async () => {
     setLoading(true)
@@ -85,6 +89,17 @@ export default function ApplicationFormPage() {
       newNames[index] = value
       setNames(newNames)
     }
+  }
+  
+  const handlePreview = () => {
+    const firstName = names[0]?.trim()
+    if (!firstName) {
+      setMessage({ type: 'error', text: '請至少輸入一個名字以預覽' })
+      return
+    }
+    setPreviewName(firstName)
+    setShowPreview(true)
+    setMessage(null)
   }
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -323,6 +338,18 @@ export default function ApplicationFormPage() {
               </div>
             </div>
             
+            {/* Preview Button */}
+            <div className="button-group">
+              <Button
+                type="button"
+                onClick={handlePreview}
+                variant="outline"
+                className="btn-secondary-large w-full"
+              >
+                預覽牌位
+              </Button>
+            </div>
+            
             {/* Submit Button */}
             <div className="button-group">
               <Button
@@ -341,6 +368,20 @@ export default function ApplicationFormPage() {
               </Button>
             </div>
           </form>
+          
+          {/* Preview Section */}
+          {showPreview && previewName && (
+            <div className="mt-8 pt-8 border-t">
+              <h3 className="text-xl font-semibold mb-4">牌位預覽</h3>
+              <div className="flex justify-center">
+                <img
+                  src={`/api/og/tablet?name=${encodeURIComponent(previewName)}&type=longevity`}
+                  alt="牌位預覽"
+                  className="max-w-full h-auto border rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+          )}
         </Card>
       )}
     </PageLayout>
