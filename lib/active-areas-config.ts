@@ -278,38 +278,119 @@ export type EnglishRenderMode = 'single-line' | 'multi-line'
 export interface EnglishFontResult {
   fontSize: number
   mode: EnglishRenderMode
+  lines: string[]
 }
 
 /**
- * Calculate font size for English text (single-line mode only for now)
- * 
- * TODO: Multi-line support needs more research into Satori's rendering behavior
- * For now, all English names are rendered as single line with dynamic font scaling
+ * Calculate font size for English text
+ * Supports single-line and multi-line (up to 2 lines) with dynamic scaling
  */
 export function calculateEnglishFont(
   text: string,
   activeArea: ActiveArea
 ): EnglishFontResult {
-  const availableHeight = activeArea.height
+  // In rotated mode:
+  // - Text length is constrained by activeArea.height (300px)
+  // - Text stack height is constrained by activeArea.width (230px)
+  const availableLength = activeArea.height
+  const availableStackHeight = activeArea.width
+  
   const BASE_SIZE = activeArea.fontSize // 42px
-  const avgCharWidthRatio = 0.7 // Conservative: 70% of fontSize per character
+  const avgCharWidthRatio = 0.6 // Conservative estimate for Noto Serif
   
-  // Calculate required height for single line
-  const totalLength = text.length
-  const singleLineWidth = totalLength * avgCharWidthRatio * BASE_SIZE
-  const singleLineHeight = singleLineWidth
+  // Helper to estimate text length at a given font size
+  const getTextLength = (str: string, fs: number) => str.length * fs * avgCharWidthRatio
+
+  // 1. Try Single Line
+  const singleLineLength = getTextLength(text, BASE_SIZE)
+  let singleLineFontSize = BASE_SIZE
   
-  if (singleLineHeight <= availableHeight) {
-    // Fits at base size
-    return { fontSize: BASE_SIZE, mode: 'single-line' }
+  if (singleLineLength > availableLength) {
+    // Scale down to fit length
+    const scale = availableLength / singleLineLength
+    singleLineFontSize = Math.floor(BASE_SIZE * scale)
   }
+
+  // If single line fits reasonably well (>= 60% of base size), prefer it
+  if (singleLineFontSize >= BASE_SIZE * 0.6) {
+    return { 
+      fontSize: singleLineFontSize, 
+      mode: 'single-line', 
+      lines: [text] 
+    }
+  }
+
+  // 2. Try Multi-line (2 lines)
+  const words = text.split(' ')
   
-  // Scale down to fit
-  const scaleFactor = availableHeight / singleLineHeight
-  const minSize = BASE_SIZE * 0.5 // Don't go below 50%
-  const newSize = Math.max(BASE_SIZE * scaleFactor, minSize)
-  
-  return { fontSize: Math.floor(newSize), mode: 'single-line' }
+  // If only one word or empty, must use single line (even if small)
+  if (words.length <= 1) {
+    return { 
+      fontSize: Math.max(singleLineFontSize, 12), // Ensure min 12px
+      mode: 'single-line', 
+      lines: [text] 
+    }
+  }
+
+  // Find best split for 2 lines
+  let bestLines: string[] = [text]
+  let bestFontSize = 0
+
+  for (let i = 1; i < words.length; i++) {
+    const line1 = words.slice(0, i).join(' ')
+    const line2 = words.slice(i).join(' ')
+    
+    // Calculate max font size that fits length for both lines
+    const len1 = getTextLength(line1, BASE_SIZE)
+    const len2 = getTextLength(line2, BASE_SIZE)
+    const maxLen = Math.max(len1, len2)
+    
+    let fs = BASE_SIZE
+    if (maxLen > availableLength) {
+      fs = Math.floor(BASE_SIZE * (availableLength / maxLen))
+    }
+    
+    // Check if stack height fits
+    // Stack height = 2 lines * fontSize * 1.1 (line height factor)
+    const stackHeight = 2 * fs * 1.1
+    
+    if (stackHeight <= availableStackHeight) {
+      // It fits! Check if this is the best font size so far
+      if (fs > bestFontSize) {
+        bestFontSize = fs
+        bestLines = [line1, line2]
+      }
+    } else {
+        // Constrained by stack height
+        const heightConstrainedFs = Math.floor(availableStackHeight / (2 * 1.1))
+        if (heightConstrainedFs > bestFontSize) {
+             // But we must check length constraint again with this fs
+             const len1_h = getTextLength(line1, heightConstrainedFs)
+             const len2_h = getTextLength(line2, heightConstrainedFs)
+             if (Math.max(len1_h, len2_h) <= availableLength) {
+                 bestFontSize = heightConstrainedFs
+                 bestLines = [line1, line2]
+             }
+        }
+    }
+  }
+
+  // Compare single line vs multi-line
+  // Prefer multi-line if it gives significantly larger font (e.g. > 1.2x single line)
+  if (bestFontSize > singleLineFontSize * 1.2) {
+    return {
+      fontSize: bestFontSize,
+      mode: 'multi-line',
+      lines: bestLines
+    }
+  }
+
+  // Default to single line (scaled as needed, with min size)
+  return {
+    fontSize: Math.max(singleLineFontSize, 12),
+    mode: 'single-line',
+    lines: [text]
+  }
 }
 
 /**

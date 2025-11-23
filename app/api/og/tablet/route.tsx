@@ -31,9 +31,9 @@ function renderVerticalText(
   const isEnglish = isEnglishText(text)
   
   if (isEnglish) {
-    // For English text: Always use single-line mode (rotated 90 degrees)
-    // TODO: Multi-line support for very long names needs more work with Satori
-    const { fontSize } = calculateEnglishFont(text, activeArea)
+    // For English text: Use single-line or multi-line mode (rotated 90 degrees)
+    // Multi-line support splits text into max 2 lines if it improves readability
+    const { fontSize, lines } = calculateEnglishFont(text, activeArea)
     
     return (
       <div
@@ -50,16 +50,29 @@ function renderVerticalText(
       >
         <div
           style={{
-            fontSize,
-            fontWeight: 400,
-            fontFamily: 'Noto Serif TC',
-            color,
-            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             transform: 'rotate(90deg)',
-            whiteSpace: 'nowrap',
+            gap: fontSize * 0.1, // Slight gap between lines
           }}
         >
-          {text}
+          {lines.map((line, index) => (
+            <div
+              key={index}
+              style={{
+                fontSize,
+                fontWeight: 400,
+                fontFamily: 'Noto Serif TC',
+                color,
+                textAlign: 'center',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {line}
+            </div>
+          ))}
         </div>
       </div>
     )
