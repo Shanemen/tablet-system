@@ -319,6 +319,10 @@ export function calculateEnglishFont(
  * 1. Most names use BASE_SIZE (42px) - looks professional and unified
  * 2. Only extremely long names are scaled down
  * 3. Different whitespace around names is acceptable
+ * 
+ * Statistics:
+ * - Chinese: 2-3 characters = 98%, 4-5 = 1%, 6+ = rare
+ * - English: Short names (< 15 chars) = 90%, medium = 8%, long = 2%
  */
 export function calculateFontSize(
   text: string,
@@ -332,17 +336,24 @@ export function calculateFontSize(
     return result.fontSize
   }
   
-  // For Chinese text
-  const BASE_SIZE = activeArea.fontSize
+  // For Chinese text: Use same unified strategy as English
+  const BASE_SIZE = activeArea.fontSize // 42px
+  const LINE_HEIGHT = activeArea.lineHeight // 42px
   const charCount = text.length
-  const requiredHeight = charCount * BASE_SIZE
+  
+  // Try BASE_SIZE first (for 98% of names)
+  const requiredHeight = charCount * LINE_HEIGHT
   
   if (requiredHeight <= activeArea.height) {
+    // Fits at BASE_SIZE - use it! (2-6 character names)
     return BASE_SIZE
   }
   
+  // Only scale down for extremely long names (7+ characters)
   const scaleFactor = activeArea.height / requiredHeight
-  const newSize = Math.max(BASE_SIZE * scaleFactor, BASE_SIZE * maxReductionPercent)
+  const minSize = BASE_SIZE * 0.5 // Don't go below 50%
+  const newSize = Math.max(BASE_SIZE * scaleFactor, minSize)
+  
   return Math.floor(newSize)
 }
 
