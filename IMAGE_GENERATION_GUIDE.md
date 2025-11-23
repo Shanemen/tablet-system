@@ -379,35 +379,37 @@ SVG 模板文件中**已经预先绘制了**：
 
 ## ⚠️ 关键技术原则 (VERY IMPORTANT)
 
-### 1. 左右居中 vs 上下居中的实现差异
+### 1. Flexbox Auto-Centering vs Measured Boundary Centering
 
-#### 左右居中（水平居中）
+#### Horizontal: Flexbox Auto-Centering (水平：Flexbox 自动居中)
 - ✅ **实现方式**：在 `route.tsx` 中使用 Flexbox 的 `alignItems: 'center'`
 - ✅ **依赖**：活动区域容器的 `width` 属性
 - ✅ **优点**：自动居中，不需要手动计算偏移
 - ✅ **适用性**：所有模板通用，因为左右边界由华盖和卍字边框框定
+- ✅ **特性**：基于容器宽度 (container width)，动态计算
 
 ```tsx
 // route.tsx 中的实现
 <div style={{
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',      // ← 左右居中靠这个
+  alignItems: 'center',      // ← Horizontal auto-centering
   justifyContent: 'center',
 }}>
 ```
 
-#### 上下居中（垂直居中）
+#### Vertical: Measured Boundary Centering (垂直：测量边界居中)
 - ⚠️ **实现方式**：在 `route.tsx` 中使用 Flexbox 的 `justifyContent: 'center'`
 - ⚠️ **依赖**：活动区域的 `y`（起始坐标）和 `height`（高度）
 - ⚠️ **关键**：`y` 和 `height` 必须精确对应模板上固定文字之间的空间
 - ⚠️ **差异**：**不同模板的固定文字位置不同，所以 y 和 height 会不同**
+- ⚠️ **特性**：基于 SVG 固定文字位置 (fixed text positions)，需要手动测量
 
 ```tsx
-// 活动区域配置决定了上下居中的范围
+// 活动区域配置决定了垂直居中的范围
 {
-  y: 295,        // ← 固定文字下方的起始点
-  height: 345,   // ← 到下方固定文字上方的距离
+  y: 312,        // ← Measured: 固定文字下方的起始点
+  height: 300,   // ← Measured: 到下方固定文字上方的距离
 }
 ```
 
@@ -417,6 +419,8 @@ SVG 模板文件中**已经预先绘制了**：
 - SVG 模板会经过优化（SVGO），优化后所有坐标值都会改变
 - **不能依赖硬编码的绝对坐标**
 - 必须理解**相对比例关系**
+- **Horizontal auto-centering 不受影响**（基于容器宽度）
+- **Vertical measured centering 需要重新测量**（坐标会变）
 
 #### 如何正确确定活动区域？
 
@@ -444,10 +448,10 @@ export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,           // 左右边界（相对固定）
-      y: 295,          // ⚠️ 上方固定文字的底部 + 间距
-      width: 230,      // 左右边界宽度（相对固定）
-      height: 345,     // ⚠️ Y_bottom - y - 间距
+      x: 45,           // Horizontal auto-centering: left boundary
+      y: 312,          // ⚠️ Vertical measured centering: top boundary (measured)
+      width: 230,      // Horizontal auto-centering: container width
+      height: 300,     // ⚠️ Vertical measured centering: measured height
       purpose: 'main',
       fontSize: 44,
       lineHeight: 44,
@@ -543,18 +547,18 @@ cp /path/to/long-living-template-optimized.svg ~/Desktop/
 - 我们选择**上下各留 6px** 的间距
 - 这样文字不会紧贴固定文字，视觉更舒适
 
-**最终配置**：
+**最终配置 (Measured Boundary Centering)**：
 ```typescript
 {
-  y: 306 + 6 = 312,           // 顶部留 6px
-  height: 312 - 12 = 300,     // 总高度减去上下各 6px
+  y: 306 + 6 = 312,           // Measured top boundary (顶部留 6px)
+  height: 312 - 12 = 300,     // Measured height (总高度减去上下各 6px)
 }
 ```
 
 验证：
 ```
-顶部边界：Y = 312 (距离"佛光注照"底部 6px) ✓
-底部边界：Y = 312 + 300 = 612 (距离"長生祿位"顶部 6px) ✓
+Measured top boundary: Y = 312 (距离"佛光注照"底部 6px) ✓
+Measured bottom boundary: Y = 312 + 300 = 612 (距离"長生祿位"顶部 6px) ✓
 ```
 
 #### 步骤 4：更新配置文件
@@ -569,14 +573,17 @@ export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
+      // Horizontal: Flexbox auto-centering (based on container width)
+      // Vertical: Measured boundary centering (based on fixed text positions in SVG)
+      // 
       // Measured from Figma:
       // "佛光注照" bottom: Y=306
       // "長生祿位" top: Y=618
       // With symmetric 6px padding
-      x: 45,           
-      y: 312,          // 306 + 6px
-      width: 230,      
-      height: 300,     // (618 - 6) - (306 + 6) = 300
+      x: 45,           // Left boundary (for horizontal auto-centering)
+      y: 312,          // Top boundary: 306 + 6px (for vertical measured centering)
+      width: 230,      // Container width (for horizontal auto-centering)
+      height: 300,     // Measured height: (618 - 6) - (306 + 6) = 300
       purpose: 'main',
       fontSize: 44,
       lineHeight: 44,
@@ -606,14 +613,16 @@ http://localhost:3000/api/og/tablet?type=longevity&name=买买提江·熱合曼
 #### 关键要点总结
 
 ✅ **成功因素**：
-1. **精确测量**：使用 Figma 获取准确的 Y 坐标
-2. **留出间距**：上下各留 6px，避免文字紧贴
-3. **对称设计**：padding 上下相等，视觉平衡
-4. **充分测试**：测试 2-7 字的各种长度
+1. **Flexbox auto-centering**：水平方向自动居中，无需配置
+2. **Measured boundary centering**：垂直方向使用 Figma 精确测量 Y 坐标
+3. **留出间距**：上下各留 6px，避免文字紧贴固定文字
+4. **对称设计**：padding 上下相等，视觉平衡
+5. **充分测试**：测试 2-7 字的各种长度
 
 ⚠️ **注意事项**：
-- 每个模板的固定文字位置不同，需要**单独测量**
-- SVG 优化后坐标会变，不能硬编码
+- **Horizontal auto-centering**：所有模板通用，基于容器宽度自动计算
+- **Vertical measured centering**：每个模板需要单独测量固定文字位置
+- SVG 优化后坐标会变，不能硬编码，需要重新测量
 - 间距大小（6px）可以根据视觉效果调整（建议 3-10px）
 
 ---
@@ -623,15 +632,18 @@ http://localhost:3000/api/og/tablet?type=longevity&name=买买提江·熱合曼
 为其他 5 个模板（往生莲位、历代祖先、冤亲债主、婴灵排位、地基主）配置活动区域时，遵循同样的流程：
 
 1. 导出并在 Figma 中打开对应的 SVG
-2. 测量**上方固定文字底部**和**下方固定文字顶部**的 Y 坐标
-3. 计算活动区域：`y = Y_top + padding`, `height = (Y_bottom - padding) - (Y_top + padding)`
-4. 更新 `lib/active-areas-config.ts` 中对应的配置
-5. 测试不同长度的名字，确保上下空间对称
+2. **Horizontal auto-centering**：`x` 和 `width` 通常和长生禄位相同（基于华盖和边框）
+3. **Vertical measured centering**：测量**上方固定文字底部**和**下方固定文字顶部**的 Y 坐标
+4. 计算活动区域：`y = Y_top + padding`, `height = (Y_bottom - padding) - (Y_top + padding)`
+5. 更新 `lib/active-areas-config.ts` 中对应的配置
+6. 测试不同长度的名字，确保上下空间对称
 
 **预期配置差异**：
-- "佛力超薦" 的位置可能和 "佛光注照" 不同
-- "往生蓮位" 的位置可能和 "長生祿位" 不同
-- 左侧活动区域（"陽上"到"敬薦"）需要单独测量
+- **Horizontal (x, width)**：通常所有模板相同（45, 230）
+- **Vertical (y, height)**：每个模板不同，需要单独测量：
+  - "佛力超薦" 的位置可能和 "佛光注照" 不同
+  - "往生蓮位" 的位置可能和 "長生祿位" 不同
+- **左侧活动区域**（"陽上"到"敬薦"）需要单独测量 y 和 height
 
 ### 快速参考表
 

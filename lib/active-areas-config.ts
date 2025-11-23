@@ -51,16 +51,19 @@ export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      // Center area coordinates (measured from Figma)
+      // Horizontal: Flexbox auto-centering (based on container width)
+      // Vertical: Measured boundary centering (based on fixed text positions in SVG)
+      // 
+      // Measured from Figma:
       // "佛光注照" bottom: Y=306, "長生祿位" top: Y=618
-      // With 6px padding on top and bottom
-      x: 45,           // Left padding from border (horizontal centering)
-      y: 312,          // 306 + 6px top padding
-      width: 230,      // Width between borders
-      height: 300,     // 618 - 6px - 312 = 300 (symmetric 6px padding)
+      // With symmetric 6px padding on top and bottom
+      x: 45,           // Left boundary (for horizontal auto-centering)
+      y: 312,          // Top boundary: 306 + 6px padding (for vertical measured centering)
+      width: 230,      // Container width (for horizontal auto-centering)
+      height: 300,     // Measured height: (618 - 6px) - (306 + 6px) = 300
       purpose: 'main',
-      fontSize: 44,    // Base font size
-      lineHeight: 44,  // Same as fontSize for consistent spacing
+      fontSize: 42,    // Base font size (most names use this)
+      lineHeight: 42,  // Same as fontSize for consistent spacing
     },
   ],
 }
@@ -258,38 +261,88 @@ export function getTemplateConfig(templateId: string): TabletTemplateConfig {
 }
 
 /**
- * Calculate dynamic font size based on text length
- * If text is too long, reduce font size to fit within active area
+ * Check if text contains English letters
+ */
+export function isEnglishText(text: string): boolean {
+  return /[a-zA-Z]/.test(text)
+}
+
+/**
+ * Rendering mode for English text
+ */
+export type EnglishRenderMode = 'single-line' | 'multi-line'
+
+/**
+ * Result from calculateFontSize for English text
+ */
+export interface EnglishFontResult {
+  fontSize: number
+  mode: EnglishRenderMode
+}
+
+/**
+ * Calculate font size for English text (single-line mode only for now)
  * 
- * Important: This function assumes lineHeight = fontSize in rendering
- * which matches the actual rendering logic in route.tsx
+ * TODO: Multi-line support needs more research into Satori's rendering behavior
+ * For now, all English names are rendered as single line with dynamic font scaling
+ */
+export function calculateEnglishFont(
+  text: string,
+  activeArea: ActiveArea
+): EnglishFontResult {
+  const availableHeight = activeArea.height
+  const BASE_SIZE = activeArea.fontSize // 42px
+  const avgCharWidthRatio = 0.7 // Conservative: 70% of fontSize per character
+  
+  // Calculate required height for single line
+  const totalLength = text.length
+  const singleLineWidth = totalLength * avgCharWidthRatio * BASE_SIZE
+  const singleLineHeight = singleLineWidth
+  
+  if (singleLineHeight <= availableHeight) {
+    // Fits at base size
+    return { fontSize: BASE_SIZE, mode: 'single-line' }
+  }
+  
+  // Scale down to fit
+  const scaleFactor = availableHeight / singleLineHeight
+  const minSize = BASE_SIZE * 0.5 // Don't go below 50%
+  const newSize = Math.max(BASE_SIZE * scaleFactor, minSize)
+  
+  return { fontSize: Math.floor(newSize), mode: 'single-line' }
+}
+
+/**
+ * Calculate font size and rendering mode for text
+ * 
+ * Strategy (Professional & Unified):
+ * 1. Most names use BASE_SIZE (42px) - looks professional and unified
+ * 2. Only extremely long names are scaled down
+ * 3. Different whitespace around names is acceptable
  */
 export function calculateFontSize(
   text: string,
   activeArea: ActiveArea,
-  maxReductionPercent = 0.7 // Don't go below 70% of original size
+  maxReductionPercent = 0.7
 ): number {
-  const charCount = text.length
-  const availableHeight = activeArea.height
-  const baseSize = activeArea.fontSize
+  const isEnglish = isEnglishText(text)
   
-  // IMPORTANT: We use fontSize as lineHeight to match rendering logic
-  // In renderVerticalText, we set lineHeight = fontSize
-  // So each character takes up approximately fontSize pixels
-  const estimatedLineHeight = baseSize
-  
-  // Calculate required height with base font size
-  const requiredHeight = charCount * estimatedLineHeight
-  
-  // If it fits, use base size
-  if (requiredHeight <= availableHeight) {
-    return baseSize
+  if (isEnglish) {
+    const result = calculateEnglishFont(text, activeArea)
+    return result.fontSize
   }
   
-  // Calculate scale factor needed
-  const scaleFactor = availableHeight / requiredHeight
-  const newSize = Math.max(baseSize * scaleFactor, baseSize * maxReductionPercent)
+  // For Chinese text
+  const BASE_SIZE = activeArea.fontSize
+  const charCount = text.length
+  const requiredHeight = charCount * BASE_SIZE
   
+  if (requiredHeight <= activeArea.height) {
+    return BASE_SIZE
+  }
+  
+  const scaleFactor = activeArea.height / requiredHeight
+  const newSize = Math.max(BASE_SIZE * scaleFactor, BASE_SIZE * maxReductionPercent)
   return Math.floor(newSize)
 }
 

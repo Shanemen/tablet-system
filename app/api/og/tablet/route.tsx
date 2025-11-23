@@ -2,7 +2,9 @@ import { ImageResponse } from '@vercel/og'
 import { NextRequest } from 'next/server'
 import { 
   getTemplateConfig, 
-  calculateFontSize, 
+  calculateFontSize,
+  calculateEnglishFont,
+  isEnglishText,
   type ActiveArea 
 } from '@/lib/active-areas-config'
 
@@ -10,21 +12,63 @@ export const runtime = 'edge'
 
 /**
  * Render vertical text character by character
- * Each character is rendered separately in a vertical column
- * Uses Flexbox for precise centering
+ * 
+ * For Chinese text: Each character is rendered separately in a vertical column
+ * For English text: 
+ *   - Single-line mode: Entire text rotated 90 degrees
+ *   - Multi-line mode: Split by space, each line rotated 90 degrees
+ * 
+ * Centering Strategy:
+ * - Horizontal: Flexbox auto-centering (based on container width)
+ * - Vertical: Measured boundary centering (based on fixed text positions in SVG)
  */
 function renderVerticalText(
   text: string,
   activeArea: ActiveArea,
   color: string = '#000000'
 ) {
-  // Split text into individual characters
-  const characters = text.split('')
+  // Check if text contains English letters
+  const isEnglish = isEnglishText(text)
   
-  // Calculate font size based on text length
+  if (isEnglish) {
+    // For English text: Always use single-line mode (rotated 90 degrees)
+    // TODO: Multi-line support for very long names needs more work with Satori
+    const { fontSize } = calculateEnglishFont(text, activeArea)
+    
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: activeArea.x,
+          top: activeArea.y,
+          width: activeArea.width,
+          height: activeArea.height,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <div
+          style={{
+            fontSize,
+            fontWeight: 400,
+            fontFamily: 'Noto Serif TC',
+            color,
+            textAlign: 'center',
+            transform: 'rotate(90deg)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {text}
+        </div>
+      </div>
+    )
+  }
+  
+  // For Chinese text: render character by character vertically
   const fontSize = calculateFontSize(text, activeArea)
-  // Use lineHeight same as fontSize for better alignment
   const lineHeight = fontSize
+  const characters = text.split('')
   
   return (
     <div
@@ -36,8 +80,8 @@ function renderVerticalText(
         height: activeArea.height,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',  // Center vertically
-        alignItems: 'center',       // Center horizontally
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       {characters.map((char, index) => (
