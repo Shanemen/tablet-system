@@ -105,8 +105,13 @@ export const KARMIC_CREDITORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 往生莲位配置
  * 
  * - 2 active areas (center + left)
- * - Center: between "佛力超薦" and "往生蓮位"
- * - Left: between "陽上" and "敬薦"
+ * - Center: between "佛力超薦" and "往生蓮位" (往生者名字)
+ * - Left: between "陽上" and "敬薦" (阳上孝属名字)
+ * 
+ * Configuration strategy:
+ * - Center X + Width: Same as Ancestors (45, 230)
+ * - Center Y + Height + fontSize: Same as Longevity (312, 300, 42px)
+ * - Left: Same as Karmic Creditors (8, 350, 50, 320, fontSize 20)
  */
 export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
   templateId: 'deceased',
@@ -115,23 +120,23 @@ export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,
-      y: 280,
-      width: 230,
-      height: 340,
-      purpose: 'main',
-      fontSize: 46,
-      lineHeight: 44,
+      x: 45,        // Same as Longevity & Ancestors
+      y: 312,       // Same as Longevity (NOT 280!)
+      width: 230,   // Same as Longevity & Ancestors
+      height: 300,  // Same as Longevity (NOT 340!)
+      purpose: 'honoree',
+      fontSize: 42, // Same as Longevity (BASE_SIZE)
+      lineHeight: 42,
     },
     {
-      id: 'left-applicant',
-      x: 15,
-      y: 280,
-      width: 60,
-      height: 340,
-      purpose: 'applicant',
-      fontSize: 32,
-      lineHeight: 30,
+      id: 'left-petitioner',
+      x: 8,         // Same as Karmic Creditors
+      y: 350,       // Same as Karmic Creditors
+      width: 50,    // Same as Karmic Creditors
+      height: 320,  // Same as Karmic Creditors
+      purpose: 'petitioner',
+      fontSize: 20, // Same as Karmic Creditors
+      lineHeight: 20,
     },
   ],
 }
@@ -160,8 +165,8 @@ export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
       width: 230,      // Same as longevity template
       height: 178,     // 490 - 312 = 178px (shorter for surname only)
       purpose: 'honoree',
-      fontSize: 46,    // Large font for surname
-      lineHeight: 44,
+      fontSize: 42,    // BASE_SIZE (Same as Longevity & Deceased for visual uniformity)
+      lineHeight: 42,
     },
     {
       id: 'left-petitioner',
@@ -436,23 +441,40 @@ export function calculateFontSize(
   }
   
   // For Chinese text: Use same unified strategy as English
-  const BASE_SIZE = activeArea.fontSize // 42px
-  const LINE_HEIGHT = activeArea.lineHeight // 42px
-  const charCount = text.length
+  const BASE_SIZE = activeArea.fontSize // 42px for center areas, 20px for left areas
+  
+  // IMPORTANT: In rendering, lineHeight = fontSize (see route.tsx line 84)
+  // So each character takes up fontSize height, and space takes fontSize * 0.5
+  
+  // Count characters, treating spaces specially
+  const characters = text.split('')
+  let totalHeightUnits = 0
+  
+  for (const char of characters) {
+    if (char === ' ') {
+      totalHeightUnits += 0.5 // Space takes half height
+    } else {
+      totalHeightUnits += 1 // Regular character takes full height
+    }
+  }
+  
+  // Calculate required fontSize to fit in available height
+  // Total height = totalHeightUnits * fontSize
+  // We need: totalHeightUnits * fontSize <= activeArea.height
+  // Therefore: fontSize <= activeArea.height / totalHeightUnits
+  
+  const maxFontSize = activeArea.height / totalHeightUnits
   
   // Try BASE_SIZE first (for 98% of names)
-  const requiredHeight = charCount * LINE_HEIGHT
-  
-  if (requiredHeight <= activeArea.height) {
+  if (BASE_SIZE <= maxFontSize) {
     // Fits at BASE_SIZE - use it! (2-6 character names)
     return BASE_SIZE
   }
   
-  // Only scale down for extremely long names (7+ characters)
-  const scaleFactor = activeArea.height / requiredHeight
+  // Scale down for extremely long names
   const minSize = BASE_SIZE * 0.5 // Don't go below 50%
-  const newSize = Math.max(BASE_SIZE * scaleFactor, minSize)
+  const newSize = Math.max(Math.floor(maxFontSize), minSize)
   
-  return Math.floor(newSize)
+  return newSize
 }
 

@@ -49,16 +49,15 @@ function renderVerticalText(
           alignItems: 'center',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: 'rotate(90deg)',
-            gap: fontSize * 0.1, // Slight gap between lines
-          }}
-        >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: 'rotate(90deg)',
+        }}
+      >
           {lines.map((line, index) => (
             <div
               key={index}
@@ -69,6 +68,7 @@ function renderVerticalText(
                 color,
                 textAlign: 'center',
                 whiteSpace: 'nowrap',
+                lineHeight: lines.length > 1 ? `${fontSize * 1.1}px` : 'normal',
               }}
             >
               {line}
@@ -98,21 +98,37 @@ function renderVerticalText(
         alignItems: 'center',
       }}
     >
-      {characters.map((char, index) => (
-        <div
-          key={index}
-          style={{
-            fontSize,
-            fontWeight: 400,
-            fontFamily: 'Noto Serif TC',
-            color,
-            lineHeight: `${lineHeight}px`,
-            textAlign: 'center',
-          }}
-        >
-          {char}
-        </div>
-      ))}
+      {characters.map((char, index) => {
+        // Handle spaces: render as visual separator (half the fontSize height)
+        if (char === ' ') {
+          return (
+            <div
+              key={index}
+              style={{
+                height: `${fontSize * 0.5}px`,
+                width: '100%',
+              }}
+            />
+          )
+        }
+        
+        // Regular character
+        return (
+          <div
+            key={index}
+            style={{
+              fontSize,
+              fontWeight: 400,
+              fontFamily: 'Noto Serif TC',
+              color,
+              lineHeight: `${lineHeight}px`,
+              textAlign: 'center',
+            }}
+          >
+            {char}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -134,6 +150,7 @@ export async function GET(request: NextRequest) {
     const isLongevity = type === '長生祿位' || type === 'longevity'
     const isKarmicCreditors = type === '冤親債主' || type === 'karmic-creditors'
     const isAncestors = type === '歷代祖先' || type === 'ancestors'
+    const isDeceased = type === '往生蓮位' || type === 'deceased'
     
     // Map type to template ID and SVG file
     let templateId: string
@@ -148,8 +165,11 @@ export async function GET(request: NextRequest) {
     } else if (isAncestors) {
       templateId = 'ancestors'
       svgFilename = 'ancestors-template-optimized.svg'
+    } else if (isDeceased) {
+      templateId = 'deceased'
+      svgFilename = 'deceased-template-optimized.svg'
     } else {
-      return new Response('Unsupported tablet type. Use "longevity", "karmic-creditors", or "ancestors"', { status: 400 })
+      return new Response('Unsupported tablet type. Use "longevity", "karmic-creditors", "ancestors", or "deceased"', { status: 400 })
     }
 
     // Get template configuration

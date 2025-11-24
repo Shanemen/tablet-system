@@ -78,12 +78,12 @@ fontSize: 20, lineHeight: 20
 {
   id: 'center',
   x: 45,           // ✅ 标准值 (大多数模板相同)
-  y: 280-312,      // ⚠️ 根据模板调整
+  y: 312,          // ✅ 标准起始位置 (所有模板相同)
   width: 230,      // ✅ 标准值 (大多数模板相同)
   height: 178-340, // ⚠️ 根据内容需求调整
   purpose: 'honoree',
-  fontSize: 42-46, // 较大字体
-  lineHeight: 42-44,
+  fontSize: 42,    // ✅ BASE_SIZE (统一字体大小)
+  lineHeight: 42,
 }
 ```
 
@@ -113,16 +113,16 @@ fontSize: 20, lineHeight: 20
 // 其他模板 - 中央 + 左侧
 {
   x: 45,
-  y: 280,          // 标准起始位置
+  y: 312,          // 标准起始位置 (Same as Longevity)
   width: 230,
-  height: 340,     // 标准高度
-  fontSize: 46,    // 略大字体
-  lineHeight: 44,
+  height: 300,     // 标准高度 (Same as Longevity)
+  fontSize: 42,    // BASE_SIZE (Same as Longevity)
+  lineHeight: 42,
 }
 ```
 **特点**：
 - 使用标准坐标
-- 字体稍大 (46px)
+- 标准字体 (42px BASE_SIZE)
 - 适用于多数双区域模板
 
 ---
@@ -135,14 +135,14 @@ fontSize: 20, lineHeight: 20
   y: 312,          // 与 longevity 一致
   width: 230,
   height: 178,     // ⚠️ 较短：只需容纳 1-2 个字
-  fontSize: 46,
-  lineHeight: 44,
+  fontSize: 42,    // BASE_SIZE (与其他模板统一)
+  lineHeight: 42,
 }
 ```
 **特点**：
 - 高度较短 (178px vs 300px)
 - 只显示姓氏，不是全名
-- 字体较大 (46px)
+- 使用统一的 BASE_SIZE (42px) 保持视觉一致性
 
 ---
 
@@ -152,8 +152,8 @@ fontSize: 20, lineHeight: 20
 |----------|-------------|-----------|
 | **Longevity**<br>長生祿位 | x:45, y:312<br>w:230, h:300<br>font:42 | ❌ None |
 | **Karmic Creditors**<br>冤親債主 | ❌ Fixed text | x:8, y:350<br>w:50, h:320<br>font:20 |
-| **Ancestors**<br>歷代祖先 | x:45, y:312<br>w:230, h:178<br>font:46 | x:8, y:370<br>w:50, h:300<br>font:20 |
-| **Deceased**<br>往生蓮位 | x:45, y:280<br>w:230, h:340<br>font:46 | x:15, y:280<br>w:60, h:340<br>font:32 |
+| **Ancestors**<br>歷代祖先 | x:45, y:312<br>w:230, h:178<br>font:42 | x:8, y:370<br>w:50, h:300<br>font:20 |
+| **Deceased**<br>往生蓮位 | x:45, y:312<br>w:230, h:300<br>font:42 | x:8, y:350<br>w:50, h:320<br>font:20 |
 
 ---
 
@@ -175,7 +175,7 @@ fontSize: 20, lineHeight: 20
 
 **我们的策略（推荐）✅**
 ```
-所有名字默认使用 BASE_SIZE (42px/46px)
+所有名字默认使用 BASE_SIZE (42px for center, 20px for left)
 → 短名字：有更多上下留白（负空间）
 → 中等名字：适中留白
 → 长名字：较少留白
@@ -193,7 +193,7 @@ fontSize: 20, lineHeight: 20
 // ✅ 正确策略
 if (requiredHeight <= activeArea.height) {
   // 名字能放下 → 使用 BASE_SIZE，不管有多少留白
-  return BASE_SIZE  // 42px or 46px
+  return BASE_SIZE  // 42px for center, 20px for left
 }
 
 // ❌ 错误策略（自适应填满）
@@ -355,7 +355,7 @@ export function calculateFontSize(
   text: string,
   activeArea: ActiveArea,
 ): number {
-  const BASE_SIZE = activeArea.fontSize  // 42px or 46px
+  const BASE_SIZE = activeArea.fontSize  // 42px for center areas, 20px for left areas
   const LINE_HEIGHT = activeArea.lineHeight
   const charCount = text.length
   
@@ -553,16 +553,16 @@ if (multiLineFontSize > singleLineFontSize * 1.2) {
 #### **Case 1: 短名字 (最常见)**
 
 **Input**: `"John Smith"` (10 chars)  
-**Area**: Center (h:178, w:230, base:46)
+**Area**: Center (h:178, w:230, base:42)
 
 ```
 Step 1: 估算长度
-  10 * 46 * 0.6 = 276px
-  276 > 178 ❌ 超出
+  10 * 42 * 0.6 = 252px
+  252 > 178 ❌ 超出
 
 Step 2: 缩小字体
-  (178 / 276) * 46 = 29.7px
-  29.7 >= 46 * 0.6 = 27.6 ✅ 可接受
+  (178 / 252) * 42 = 29.7px
+  29.7 >= 42 * 0.6 = 25.2 ✅ 可接受
 
 Result: ✅ 单行，29.7px
 ```
@@ -599,16 +599,16 @@ Result: ✅ 两行，20px (更清晰)
 #### **Case 3: 超长复姓 (极限情况)**
 
 **Input**: `"Washington-Williamson"` (21 chars)  
-**Area**: Center (h:178, w:230, base:46)
+**Area**: Center (h:178, w:230, base:42)
 
 ```
 Step 1: 单行估算
-  21 * 46 * 0.6 = 579.6px
-  579.6 > 178 ❌❌ 严重超出
+  21 * 42 * 0.6 = 529.2px
+  529.2 > 178 ❌❌ 严重超出
 
 Step 2: 缩小字体
-  (178 / 579.6) * 46 = 14.1px
-  14.1 < 46 * 0.6 = 27.6 ❌ 太小
+  (178 / 529.2) * 42 = 14.1px
+  14.1 < 42 * 0.6 = 25.2 ❌ 太小
 
 Step 3: 尝试分行
   Split by hyphen: "Washington-" / "Williamson"
@@ -754,14 +754,12 @@ height: 670 - y  // ⚠️ 自动计算
 
 **Center Honoree Area (参考值):**
 ```typescript
-// Longevity 模式
-x: 45, y: 312, width: 230, height: 300, fontSize: 42
+// Standard 配置 (所有中心区域统一)
+x: 45, y: 312, width: 230, fontSize: 42
 
-// Standard 模式
-x: 45, y: 280, width: 230, height: 340, fontSize: 46
-
-// Ancestors 模式（短文本）
-x: 45, y: 312, width: 230, height: 178, fontSize: 46
+// 高度根据模板调整:
+// - Longevity & Deceased: height: 300 (完整名字)
+// - Ancestors: height: 178 (姓氏专用)
 ```
 
 ---
@@ -853,10 +851,9 @@ config.activeAreas.map((area) => {
 - 验证：动态文字不应与固定文字重叠
 
 ### **5. 字体大小选择** ✅
-- Center Area (全名): 42-46px
+- Center Area (全名): 42px (统一 BASE_SIZE)
 - Left Area (申请人): 20px
-- 窄区域优先使用小字体
-- 宽区域可以使用大字体
+- 所有模板使用统一字体大小保持视觉一致性
 
 ---
 

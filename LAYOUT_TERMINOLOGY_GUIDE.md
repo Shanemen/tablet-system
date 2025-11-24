@@ -15,6 +15,33 @@ Every tablet template has **areas** where dynamic content (names) will be insert
 
 ---
 
+## ⚠️ Universal Design Rule / 通用设计规则
+
+### **CRITICAL**: All Tablets Require Both Areas (Except Longevity)
+
+**English**:
+- **Default Rule**: ALL tablet templates MUST fill BOTH the Center Honoree Area AND the Left Petitioner Area
+- **Only Exception**: 長生祿位 (Longevity) is the ONLY template that does NOT require specifying the living petitioner
+- **Special Case**: 冤親債主 (Karmic Creditors) technically fills both areas, but the honoree ("累劫冤親債主") is pre-filled in the SVG template, so only the Left Petitioner Area needs dynamic rendering
+
+**中文**:
+- **默认规则**：所有牌位模板都必须填写中央受祭者区域和左侧阳上者区域
+- **唯一例外**：長生祿位（Longevity）是唯一不需要指定阳上者的模板
+- **特殊情况**：冤親債主（Karmic Creditors）技术上也填写了两个区域，但受祭者（"累劫冤親債主"）已经在 SVG 模板中固定，所以只有左侧阳上者区域需要动态渲染
+
+### Quick Summary Table
+
+| Template | Center Area Required | Left Area Required | Notes |
+|----------|---------------------|-------------------|-------|
+| **Longevity** 長生祿位 | ✅ Yes | ❌ **NO** | **Only exception** - no petitioner needed |
+| **Karmic Creditors** 冤親債主 | ✅ Pre-filled in SVG | ✅ Yes | Honoree is fixed: "累劫冤親債主" |
+| **Deceased** 往生蓮位 | ✅ Yes | ✅ Yes | Both must be filled |
+| **Ancestors** 歷代祖先 | ✅ Yes | ✅ Yes | Both must be filled |
+| **Aborted Spirits** 嬰靈 | ✅ Yes | ✅ Yes | Both must be filled |
+| **Land Deity** 地基主 | ✅ Yes | ✅ Yes | Both must be filled |
+
+---
+
 ## 🎨 Layout/Position Terms (布局/位置术语)
 
 **Use these when discussing:**
@@ -115,8 +142,8 @@ This tells us:
 
 | Template Type | Center Area | Left Area |
 |--------------|-------------|-----------|
-| **Longevity**<br>長生祿位 | ✅ **Center Honoree Area**<br>被祈福者（在世） | ❌ None |
-| **Karmic Creditors**<br>冤親債主 | ❌ Fixed Text<br>"累劫冤親債主" | ✅ **Left Petitioner Area**<br>申请人（阳上） |
+| **Longevity**<br>長生祿位 | ✅ **Center Honoree Area**<br>被祈福者（在世） | ❌ **None** (Only exception) |
+| **Karmic Creditors**<br>冤親債主 | ✅ **Pre-filled in SVG**<br>"累劫冤親債主" | ✅ **Left Petitioner Area**<br>申请人（阳上） |
 | **Deceased**<br>往生蓮位 | ✅ **Center Honoree Area**<br>往生者 | ✅ **Left Petitioner Area**<br>阳上孝属 |
 | **Ancestors**<br>歷代祖先 | ✅ **Center Honoree Area**<br>XX氏历代祖先 | ✅ **Left Petitioner Area**<br>阳上后裔 |
 | **Aborted Spirits**<br>嬰靈 | ✅ **Center Honoree Area**<br>婴灵 | ✅ **Left Petitioner Area**<br>阳上父母 |
@@ -282,10 +309,65 @@ This provides both location and meaning context.
 
 ---
 
+## 📋 Detailed Requirements by Template Type
+
+### 往生蓮位 (Deceased Tablet)
+
+**Design Rule**: Both Center and Left areas MUST be filled (following the universal rule).
+
+**设计规则**：中心区和左侧区都必须填写（遵循通用规则）。
+
+#### Format Structure
+
+**Center Honoree Area (中央受祭者区域)**:
+- **Content**: Relationship Title + Deceased's Name
+- **格式**: 关系称谓 + 往生者名字
+- **Examples**:
+  - `先父 胡澤明` (Late father Hu Zeming)
+  - `先曾祖父 梁熙` (Late great-great-grandfather Liang Xi)
+  - `先外曾祖母 歐陽叔貞` (Late great-great-grandmother Ouyang Shuzhen)
+
+**Left Petitioner Area (左侧阳上者区域)**:
+- **Content**: Filial Title + Petitioner's Name
+- **格式**: 孝属称谓 + 申请人名字
+- **Examples**:
+  - `孝子 胡靜安` (Filial son Hu Jing'an)
+  - `孝曾孫女 梁思聰` (Filial great-great-granddaughter Liang Sicong)
+  - `孝外曾孫女 梁燦燦` (Filial great-great-granddaughter from maternal side Liang Cancan)
+
+#### Data Collection
+
+**Relationship titles** will be collected via dropdown menus in the application form:
+- Honoree relationship (e.g., 先父, 先母, 先祖父, 先祖母, etc.)
+- Petitioner relationship (e.g., 孝子, 孝女, 孝孫, 孝孫女, etc.)
+
+#### Test Cases
+
+```
+1. 曾祖父 - 曾孙女
+   Honoree: 先曾祖父 梁熙
+   Petitioner: 孝曾孫女 梁思聰
+   URL: /api/og/tablet?name=先曾祖父%20梁熙&applicant=孝曾孫女%20梁思聰&type=deceased
+
+2. 父亲 - 儿子
+   Honoree: 先父 胡澤明
+   Petitioner: 孝子 胡靜安
+   URL: /api/og/tablet?name=先父%20胡澤明&applicant=孝子%20胡靜安&type=deceased
+
+3. 外曾祖母 - 外曾孙女
+   Honoree: 先外曾祖母 歐陽叔貞
+   Petitioner: 孝外曾祖母 梁燦燦
+   URL: /api/og/tablet?name=先外曾祖母%20歐陽叔貞&applicant=孝外曾祖母%20梁燦燦&type=deceased
+```
+
+---
+
 ## 📝 Change Log
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2024-11-24 | 1.2 | **Major update**: Clarified universal design rule - all tablets require both areas except Longevity |
+| 2024-11-24 | 1.1 | Added Special Requirements section for Deceased Tablets |
 | 2024-11-24 | 1.0 | Initial terminology guide created |
 
 ---
