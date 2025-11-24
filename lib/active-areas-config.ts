@@ -443,10 +443,22 @@ export function calculateFontSize(
   // For Chinese text: Use same unified strategy as English
   const BASE_SIZE = activeArea.fontSize // 42px
   const LINE_HEIGHT = activeArea.lineHeight // 42px
-  const charCount = text.length
+  
+  // Count characters, treating spaces specially
+  // Spaces take up 0.5 * fontSize in height (as rendered)
+  const characters = text.split('')
+  let totalHeightUnits = 0
+  
+  for (const char of characters) {
+    if (char === ' ') {
+      totalHeightUnits += 0.5 // Space takes half height
+    } else {
+      totalHeightUnits += 1 // Regular character takes full height
+    }
+  }
   
   // Try BASE_SIZE first (for 98% of names)
-  const requiredHeight = charCount * LINE_HEIGHT
+  const requiredHeight = totalHeightUnits * LINE_HEIGHT
   
   if (requiredHeight <= activeArea.height) {
     // Fits at BASE_SIZE - use it! (2-6 character names)
