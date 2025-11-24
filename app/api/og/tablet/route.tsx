@@ -98,21 +98,37 @@ function renderVerticalText(
         alignItems: 'center',
       }}
     >
-      {characters.map((char, index) => (
-        <div
-          key={index}
-          style={{
-            fontSize,
-            fontWeight: 400,
-            fontFamily: 'Noto Serif TC',
-            color,
-            lineHeight: `${lineHeight}px`,
-            textAlign: 'center',
-          }}
-        >
-          {char}
-        </div>
-      ))}
+      {characters.map((char, index) => {
+        // Handle spaces: render as visual separator (half the fontSize height)
+        if (char === ' ') {
+          return (
+            <div
+              key={index}
+              style={{
+                height: `${fontSize * 0.5}px`,
+                width: '100%',
+              }}
+            />
+          )
+        }
+        
+        // Regular character
+        return (
+          <div
+            key={index}
+            style={{
+              fontSize,
+              fontWeight: 400,
+              fontFamily: 'Noto Serif TC',
+              color,
+              lineHeight: `${lineHeight}px`,
+              textAlign: 'center',
+            }}
+          >
+            {char}
+          </div>
+        )
+      })}
     </div>
   )
 }
