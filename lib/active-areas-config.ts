@@ -110,7 +110,7 @@ export const KARMIC_CREDITORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 
  * Configuration strategy:
  * - Center X + Width: Same as Ancestors (45, 230)
- * - Center Y + Height + fontSize: Same as Longevity (280, 340, 42px)
+ * - Center Y + Height + fontSize: Same as Longevity (312, 300, 42px)
  * - Left: Same as Karmic Creditors (8, 350, 50, 320, fontSize 20)
  */
 export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
@@ -120,10 +120,10 @@ export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,        // Same as Ancestors
-      y: 280,       // Same as Longevity
-      width: 230,   // Same as Ancestors
-      height: 340,  // Same as Longevity
+      x: 45,        // Same as Longevity & Ancestors
+      y: 312,       // Same as Longevity (NOT 280!)
+      width: 230,   // Same as Longevity & Ancestors
+      height: 300,  // Same as Longevity (NOT 340!)
       purpose: 'honoree',
       fontSize: 42, // Same as Longevity (BASE_SIZE)
       lineHeight: 42,
