@@ -159,9 +159,9 @@ export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
     },
     {
       id: 'left-petitioner',
-      x: 15,           // Same as karmic-creditors
+      x: 8,            // Same as karmic-creditors (NOT 15!)
       y: 370,          // User-specified (different from karmic-creditors' 350)
-      width: 60,       // Same as karmic-creditors
+      width: 50,       // Same as karmic-creditors (NOT 60!)
       height: 300,     // 670 - 370 = 300px
       purpose: 'petitioner',
       fontSize: 20,    // Same as karmic-creditors
