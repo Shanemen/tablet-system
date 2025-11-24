@@ -282,10 +282,64 @@ This provides both location and meaning context.
 
 ---
 
+## ⚠️ Special Requirements by Template Type
+
+### 往生蓮位 (Deceased Tablet) - Both Areas REQUIRED
+
+**Critical Design Rule**: For Deceased Tablets, **BOTH areas MUST be filled**. This is enforced at the form level.
+
+**往生莲位的关键设计规则**：**两个区域都必须填写**。这将在表单层面强制执行。
+
+#### Format Structure
+
+**Center Honoree Area (中央受祭者区域)**:
+- **Content**: Relationship Title + Deceased's Name
+- **格式**: 关系称谓 + 往生者名字
+- **Examples**:
+  - `先父 胡澤明` (Late father Hu Zeming)
+  - `先曾祖父 梁熙` (Late great-great-grandfather Liang Xi)
+  - `先外曾祖母 歐陽叔貞` (Late great-great-grandmother Ouyang Shuzhen)
+
+**Left Petitioner Area (左侧阳上者区域)**:
+- **Content**: Filial Title + Petitioner's Name
+- **格式**: 孝属称谓 + 申请人名字
+- **Examples**:
+  - `孝子 胡靜安` (Filial son Hu Jing'an)
+  - `孝曾孫女 梁思聰` (Filial great-great-granddaughter Liang Sicong)
+  - `孝外曾孫女 梁燦燦` (Filial great-great-granddaughter from maternal side Liang Cancan)
+
+#### Data Collection
+
+**Relationship titles** will be collected via dropdown menus in the application form:
+- Honoree relationship (e.g., 先父, 先母, 先祖父, 先祖母, etc.)
+- Petitioner relationship (e.g., 孝子, 孝女, 孝孫, 孝孫女, etc.)
+
+#### Test Cases
+
+```
+1. 曾祖父 - 曾孙女
+   Honoree: 先曾祖父 梁熙
+   Petitioner: 孝曾孫女 梁思聰
+   URL: /api/og/tablet?name=先曾祖父%20梁熙&applicant=孝曾孫女%20梁思聰&type=deceased
+
+2. 父亲 - 儿子
+   Honoree: 先父 胡澤明
+   Petitioner: 孝子 胡靜安
+   URL: /api/og/tablet?name=先父%20胡澤明&applicant=孝子%20胡靜安&type=deceased
+
+3. 外曾祖母 - 外曾孙女
+   Honoree: 先外曾祖母 歐陽叔貞
+   Petitioner: 孝外曾祖母 梁燦燦
+   URL: /api/og/tablet?name=先外曾祖母%20歐陽叔貞&applicant=孝外曾祖母%20梁燦燦&type=deceased
+```
+
+---
+
 ## 📝 Change Log
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2024-11-24 | 1.1 | Added Special Requirements section for Deceased Tablets |
 | 2024-11-24 | 1.0 | Initial terminology guide created |
 
 ---
