@@ -69,10 +69,14 @@ http://localhost:3000/api/og/tablet?name=Washington-Williamson&type=deceased
 **关系称谓下拉菜单**
 
 **Description**:
-Implement dropdown menus in the application form to collect relationship titles for Deceased Tablets.
+Implement dropdown menus in the application form to collect relationship titles for all tablets that require both Center and Left areas (Deceased, Ancestors, Aborted Spirits, Land Deity).
 
 **描述**:
-在申请表单中实现下拉菜单，用于收集往生莲位的关系称谓。
+在申请表单中实现下拉菜单，用于收集所有需要填写中心区和左侧区的牌位的关系称谓（往生莲位、历代祖先、婴灵、地基主）。
+
+**Universal Rule**: All tablets require both areas EXCEPT Longevity (which only needs Center) and Karmic Creditors (where Center is pre-filled).
+
+**通用规则**：除了長生祿位（只需要中心区）和冤親債主（中心区已预填）之外，所有牌位都需要填写两个区域。
 
 **Requirements**:
 - **Honoree Relationship Dropdown** (往生者关系):
@@ -127,6 +131,6 @@ Implement dropdown menus in the application form to collect relationship titles 
 
 ---
 
-**Last Updated**: November 24, 2024  
+**Last Updated**: November 24, 2024 (Version 1.1)  
 **Maintained by**: Tablet System Development Team
 
