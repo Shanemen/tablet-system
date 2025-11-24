@@ -441,11 +441,12 @@ export function calculateFontSize(
   }
   
   // For Chinese text: Use same unified strategy as English
-  const BASE_SIZE = activeArea.fontSize // 42px
-  const LINE_HEIGHT = activeArea.lineHeight // 42px
+  const BASE_SIZE = activeArea.fontSize // 46px for deceased center
+  
+  // IMPORTANT: In rendering, lineHeight = fontSize (see route.tsx line 84)
+  // So each character takes up fontSize height, and space takes fontSize * 0.5
   
   // Count characters, treating spaces specially
-  // Spaces take up 0.5 * fontSize in height (as rendered)
   const characters = text.split('')
   let totalHeightUnits = 0
   
@@ -457,19 +458,23 @@ export function calculateFontSize(
     }
   }
   
-  // Try BASE_SIZE first (for 98% of names)
-  const requiredHeight = totalHeightUnits * LINE_HEIGHT
+  // Calculate required fontSize to fit in available height
+  // Total height = totalHeightUnits * fontSize
+  // We need: totalHeightUnits * fontSize <= activeArea.height
+  // Therefore: fontSize <= activeArea.height / totalHeightUnits
   
-  if (requiredHeight <= activeArea.height) {
+  const maxFontSize = activeArea.height / totalHeightUnits
+  
+  // Try BASE_SIZE first (for 98% of names)
+  if (BASE_SIZE <= maxFontSize) {
     // Fits at BASE_SIZE - use it! (2-6 character names)
     return BASE_SIZE
   }
   
-  // Only scale down for extremely long names (7+ characters)
-  const scaleFactor = activeArea.height / requiredHeight
+  // Scale down for extremely long names
   const minSize = BASE_SIZE * 0.5 // Don't go below 50%
-  const newSize = Math.max(BASE_SIZE * scaleFactor, minSize)
+  const newSize = Math.max(Math.floor(maxFontSize), minSize)
   
-  return Math.floor(newSize)
+  return newSize
 }
 
