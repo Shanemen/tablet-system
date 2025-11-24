@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG 查看器 - 历代祖先模板</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    img {
+      display: block;
+      /* 显示原始尺寸 */
+      width: 320px;
+      height: 848px;
+      border: 1px solid #ddd;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #0070f3;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .info p {
+      margin: 5px 0;
+    }
+    .template-info {
+      background: #e3f2fd;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid #2196f3;
+      border-radius: 4px;
+    }
+    .template-info h3 {
+      margin: 0 0 10px 0;
+      color: #1565c0;
+    }
+    .template-info ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .template-info li {
+      margin: 5px 0;
+      color: #1976d2;
+    }
+    .area-info {
+      background: #fff3cd;
+      padding: 10px;
+      margin: 10px 0;
+      border-left: 4px solid #ffc107;
+      border-radius: 4px;
+    }
+    .area-info strong {
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="template-info">
+      <h3>🏛️ 历代祖先模板 (Ancestors Template)</h3>
+      <div class="area-info">
+        <strong>📍 Center Honoree Area (中央受祭者区域):</strong><br>
+        固定文字: "佛力超薦" + <span style="background: yellow;">[姓氏]</span> + "氏歷代祖先往生蓮位"<br>
+        示例: "佛力超薦<strong>陳</strong>氏歷代祖先往生蓮位"
+      </div>
+      <div class="area-info">
+        <strong>📍 Left Petitioner Area (左侧阳上者区域):</strong><br>
+        格式: "陽上後裔 " + <span style="background: yellow;">[申请人名字]</span> + " 叩薦"<br>
+        示例: "陽上後裔 <strong>陳小華</strong> 叩薦"
+      </div>
+      <ul>
+        <li><strong>文件大小：</strong>175.5 KB (优化后，减少 73.7%)</li>
+        <li><strong>优化前：</strong>668 KB</li>
+      </ul>
+    </div>
+
+    <img src="/ancestors-template-optimized.svg" alt="历代祖先模板">
+    
+    <div class="info">
+      <p><strong>模板信息：</strong></p>
+      <p>原始尺寸: 320 × 848 px</p>
+      <p>显示尺寸: 320 × 848 px (1x 原始大小)</p>
+      <p>优化后大小: 175.5 KB</p>
+      <p>---</p>
+      <p><strong>🎯 需要测量的坐标：</strong></p>
+      <p><strong>1. Center Area (姓氏插入位置):</strong></p>
+      <p>   - 找到 "佛力超薦" 和 "氏歷代祖先" 之间的位置</p>
+      <p>   - 需要插入单个姓氏字（例如：陈、张、李）</p>
+      <p>   - 记录 X, Y 坐标和可用空间</p>
+      <p></p>
+      <p><strong>2. Left Petitioner Area (申请人名字位置):</strong></p>
+      <p>   - 找到 "陽上後裔" 和 "叩薦" 之间的位置</p>
+      <p>   - 需要插入完整名字（2-4个字）</p>
+      <p>   - 记录 X, Y 坐标和可用空间</p>
+      <p>---</p>
+      <p><strong>📐 测量方法：</strong></p>
+      <p>1. 右键点击图片 → 检查元素</p>
+      <p>2. 在开发者工具中找到对应的文字元素</p>
+      <p>3. 记录坐标和字体大小</p>
+    </div>
+  </div>
+</body>
+</html>
+
