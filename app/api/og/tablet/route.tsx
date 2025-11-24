@@ -49,16 +49,15 @@ function renderVerticalText(
           alignItems: 'center',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: 'rotate(90deg)',
-            gap: fontSize * 0.1, // Slight gap between lines
-          }}
-        >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: 'rotate(90deg)',
+        }}
+      >
           {lines.map((line, index) => (
             <div
               key={index}
@@ -69,6 +68,7 @@ function renderVerticalText(
                 color,
                 textAlign: 'center',
                 whiteSpace: 'nowrap',
+                lineHeight: lines.length > 1 ? `${fontSize * 1.1}px` : 'normal',
               }}
             >
               {line}
