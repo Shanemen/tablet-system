@@ -164,8 +164,8 @@ export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
       width: 60,       // Same as other templates
       height: 300,     // 670 - 370 = 300px
       purpose: 'petitioner',
-      fontSize: 32,    // Standard petitioner font
-      lineHeight: 30,
+      fontSize: 20,    // Small font like karmic-creditors (narrow area)
+      lineHeight: 20,  // Same as fontSize for tight spacing
     },
   ],
 }
