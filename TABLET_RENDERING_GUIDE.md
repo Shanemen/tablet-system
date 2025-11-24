@@ -78,7 +78,7 @@ fontSize: 20, lineHeight: 20
 {
   id: 'center',
   x: 45,           // ✅ 标准值 (大多数模板相同)
-  y: 280-312,      // ⚠️ 根据模板调整
+  y: 312,          // ✅ 标准起始位置 (所有模板相同)
   width: 230,      // ✅ 标准值 (大多数模板相同)
   height: 178-340, // ⚠️ 根据内容需求调整
   purpose: 'honoree',
@@ -113,11 +113,11 @@ fontSize: 20, lineHeight: 20
 // 其他模板 - 中央 + 左侧
 {
   x: 45,
-  y: 280,          // 标准起始位置
+  y: 312,          // 标准起始位置 (Same as Longevity)
   width: 230,
-  height: 340,     // 标准高度
-  fontSize: 46,    // 略大字体
-  lineHeight: 44,
+  height: 300,     // 标准高度 (Same as Longevity)
+  fontSize: 42,    // BASE_SIZE (Same as Longevity)
+  lineHeight: 42,
 }
 ```
 **特点**：
@@ -153,7 +153,7 @@ fontSize: 20, lineHeight: 20
 | **Longevity**<br>長生祿位 | x:45, y:312<br>w:230, h:300<br>font:42 | ❌ None |
 | **Karmic Creditors**<br>冤親債主 | ❌ Fixed text | x:8, y:350<br>w:50, h:320<br>font:20 |
 | **Ancestors**<br>歷代祖先 | x:45, y:312<br>w:230, h:178<br>font:46 | x:8, y:370<br>w:50, h:300<br>font:20 |
-| **Deceased**<br>往生蓮位 | x:45, y:280<br>w:230, h:340<br>font:46 | x:15, y:280<br>w:60, h:340<br>font:32 |
+| **Deceased**<br>往生蓮位 | x:45, y:312<br>w:230, h:300<br>font:42 | x:8, y:350<br>w:50, h:320<br>font:20 |
 
 ---
 
@@ -754,13 +754,10 @@ height: 670 - y  // ⚠️ 自动计算
 
 **Center Honoree Area (参考值):**
 ```typescript
-// Longevity 模式
+// Longevity & Deceased 模式 (标准配置)
 x: 45, y: 312, width: 230, height: 300, fontSize: 42
 
-// Standard 模式
-x: 45, y: 280, width: 230, height: 340, fontSize: 46
-
-// Ancestors 模式（短文本）
+// Ancestors 模式（短文本 - 姓氏）
 x: 45, y: 312, width: 230, height: 178, fontSize: 46
 ```
 
