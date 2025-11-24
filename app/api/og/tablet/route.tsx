@@ -107,7 +107,11 @@ function renderVerticalText(
             fontFamily: 'Noto Serif TC',
             color,
             lineHeight: `${lineHeight}px`,
+            width: `${fontSize}px`, // Fixed width for each character
             textAlign: 'center',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
           {char}
