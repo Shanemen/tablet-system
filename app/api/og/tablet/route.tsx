@@ -107,11 +107,7 @@ function renderVerticalText(
             fontFamily: 'Noto Serif TC',
             color,
             lineHeight: `${lineHeight}px`,
-            width: `${fontSize}px`, // Fixed width for each character
             textAlign: 'center',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
           }}
         >
           {char}
@@ -225,8 +221,8 @@ export async function GET(request: NextRequest) {
             let textToRender = ''
             
             if (area.purpose === 'honoree') {
-              // Center area: For ancestors, extract surname (first character)
-              textToRender = isAncestors ? name.charAt(0) : name
+              // Center area: Use the full surname (user passes complete surname)
+              textToRender = name
             } else if (area.purpose === 'petitioner') {
               // Left area: Use applicant parameter, default to empty
               const applicant = searchParams.get('applicant') || ''
