@@ -130,25 +130,39 @@ export async function GET(request: NextRequest) {
       console.log(`[OG Image] Input: "${nameInput}" → Converted: "${name}"`)
     }
 
-    // For now, only support 長生祿位 (Longevity Tablet)
+    // Determine template type
     const isLongevity = type === '長生祿位' || type === 'longevity'
+    const isKarmicCreditors = type === '冤親債主' || type === 'karmic-creditors'
     
-    if (!isLongevity) {
-      return new Response('Only 長生祿位 is supported for now', { status: 400 })
+    // Map type to template ID and SVG file
+    let templateId: string
+    let svgFilename: string
+    let activeAreaId: string
+    
+    if (isLongevity) {
+      templateId = 'longevity'
+      svgFilename = 'long-living-template-optimized.svg'
+      activeAreaId = 'center'
+    } else if (isKarmicCreditors) {
+      templateId = 'karmic-creditors'
+      svgFilename = 'karmic-creditors-template-optimized.svg'
+      activeAreaId = 'left-applicant'
+    } else {
+      return new Response('Unsupported tablet type. Use "longevity" or "karmic-creditors"', { status: 400 })
     }
 
     // Get template configuration
-    const config = getTemplateConfig('longevity')
-    const centerArea = config.activeAreas.find(area => area.id === 'center')
+    const config = getTemplateConfig(templateId)
+    const activeArea = config.activeAreas.find(area => area.id === activeAreaId)
     
-    if (!centerArea) {
-      throw new Error('Center active area not found in config')
+    if (!activeArea) {
+      throw new Error(`Active area "${activeAreaId}" not found in config`)
     }
 
     const textColor = '#000000'
 
     // Load SVG template with pre-rendered text
-    const svgUrl = `${request.nextUrl.origin}/long-living-template-optimized.svg`
+    const svgUrl = `${request.nextUrl.origin}/${svgFilename}`
     
     let svgContent = ''
     try {
@@ -210,7 +224,7 @@ export async function GET(request: NextRequest) {
           )}
 
           {/* Content Layer - Render vertical text in active area */}
-          {renderVerticalText(name, centerArea, textColor)}
+          {renderVerticalText(name, activeArea, textColor)}
         </div>
       ),
       {

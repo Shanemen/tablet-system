@@ -74,7 +74,13 @@ export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 
  * - 1 active area (left side)
  * - Between "陽上" (top) and "敬薦" (bottom)
- * - Center text "累劫冤親債主" is fixed in template
+ * - Format: "陽上 [申请人名字] 敬薦"
+ * - Center text "佛力超薦 累劫冤親債主 往生蓮位" is fixed in template
+ * 
+ * Coordinates (user-measured with padding):
+ * - X: 8 → 58 (width: 50px)
+ * - Y: 350 → 670 (height: 320px)
+ * - Font size: 20px (very small area)
  */
 export const KARMIC_CREDITORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
   templateId: 'karmic-creditors',
@@ -83,13 +89,13 @@ export const KARMIC_CREDITORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'left-applicant',
-      x: 15,           // Left side
-      y: 280,          // Below "陽上"
-      width: 60,       // Narrower for applicant info
-      height: 340,     // To "敬薦"
+      x: 8,            // User-measured with padding
+      y: 350,          // User-measured with padding
+      width: 50,       // 58 - 8 = 50px (very narrow)
+      height: 320,     // 670 - 350 = 320px
       purpose: 'applicant',
-      fontSize: 32,    // Smaller font for applicant
-      lineHeight: 30,
+      fontSize: 20,    // User-specified (small font for narrow area)
+      lineHeight: 20,  // Same as fontSize for tight spacing
     },
   ],
 }
