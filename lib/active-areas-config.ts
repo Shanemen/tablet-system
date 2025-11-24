@@ -17,7 +17,7 @@ export interface ActiveArea {
   /** Height of the active area */
   height: number
   /** Purpose/content of this area */
-  purpose: 'main' | 'applicant'
+  purpose: 'honoree' | 'petitioner' | 'main' | 'applicant' // Support both old and new terminology
   /** Default font size (can be adjusted dynamically) */
   fontSize: number
   /** Line height for vertical text */
@@ -61,7 +61,7 @@ export const LONGEVITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
       y: 312,          // Top boundary: 306 + 6px padding (for vertical measured centering)
       width: 230,      // Container width (for horizontal auto-centering)
       height: 300,     // Measured height: (618 - 6px) - (306 + 6px) = 300
-      purpose: 'main',
+      purpose: 'honoree',
       fontSize: 42,    // Base font size (most names use this)
       lineHeight: 42,  // Same as fontSize for consistent spacing
     },
@@ -135,8 +135,12 @@ export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 历代祖先配置
  * 
  * - 2 active areas (center + left)
- * - Center: for inserting surname before "氏"
- * - Left: between "陽上後裔" and "叩薦"
+ * - Center: for inserting surname in "佛力超薦[姓]氏歷代祖先往生蓮位"
+ * - Left: for "陽上後裔 [名字] 叩薦"
+ * 
+ * Coordinates (user-measured with padding):
+ * - Center: Between "佛力超薦" and "氏歷代祖先" (surname only)
+ * - Left: Between "陽上後裔" and "叩薦" (full name)
  */
 export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
   templateId: 'ancestors',
@@ -145,22 +149,22 @@ export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,
-      y: 280,
-      width: 230,
-      height: 340,
-      purpose: 'main',
-      fontSize: 46,
+      x: 45,           // Same as longevity template
+      y: 312,          // User-measured with padding
+      width: 230,      // Same as longevity template
+      height: 178,     // 490 - 312 = 178px (shorter for surname only)
+      purpose: 'honoree',
+      fontSize: 46,    // Large font for surname
       lineHeight: 44,
     },
     {
-      id: 'left-applicant',
-      x: 15,
-      y: 280,
-      width: 60,
-      height: 340,
-      purpose: 'applicant',
-      fontSize: 32,
+      id: 'left-petitioner',
+      x: 15,           // Same as other templates
+      y: 370,          // User-measured (lower than center)
+      width: 60,       // Same as other templates
+      height: 300,     // 670 - 370 = 300px
+      purpose: 'petitioner',
+      fontSize: 32,    // Standard petitioner font
       lineHeight: 30,
     },
   ],

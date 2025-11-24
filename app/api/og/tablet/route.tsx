@@ -130,25 +130,30 @@ export async function GET(request: NextRequest) {
       console.log(`[OG Image] Input: "${nameInput}" → Converted: "${name}"`)
     }
 
-    // For now, only support 長生祿位 (Longevity Tablet)
+    // Determine template type
     const isLongevity = type === '長生祿位' || type === 'longevity'
+    const isAncestors = type === '歷代祖先' || type === 'ancestors'
     
-    if (!isLongevity) {
-      return new Response('Only 長生祿位 is supported for now', { status: 400 })
+    // Map type to template ID and SVG file
+    let templateId: string
+    let svgFilename: string
+    
+    if (isLongevity) {
+      templateId = 'longevity'
+      svgFilename = 'long-living-template-optimized.svg'
+    } else if (isAncestors) {
+      templateId = 'ancestors'
+      svgFilename = 'ancestors-template-optimized.svg'
+    } else {
+      return new Response('Unsupported tablet type. Use "longevity" or "ancestors"', { status: 400 })
     }
 
     // Get template configuration
-    const config = getTemplateConfig('longevity')
-    const centerArea = config.activeAreas.find(area => area.id === 'center')
-    
-    if (!centerArea) {
-      throw new Error('Center active area not found in config')
-    }
-
+    const config = getTemplateConfig(templateId)
     const textColor = '#000000'
 
     // Load SVG template with pre-rendered text
-    const svgUrl = `${request.nextUrl.origin}/long-living-template-optimized.svg`
+    const svgUrl = `${request.nextUrl.origin}/${svgFilename}`
     
     let svgContent = ''
     try {
@@ -209,8 +214,24 @@ export async function GET(request: NextRequest) {
             />
           )}
 
-          {/* Content Layer - Render vertical text in active area */}
-          {renderVerticalText(name, centerArea, textColor)}
+          {/* Content Layer - Render vertical text in active areas */}
+          {config.activeAreas.map((area) => {
+            // For center/honoree area: use the main name (surname for ancestors)
+            // For left/petitioner area: use applicant name from query param
+            let textToRender = ''
+            
+            if (area.purpose === 'honoree') {
+              // Center area: For ancestors, extract surname (first character)
+              textToRender = isAncestors ? name.charAt(0) : name
+            } else if (area.purpose === 'petitioner') {
+              // Left area: Use applicant parameter, default to empty
+              const applicant = searchParams.get('applicant') || ''
+              textToRender = convertToTraditional(applicant)
+            }
+            
+            // Only render if there's text
+            return textToRender ? renderVerticalText(textToRender, area, textColor) : null
+          })}
         </div>
       ),
       {
