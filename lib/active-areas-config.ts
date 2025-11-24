@@ -105,8 +105,13 @@ export const KARMIC_CREDITORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 往生莲位配置
  * 
  * - 2 active areas (center + left)
- * - Center: between "佛力超薦" and "往生蓮位"
- * - Left: between "陽上" and "敬薦"
+ * - Center: between "佛力超薦" and "往生蓮位" (往生者名字)
+ * - Left: between "陽上" and "敬薦" (阳上孝属名字)
+ * 
+ * Configuration strategy:
+ * - Center X + Width: Same as Ancestors (45, 230)
+ * - Center Y + Height: Same as Longevity (280, 340)
+ * - Left: Same as Karmic Creditors (8, 350, 50, 320, fontSize 20)
  */
 export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
   templateId: 'deceased',
@@ -115,23 +120,23 @@ export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,
-      y: 280,
-      width: 230,
-      height: 340,
-      purpose: 'main',
+      x: 45,        // Same as Ancestors
+      y: 280,       // Same as Longevity
+      width: 230,   // Same as Ancestors
+      height: 340,  // Same as Longevity
+      purpose: 'honoree',
       fontSize: 46,
       lineHeight: 44,
     },
     {
-      id: 'left-applicant',
-      x: 15,
-      y: 280,
-      width: 60,
-      height: 340,
-      purpose: 'applicant',
-      fontSize: 32,
-      lineHeight: 30,
+      id: 'left-petitioner',
+      x: 8,         // Same as Karmic Creditors
+      y: 350,       // Same as Karmic Creditors
+      width: 50,    // Same as Karmic Creditors
+      height: 320,  // Same as Karmic Creditors
+      purpose: 'petitioner',
+      fontSize: 20, // Same as Karmic Creditors
+      lineHeight: 20,
     },
   ],
 }

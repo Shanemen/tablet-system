@@ -134,6 +134,7 @@ export async function GET(request: NextRequest) {
     const isLongevity = type === '長生祿位' || type === 'longevity'
     const isKarmicCreditors = type === '冤親債主' || type === 'karmic-creditors'
     const isAncestors = type === '歷代祖先' || type === 'ancestors'
+    const isDeceased = type === '往生蓮位' || type === 'deceased'
     
     // Map type to template ID and SVG file
     let templateId: string
@@ -148,8 +149,11 @@ export async function GET(request: NextRequest) {
     } else if (isAncestors) {
       templateId = 'ancestors'
       svgFilename = 'ancestors-template-optimized.svg'
+    } else if (isDeceased) {
+      templateId = 'deceased'
+      svgFilename = 'deceased-template-optimized.svg'
     } else {
-      return new Response('Unsupported tablet type. Use "longevity", "karmic-creditors", or "ancestors"', { status: 400 })
+      return new Response('Unsupported tablet type. Use "longevity", "karmic-creditors", "ancestors", or "deceased"', { status: 400 })
     }
 
     // Get template configuration
