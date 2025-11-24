@@ -14,6 +14,7 @@ import { Loader2, Calendar, MapPin, Clock, Plus, X } from 'lucide-react'
 
 const PLAQUE_TYPES = [
   { value: 'longevity', label: '長生祿位', description: '為在世親友祈福' },
+  { value: 'karmic-creditors', label: '冤親債主', description: '超薦累劫冤親債主' },
 ]
 
 export default function ApplicationFormPage() {
@@ -48,11 +49,6 @@ export default function ApplicationFormPage() {
       setIsDeadlinePassed(now > deadline)
     }
   }, [ceremony])
-  
-  useEffect(() => {
-    // Auto-select longevity type since it's the only option
-    setPlaqueType('longevity')
-  }, [])
   
   const loadCeremony = async () => {
     setLoading(true)
@@ -95,6 +91,10 @@ export default function ApplicationFormPage() {
     const firstName = names[0]?.trim()
     if (!firstName) {
       setMessage({ type: 'error', text: '請至少輸入一個名字以預覽' })
+      return
+    }
+    if (!plaqueType) {
+      setMessage({ type: 'error', text: '請先選擇牌位類型' })
       return
     }
     setPreviewName(firstName)
@@ -370,12 +370,12 @@ export default function ApplicationFormPage() {
           </form>
           
           {/* Preview Section */}
-          {showPreview && previewName && (
+          {showPreview && previewName && plaqueType && (
             <div className="mt-8 pt-8 border-t">
               <h3 className="text-xl font-semibold mb-4">牌位預覽</h3>
               <div className="flex justify-center">
                 <img
-                  src={`/api/og/tablet?name=${encodeURIComponent(previewName)}&type=longevity`}
+                  src={`/api/og/tablet?name=${encodeURIComponent(previewName)}&type=${plaqueType}`}
                   alt="牌位預覽"
                   className="max-w-full h-auto border rounded-lg shadow-lg"
                 />
