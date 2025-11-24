@@ -159,13 +159,13 @@ export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
     },
     {
       id: 'left-petitioner',
-      x: 15,           // Same as other templates
-      y: 370,          // User-measured (lower than center)
-      width: 60,       // Same as other templates
+      x: 15,           // Same as karmic-creditors
+      y: 370,          // User-specified (different from karmic-creditors' 350)
+      width: 60,       // Same as karmic-creditors
       height: 300,     // 670 - 370 = 300px
       purpose: 'petitioner',
-      fontSize: 20,    // Small font like karmic-creditors (narrow area)
-      lineHeight: 20,  // Same as fontSize for tight spacing
+      fontSize: 20,    // Same as karmic-creditors
+      lineHeight: 20,  // Same as karmic-creditors
     },
   ],
 }
