@@ -219,10 +219,13 @@ if (requiredHeight > activeArea.height) {
 ```
 
 **统计数据（2024 研究）**：
-- **中文名字**: 2-3 字 = 98%，4-5 字 = 1%，6+ 字 = 极少
+- **中文名字**: 2-3 字 = 98%，4-5 字 = 1%，6+ 字 = ~1%
+  - 常见: 陳小華、王明、李芳 (2-3字)
+  - 少见: 上弘下唯法師 (7字，法师)
+  - 罕见: 迪麗熱巴·迪力木拉提 (10+字，少数民族)
 - **英文名字**: 11-15 chars = 50%，16-20 chars = 30%
 
-**结论**：**98% 的名字使用 BASE_SIZE**，只有 2% 需要缩放！
+**结论**：**98% 的名字使用 BASE_SIZE**，只有 2% 需要缩放（法师、少数民族长名字）！
 
 ---
 
@@ -275,43 +278,45 @@ if (requiredHeight > activeArea.height) {
 
 #### **Principle 4: 极限情况才缩小**
 
-**名字 D: "陳小華明德建國" (7 字，超长！)**
+**名字 D: "上弘下唯法師" (6 字，法师名字)**
 ```
 计算：7 * 42px = 294px
 294px < 300px ✅ 还能用 BASE_SIZE！
 
 ┌─────────────┐
-│      陳     │  ← 留白 3px
-│      小     │
-│      華     │
-│      明     │  ← 字体 42px (仍然相同！)
-│      德     │
-│      建     │
-│      國     │  ← 留白 3px
+│      上     │  ← 留白 3px
+│      弘     │
+│      下     │
+│      唯     │  ← 字体 42px (仍然相同！)
+│      法     │
+│      師     │
+│             │  ← 留白 3px
 └─────────────┘
 ```
 
-**名字 E: "陳小華明德建國志" (8 字，超出！)**
+**名字 E: "迪麗熱巴·迪力木拉提" (10+ 字，少数民族名字)**
 ```
-计算：8 * 42px = 336px
-336px > 300px ❌ 超出了！
+计算：10 * 42px = 420px
+420px > 300px ❌ 超出了！
 
 需要缩小：
-fontSize = (300 / 336) * 42 = 37.5px
+fontSize = (300 / 420) * 42 = 30px
 
 ┌─────────────┐
-│      陳     │
-│      小     │
-│      華     │
-│      明     │  ← 字体 37.5px (缩小了)
-│      德     │
-│      建     │
-│      國     │
-│      志     │
+│      迪     │
+│      麗     │
+│      熱     │
+│      巴     │
+│      ·     │  ← 字体 30px (缩小了)
+│      迪     │
+│      力     │
+│      木     │
+│      拉     │
+│      提     │
 └─────────────┘
 ```
 
-**统计**：这种 8 字名字在实际中**极其罕见** (<1%)
+**统计**：法师名字和少数民族长名字在实际中**较少见** (~2%)
 
 ---
 
@@ -324,6 +329,11 @@ fontSize = (300 / 336) * 42 = 37.5px
  * 1. Most names use BASE_SIZE (42px) - looks professional and unified
  * 2. Only extremely long names are scaled down
  * 3. Different whitespace around names is acceptable (and expected)
+ * 
+ * Statistics:
+ * - 98% of names: 2-3 chars (陳小華, 王明, 李芳) → Use BASE_SIZE
+ * - 1% of names: 4-5 chars → Still use BASE_SIZE (fits with less whitespace)
+ * - ~1% of names: 6+ chars (上弘下唯法師, 迪麗熱巴·迪力木拉提) → Scale down
  */
 export function calculateFontSize(
   text: string,
@@ -342,7 +352,8 @@ export function calculateFontSize(
     return BASE_SIZE
   }
   
-  // ❌ Only scale down for extremely long names (2% of cases)
+  // ❌ Only scale down for extremely long names (~2% of cases)
+  // Examples: 法师名字 (上弘下唯法師), 少数民族长名字 (迪麗熱巴·迪力木拉提)
   const scaleFactor = activeArea.height / requiredHeight
   const minSize = BASE_SIZE * 0.5  // Don't go below 50%
   const newSize = Math.max(BASE_SIZE * scaleFactor, minSize)

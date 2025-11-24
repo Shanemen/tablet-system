@@ -406,7 +406,10 @@ export function calculateEnglishFont(
  * 3. Different whitespace around names is acceptable
  * 
  * Statistics (2024 Research):
- * - Chinese: 2-3 characters = 98%, 4-5 = 1%, 6+ = rare
+ * - Chinese: 
+ *   - 2-3 characters = 98% (陳小華, 王明, 李芳) → Use BASE_SIZE
+ *   - 4-5 characters = 1% → Still use BASE_SIZE
+ *   - 6+ characters = ~1% (上弘下唯法師, 迪麗熱巴·迪力木拉提) → Scale down
  * - English: 
  *   - 11-15 chars = 50% (Typical)
  *   - 16-20 chars = 30% (Common long)
