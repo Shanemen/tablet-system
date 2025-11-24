@@ -110,7 +110,7 @@ export const KARMIC_CREDITORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 
  * Configuration strategy:
  * - Center X + Width: Same as Ancestors (45, 230)
- * - Center Y + Height: Same as Longevity (280, 340)
+ * - Center Y + Height + fontSize: Same as Longevity (280, 340, 42px)
  * - Left: Same as Karmic Creditors (8, 350, 50, 320, fontSize 20)
  */
 export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
@@ -125,8 +125,8 @@ export const DECEASED_TEMPLATE_CONFIG: TabletTemplateConfig = {
       width: 230,   // Same as Ancestors
       height: 340,  // Same as Longevity
       purpose: 'honoree',
-      fontSize: 46,
-      lineHeight: 44,
+      fontSize: 42, // Same as Longevity (BASE_SIZE)
+      lineHeight: 42,
     },
     {
       id: 'left-petitioner',
@@ -441,7 +441,7 @@ export function calculateFontSize(
   }
   
   // For Chinese text: Use same unified strategy as English
-  const BASE_SIZE = activeArea.fontSize // 46px for deceased center
+  const BASE_SIZE = activeArea.fontSize // 42px for center areas, 20px for left areas
   
   // IMPORTANT: In rendering, lineHeight = fontSize (see route.tsx line 84)
   // So each character takes up fontSize height, and space takes fontSize * 0.5
