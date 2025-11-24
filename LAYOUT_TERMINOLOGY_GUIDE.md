@@ -33,7 +33,7 @@ Every tablet template has **areas** where dynamic content (names) will be insert
 |---------|---------|-------------|
 | **Center Area** | 中央区域 | The main vertical area in the center of the tablet |
 | **Left Area** | 左侧区域 | The narrow vertical area on the left side |
-| **Right Area** | 右侧区域 | (Reserved for future use) |
+
 
 **Example Usage:**
 ```
