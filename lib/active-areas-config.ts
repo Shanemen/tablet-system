@@ -165,8 +165,8 @@ export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
       width: 230,      // Same as longevity template
       height: 178,     // 490 - 312 = 178px (shorter for surname only)
       purpose: 'honoree',
-      fontSize: 46,    // Large font for surname
-      lineHeight: 44,
+      fontSize: 42,    // BASE_SIZE (Same as Longevity & Deceased for visual uniformity)
+      lineHeight: 42,
     },
     {
       id: 'left-petitioner',
