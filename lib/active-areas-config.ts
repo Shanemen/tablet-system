@@ -186,8 +186,12 @@ export const ANCESTORS_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 婴灵排位配置
  * 
  * - 2 active areas (center + left)
- * - Center: baby spirit info
- * - Left: parent info (father + mother)
+ * - Center: Memorial text for the baby (可能很长，允许换行)
+ *   例如："陈姓二位流产婴孩菩萨" 或 "故儿妙音"
+ * - Left: Parents' names (父 + 母)
+ *   格式："父 [父亲名字] 母 [母亲名字]"
+ *   例如："父 陈明 母 李华"
+ *   英文：John Smith & Amy Latter
  */
 export const ABORTED_SPIRITS_TEMPLATE_CONFIG: TabletTemplateConfig = {
   templateId: 'aborted-spirits',
@@ -196,23 +200,23 @@ export const ABORTED_SPIRITS_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,
-      y: 280,
+      x: 45,        // Same as Deceased
+      y: 312,       // Same as Deceased (unified standard)
       width: 230,
-      height: 340,
-      purpose: 'main',
-      fontSize: 46,
-      lineHeight: 44,
+      height: 300,
+      purpose: 'honoree',
+      fontSize: 42, // Unified standard
+      lineHeight: 42,
     },
     {
-      id: 'left-applicant',
-      x: 15,
-      y: 280,
-      width: 60,
-      height: 340,
-      purpose: 'applicant',
-      fontSize: 32,
-      lineHeight: 30,
+      id: 'left-petitioner',
+      x: 8,         // Same as Deceased
+      y: 350,       // Same as Deceased
+      width: 50,
+      height: 320,
+      purpose: 'petitioner',
+      fontSize: 20, // Unified standard
+      lineHeight: 20,
     },
   ],
 }

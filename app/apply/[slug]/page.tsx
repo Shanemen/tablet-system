@@ -16,6 +16,7 @@ const PLAQUE_TYPES = [
   { value: 'longevity', label: '長生祿位', description: '為在世親友祈福' },
   { value: 'deceased', label: '往生蓮位', description: '超薦往生者' },
   { value: 'karmic-creditors', label: '冤親債主', description: '超薦累劫冤親債主' },
+  { value: 'aborted-spirits', label: '嬰靈排位', description: '超薦嬰靈菩薩' },
 ]
 
 export default function ApplicationFormPage() {
