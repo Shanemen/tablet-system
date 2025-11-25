@@ -226,8 +226,11 @@ export const ABORTED_SPIRITS_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 地基主配置
  * 
  * - 2 active areas (center + left)
- * - Center: address + "之地基主"
- * - Left: applicant name
+ * - Center: Address + "之地基主" (需要自动换行)
+ *   中文示例：中國福建省福州市蘭花區向陽橋路1009號之地基主
+ *   英文示例：123 Main Street, Union City, UT 12345 U.S.
+ * - Left: Applicant name only (无称谓)
+ *   例如："陈明" 或 "John Smith"
  */
 export const LAND_DEITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
   templateId: 'land-deity',
@@ -236,23 +239,23 @@ export const LAND_DEITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,
-      y: 280,
+      x: 45,        // Same as Deceased
+      y: 312,       // Same as Deceased (unified standard)
       width: 230,
-      height: 340,
-      purpose: 'main',
-      fontSize: 46,
-      lineHeight: 44,
+      height: 300,
+      purpose: 'honoree',
+      fontSize: 42, // Unified standard
+      lineHeight: 42,
     },
     {
-      id: 'left-applicant',
-      x: 15,
-      y: 280,
-      width: 60,
-      height: 340,
-      purpose: 'applicant',
-      fontSize: 32,
-      lineHeight: 30,
+      id: 'left-petitioner',
+      x: 8,         // Same as Deceased
+      y: 350,       // Same as Deceased
+      width: 50,
+      height: 320,
+      purpose: 'petitioner',
+      fontSize: 20, // Unified standard
+      lineHeight: 20,
     },
   ],
 }
@@ -339,7 +342,7 @@ export function calculateEnglishFont(
     }
   }
 
-  // 2. Try Multi-line (2 lines)
+  // 2. Try Multi-line (2 or 3 lines max - breakpoint thinking)
   const words = text.split(' ')
   
   // If only one word or empty, must use single line (even if small)
@@ -351,54 +354,69 @@ export function calculateEnglishFont(
     }
   }
 
-  // Find best split for 2 lines
-  let bestLines: string[] = [text]
-  let bestFontSize = 0
-
-  for (let i = 1; i < words.length; i++) {
-    const line1 = words.slice(0, i).join(' ')
-    const line2 = words.slice(i).join(' ')
-    
-    // Calculate max font size that fits length for both lines
-    const len1 = getTextLength(line1, BASE_SIZE)
-    const len2 = getTextLength(line2, BASE_SIZE)
-    const maxLen = Math.max(len1, len2)
-    
-    let fs = BASE_SIZE
-    if (maxLen > availableLength) {
-      fs = Math.floor(BASE_SIZE * (availableLength / maxLen))
-    }
-    
-    // Check if stack height fits
-    // Stack height = 2 lines * fontSize * 1.1 (line height factor)
-    const stackHeight = 2 * fs * 1.1
-    
-    if (stackHeight <= availableStackHeight) {
-      // It fits! Check if this is the best font size so far
-      if (fs > bestFontSize) {
-        bestFontSize = fs
-        bestLines = [line1, line2]
-      }
-    } else {
-        // Constrained by stack height
-        const heightConstrainedFs = Math.floor(availableStackHeight / (2 * 1.1))
-        if (heightConstrainedFs > bestFontSize) {
-             // But we must check length constraint again with this fs
-             const len1_h = getTextLength(line1, heightConstrainedFs)
-             const len2_h = getTextLength(line2, heightConstrainedFs)
-             if (Math.max(len1_h, len2_h) <= availableLength) {
-                 bestFontSize = heightConstrainedFs
-                 bestLines = [line1, line2]
-             }
-        }
+  // Breakpoint thinking: Only break if single-line font would be too small
+  const MIN_READABLE_SIZE = 16 // Breakpoint: break into lines if font < 16px
+  
+  if (singleLineFontSize >= MIN_READABLE_SIZE) {
+    // Single line is readable, no need to break
+    return {
+      fontSize: singleLineFontSize,
+      mode: 'single-line',
+      lines: [text]
     }
   }
 
-  // Compare single line vs multi-line
-  // Prefer multi-line if it gives significantly larger font (e.g. > 1.2x single line)
-  if (bestFontSize > singleLineFontSize * 1.2) {
+  // Font too small, try 2 lines first, then 3 lines if needed
+  let bestLines: string[] = [text]
+  let bestFontSize = singleLineFontSize
+  const maxLines = Math.min(3, words.length) // Max 3 lines
+
+  for (let numLines = 2; numLines <= maxLines; numLines++) {
+    // Try different ways to split into numLines
+    const linesVariations = splitIntoLines(words, numLines)
+    
+    for (const lines of linesVariations) {
+      // Calculate max font size that fits length for all lines
+      const maxLen = Math.max(...lines.map(line => getTextLength(line, BASE_SIZE)))
+      
+      let fs = BASE_SIZE
+      if (maxLen > availableLength) {
+        fs = Math.floor(BASE_SIZE * (availableLength / maxLen))
+      }
+      
+      // Check if stack height fits
+      const stackHeight = numLines * fs * 1.1
+      
+      if (stackHeight <= availableStackHeight) {
+        // It fits! Check if this is the best font size so far
+        if (fs > bestFontSize) {
+          bestFontSize = fs
+          bestLines = lines
+        }
+      } else {
+        // Constrained by stack height
+        const heightConstrainedFs = Math.floor(availableStackHeight / (numLines * 1.1))
+        if (heightConstrainedFs > bestFontSize) {
+          // Check length constraint again with this fs
+          const maxLenWithFs = Math.max(...lines.map(line => getTextLength(line, heightConstrainedFs)))
+          if (maxLenWithFs <= availableLength) {
+            bestFontSize = heightConstrainedFs
+            bestLines = lines
+          }
+        }
+      }
+    }
+    
+    // Breakpoint: If we found a good 2-line solution (>= MIN_READABLE_SIZE), stop
+    if (numLines === 2 && bestFontSize >= MIN_READABLE_SIZE) {
+      break
+    }
+  }
+
+  // Use multi-line if it's better than single line
+  if (bestLines.length > 1 && bestFontSize > singleLineFontSize) {
     return {
-      fontSize: bestFontSize,
+      fontSize: Math.max(bestFontSize, 12), // Ensure min 12px
       mode: 'multi-line',
       lines: bestLines
     }
@@ -410,6 +428,50 @@ export function calculateEnglishFont(
     mode: 'single-line',
     lines: [text]
   }
+}
+
+/**
+ * Split words into N lines, trying different balanced distributions
+ */
+function splitIntoLines(words: string[], numLines: number): string[][] {
+  if (numLines === 1) return [[words.join(' ')]]
+  if (numLines >= words.length) return words.map(w => [w])
+  
+  const results: string[][] = []
+  
+  // For 2 lines: try all split points
+  if (numLines === 2) {
+    for (let i = 1; i < words.length; i++) {
+      results.push([
+        words.slice(0, i).join(' '),
+        words.slice(i).join(' ')
+      ])
+    }
+    return results
+  }
+  
+  // For 3 lines: try a few reasonable splits
+  if (numLines === 3 && words.length >= 3) {
+    const third = Math.floor(words.length / 3)
+    // Try center-weighted split
+    results.push([
+      words.slice(0, third).join(' '),
+      words.slice(third, third * 2).join(' '),
+      words.slice(third * 2).join(' ')
+    ])
+    // Try even split
+    for (let i = 1; i < words.length - 1; i++) {
+      for (let j = i + 1; j < words.length; j++) {
+        results.push([
+          words.slice(0, i).join(' '),
+          words.slice(i, j).join(' '),
+          words.slice(j).join(' ')
+        ])
+      }
+    }
+  }
+  
+  return results
 }
 
 /**
@@ -432,53 +494,109 @@ export function calculateEnglishFont(
  *   - >30 chars = 1-2% (Very long - Requires scaling/wrapping)
  *   - <10 chars = 5-8% (Short)
  */
+/**
+ * Result type for Chinese text calculation
+ */
+export type ChineseFontResult = {
+  fontSize: number
+  columns: string[] // Array of column texts (1 column = no split, 2-3 columns = split)
+}
+
 export function calculateFontSize(
   text: string,
   activeArea: ActiveArea,
-  maxReductionPercent = 0.7
-): number {
+  allowMultiColumn: boolean = false // Only enable for aborted-spirits and land-deity
+): ChineseFontResult {
   const isEnglish = isEnglishText(text)
   
   if (isEnglish) {
     const result = calculateEnglishFont(text, activeArea)
-    return result.fontSize
+    // For English, we don't use columns, just return as single column
+    return { fontSize: result.fontSize, columns: [text] }
   }
   
-  // For Chinese text: Use same unified strategy as English
+  // For Chinese text: Use breakpoint strategy with optional multi-column support
   const BASE_SIZE = activeArea.fontSize // 42px for center areas, 20px for left areas
+  const MIN_READABLE_SIZE = 20 // Breakpoint: split into columns if font < 20px
   
-  // IMPORTANT: In rendering, lineHeight = fontSize (see route.tsx line 84)
-  // So each character takes up fontSize height, and space takes fontSize * 0.5
+  // Calculate single-column font size
+  const singleColumnSize = calculateSingleColumnSize(text, activeArea.height, BASE_SIZE)
   
-  // Count characters, treating spaces specially
-  const characters = text.split('')
-  let totalHeightUnits = 0
+  // If multi-column not allowed (longevity, deceased, ancestors), just return single column
+  if (!allowMultiColumn) {
+    return { fontSize: Math.floor(singleColumnSize), columns: [text] }
+  }
   
-  for (const char of characters) {
-    if (char === ' ') {
-      totalHeightUnits += 0.5 // Space takes half height
-    } else {
-      totalHeightUnits += 1 // Regular character takes full height
+  // Multi-column is allowed (aborted-spirits, land-deity)
+  // Breakpoint thinking: Only split if single-column font would be too small
+  if (singleColumnSize >= MIN_READABLE_SIZE) {
+    // Single column is readable, no need to split
+    return { fontSize: Math.floor(singleColumnSize), columns: [text] }
+  }
+  
+  // Font too small, try 2 columns, then 3 columns if needed
+  let bestFontSize = singleColumnSize
+  let bestColumns = [text]
+  const maxColumns = Math.min(3, text.length) // Max 3 columns
+  
+  for (let numCols = 2; numCols <= maxColumns; numCols++) {
+    const charsPerCol = Math.ceil(text.length / numCols)
+    const columns: string[] = []
+    
+    for (let i = 0; i < numCols; i++) {
+      const start = i * charsPerCol
+      const end = Math.min((i + 1) * charsPerCol, text.length)
+      columns.push(text.substring(start, end))
+    }
+    
+    // Find the tallest column (which determines the font size)
+    const maxColSize = Math.max(...columns.map(col => 
+      calculateSingleColumnSize(col, activeArea.height, BASE_SIZE)
+    ))
+    
+    if (maxColSize > bestFontSize) {
+      bestFontSize = maxColSize
+      bestColumns = columns
+    }
+    
+    // Breakpoint: If we found a good 2-column solution, stop
+    if (numCols === 2 && bestFontSize >= MIN_READABLE_SIZE) {
+      break
     }
   }
   
-  // Calculate required fontSize to fit in available height
-  // Total height = totalHeightUnits * fontSize
-  // We need: totalHeightUnits * fontSize <= activeArea.height
-  // Therefore: fontSize <= activeArea.height / totalHeightUnits
+  return { 
+    fontSize: Math.floor(Math.max(bestFontSize, 12)), // Ensure min 12px
+    columns: bestColumns 
+  }
+}
+
+/**
+ * Calculate font size for a single column of Chinese text
+ */
+function calculateSingleColumnSize(text: string, availableHeight: number, baseSize: number): number {
+  // Count characters, treating spaces specially
+  let totalHeightUnits = 0
   
-  const maxFontSize = activeArea.height / totalHeightUnits
-  
-  // Try BASE_SIZE first (for 98% of names)
-  if (BASE_SIZE <= maxFontSize) {
-    // Fits at BASE_SIZE - use it! (2-6 character names)
-    return BASE_SIZE
+  for (const char of text) {
+    if (char === ' ') {
+      totalHeightUnits += 0.5 // Space takes half a unit
+    } else {
+      totalHeightUnits += 1.0 // Regular character takes one unit
+    }
+  }
+
+  // If no text, return base size
+  if (totalHeightUnits === 0) {
+    return baseSize
   }
   
-  // Scale down for extremely long names
-  const minSize = BASE_SIZE * 0.5 // Don't go below 50%
-  const newSize = Math.max(Math.floor(maxFontSize), minSize)
+  // Calculate max font size that fits the available height
+  const maxPossibleFontSize = availableHeight / totalHeightUnits
   
-  return newSize
+  // Use base size if it fits, otherwise scale down
+  return Math.min(baseSize, maxPossibleFontSize)
 }
+
+
 

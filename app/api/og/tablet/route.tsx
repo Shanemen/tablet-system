@@ -5,7 +5,8 @@ import {
   calculateFontSize,
   calculateEnglishFont,
   isEnglishText,
-  type ActiveArea 
+  type ActiveArea,
+  type ChineseFontResult 
 } from '@/lib/active-areas-config'
 import { convertToTraditional } from '@/lib/utils/chinese-converter'
 
@@ -26,7 +27,8 @@ export const runtime = 'edge'
 function renderVerticalText(
   text: string,
   activeArea: ActiveArea,
-  color: string = '#000000'
+  color: string = '#000000',
+  allowMultiColumn: boolean = false // Only for aborted-spirits and land-deity
 ) {
   // Check if text contains English letters
   const isEnglish = isEnglishText(text)
@@ -79,10 +81,11 @@ function renderVerticalText(
     )
   }
   
-  // For Chinese text: render character by character vertically
-  const fontSize = calculateFontSize(text, activeArea)
+  // For Chinese text: render character by character vertically (with multi-column support)
+  const result = calculateFontSize(text, activeArea, allowMultiColumn)
+  const fontSize = result.fontSize
+  const columns = result.columns
   const lineHeight = fontSize
-  const characters = text.split('')
   
   return (
     <div
@@ -93,42 +96,66 @@ function renderVerticalText(
         width: activeArea.width,
         height: activeArea.height,
         display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'center', // Center the entire text block
         alignItems: 'center',
       }}
     >
-      {characters.map((char, index) => {
-        // Handle spaces: render as visual separator (half the fontSize height)
-        if (char === ' ') {
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row-reverse', // Chinese tradition: columns go right to left
+          alignItems: 'center',
+          gap: `${fontSize * 0.5}px`, // Space between columns (half font size)
+        }}
+      >
+        {columns.map((columnText, colIndex) => {
+          const characters = columnText.split('')
           return (
             <div
-              key={index}
+              key={colIndex}
               style={{
-                height: `${fontSize * 0.5}px`,
-                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
               }}
-            />
+            >
+              {characters.map((char, charIndex) => {
+                // Handle spaces: render as visual separator (half the fontSize height)
+                if (char === ' ') {
+                  return (
+                    <div
+                      key={charIndex}
+                      style={{
+                        height: `${fontSize * 0.5}px`,
+                        width: `${fontSize}px`,
+                      }}
+                    />
+                  )
+                }
+                
+                // Regular character
+                return (
+                  <div
+                    key={charIndex}
+                    style={{
+                      fontSize,
+                      fontWeight: 400,
+                      fontFamily: 'Noto Serif TC',
+                      color,
+                      lineHeight: `${lineHeight}px`,
+                      textAlign: 'center',
+                      width: `${fontSize}px`, // Fixed width for each character
+                    }}
+                  >
+                    {char}
+                  </div>
+                )
+              })}
+            </div>
           )
-        }
-        
-        // Regular character
-        return (
-          <div
-            key={index}
-            style={{
-              fontSize,
-              fontWeight: 400,
-              fontFamily: 'Noto Serif TC',
-              color,
-              lineHeight: `${lineHeight}px`,
-              textAlign: 'center',
-            }}
-          >
-            {char}
-          </div>
-        )
-      })}
+        })}
+      </div>
     </div>
   )
 }
@@ -152,6 +179,7 @@ export async function GET(request: NextRequest) {
     const isAncestors = type === '歷代祖先' || type === 'ancestors'
     const isDeceased = type === '往生蓮位' || type === 'deceased'
     const isAbortedSpirits = type === '嬰靈排位' || type === 'aborted-spirits'
+    const isLandDeity = type === '地基主' || type === 'land-deity'
     
     // Map type to template ID and SVG file
     let templateId: string
@@ -172,8 +200,11 @@ export async function GET(request: NextRequest) {
     } else if (isAbortedSpirits) {
       templateId = 'aborted-spirits'
       svgFilename = 'aborted-spirits-template-optimized.svg'
+    } else if (isLandDeity) {
+      templateId = 'land-deity'
+      svgFilename = 'land-deity-template-optimized.svg'
     } else {
-      return new Response('Unsupported tablet type. Use "longevity", "karmic-creditors", "ancestors", "deceased", or "aborted-spirits"', { status: 400 })
+      return new Response('Unsupported tablet type. Use "longevity", "karmic-creditors", "ancestors", "deceased", "aborted-spirits", or "land-deity"', { status: 400 })
     }
 
     // Get template configuration
@@ -250,7 +281,8 @@ export async function GET(request: NextRequest) {
             
             if (area.purpose === 'honoree') {
               // Center area: Use the full name/surname
-              textToRender = name
+              // For Land Deity: append "之地基主" to the address
+              textToRender = isLandDeity ? `${name}之地基主` : name
             } else if (area.purpose === 'petitioner') {
               // Left area: Use applicant parameter, default to empty
               const applicant = searchParams.get('applicant') || ''
@@ -258,7 +290,9 @@ export async function GET(request: NextRequest) {
             }
             
             // Only render if there's text
-            return textToRender ? renderVerticalText(textToRender, area, textColor) : null
+            // Enable multi-column only for aborted-spirits and land-deity center areas
+            const allowMultiColumn = area.purpose === 'honoree' && (isAbortedSpirits || isLandDeity)
+            return textToRender ? renderVerticalText(textToRender, area, textColor, allowMultiColumn) : null
           })}
         </div>
       ),
