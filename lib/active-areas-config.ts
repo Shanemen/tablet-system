@@ -226,7 +226,9 @@ export const ABORTED_SPIRITS_TEMPLATE_CONFIG: TabletTemplateConfig = {
  * 地基主配置
  * 
  * - 2 active areas (center + left)
- * - Center: Address + "之地基主" (需要自动换行)
+ * - Center: Address + "之地基主"（从上到下填充，传统书法风格）
+ *   固定字体：28px
+ *   填充策略：从上到下，前面列等长，最后列可变
  *   中文示例：中國福建省福州市蘭花區向陽橋路1009號之地基主
  *   英文示例：123 Main Street, Union City, UT 12345 U.S.
  * - Left: Applicant name only (无称谓)
@@ -239,18 +241,18 @@ export const LAND_DEITY_TEMPLATE_CONFIG: TabletTemplateConfig = {
   activeAreas: [
     {
       id: 'center',
-      x: 45,        // Same as Deceased
-      y: 312,       // Same as Deceased (unified standard)
-      width: 230,
-      height: 300,
+      x: 80,        // Padded area for text
+      y: 320,       // Padded area for text
+      width: 158,   // 238 - 80 = 158px
+      height: 280,  // 600 - 320 = 280px
       purpose: 'honoree',
-      fontSize: 42, // Unified standard
-      lineHeight: 42,
+      fontSize: 28, // Fixed font size for professional printing
+      lineHeight: 28,
     },
     {
       id: 'left-petitioner',
-      x: 8,         // Same as Deceased
-      y: 350,       // Same as Deceased
+      x: 8,         // Same as other templates
+      y: 350,       // Same as other templates
       width: 50,
       height: 320,
       purpose: 'petitioner',
@@ -286,7 +288,17 @@ export function getTemplateConfig(templateId: string): TabletTemplateConfig {
  * Check if text contains English letters
  */
 export function isEnglishText(text: string): boolean {
-  return /[a-zA-Z]/.test(text)
+  // Count English letters and Chinese characters
+  const englishCount = (text.match(/[a-zA-Z]/g) || []).length
+  const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length
+  
+  // If there are Chinese characters and they outnumber English letters, treat as Chinese
+  if (chineseCount > 0 && chineseCount >= englishCount) {
+    return false
+  }
+  
+  // If there are English letters and no (or few) Chinese characters, treat as English
+  return englishCount > 0
 }
 
 /**
@@ -517,58 +529,196 @@ export function calculateFontSize(
   
   // For Chinese text: Use breakpoint strategy with optional multi-column support
   const BASE_SIZE = activeArea.fontSize // 42px for center areas, 20px for left areas
-  const MIN_READABLE_SIZE = 20 // Breakpoint: split into columns if font < 20px
-  
-  // Calculate single-column font size
-  const singleColumnSize = calculateSingleColumnSize(text, activeArea.height, BASE_SIZE)
   
   // If multi-column not allowed (longevity, deceased, ancestors), just return single column
   if (!allowMultiColumn) {
+    const singleColumnSize = calculateSingleColumnSize(text, activeArea.height, BASE_SIZE)
     return { fontSize: Math.floor(singleColumnSize), columns: [text] }
   }
   
-  // Multi-column is allowed (aborted-spirits, land-deity)
-  // Breakpoint thinking: Only split if single-column font would be too small
-  if (singleColumnSize >= MIN_READABLE_SIZE) {
-    // Single column is readable, no need to split
-    return { fontSize: Math.floor(singleColumnSize), columns: [text] }
-  }
+  // Multi-column is allowed (land-deity only)
+  // Traditional calligraphy style: Fill from top to bottom, column by column
+  const FIXED_FONT_SIZE = activeArea.fontSize // Use the fontSize from config (28px for land-deity)
+  const MAX_COLUMNS = 4 // Max columns before we scale down font
   
-  // Font too small, try 2 columns, then 3 columns if needed
-  let bestFontSize = singleColumnSize
-  let bestColumns = [text]
-  const maxColumns = Math.min(3, text.length) // Max 3 columns
-  
-  for (let numCols = 2; numCols <= maxColumns; numCols++) {
-    const charsPerCol = Math.ceil(text.length / numCols)
-    const columns: string[] = []
-    
-    for (let i = 0; i < numCols; i++) {
-      const start = i * charsPerCol
-      const end = Math.min((i + 1) * charsPerCol, text.length)
-      columns.push(text.substring(start, end))
-    }
-    
-    // Find the tallest column (which determines the font size)
-    const maxColSize = Math.max(...columns.map(col => 
-      calculateSingleColumnSize(col, activeArea.height, BASE_SIZE)
-    ))
-    
-    if (maxColSize > bestFontSize) {
-      bestFontSize = maxColSize
-      bestColumns = columns
-    }
-    
-    // Breakpoint: If we found a good 2-column solution, stop
-    if (numCols === 2 && bestFontSize >= MIN_READABLE_SIZE) {
-      break
-    }
-  }
+  // Use top-to-bottom filling algorithm (land-deity specific)
+  const result = fillColumnsTopToBottom(text, activeArea.height, FIXED_FONT_SIZE, MAX_COLUMNS)
   
   return { 
-    fontSize: Math.floor(Math.max(bestFontSize, 12)), // Ensure min 12px
-    columns: bestColumns 
+    fontSize: result.fontSize,
+    columns: result.columns 
   }
+}
+
+/**
+ * Fill columns from top to bottom (traditional calligraphy style)
+ * - Fixed font size (28px for land-deity)
+ * - Fill from top to bottom, column by column
+ * - First N-1 columns are equal length (max chars per column)
+ * - Last column can be shorter
+ * - Protect word pairs (A座, 8號, 15樓, etc.)
+ */
+function fillColumnsTopToBottom(
+  text: string,
+  availableHeight: number,
+  fontSize: number,
+  maxColumns: number
+): { fontSize: number; columns: string[] } {
+  // Calculate max characters per column
+  const maxCharsPerColumn = Math.floor(availableHeight / fontSize)
+  
+  // Try to fit with fixed font size
+  const totalChars = text.length
+  const neededColumns = Math.ceil(totalChars / maxCharsPerColumn)
+  
+  if (neededColumns <= maxColumns) {
+    // Fits within max columns, use fixed font size
+    const columns = fillTopToBottomHelper(text, maxCharsPerColumn)
+    return { fontSize, columns }
+  }
+  
+  // Too many columns needed, scale down font
+  const scaledFontSize = Math.floor(availableHeight / Math.ceil(totalChars / maxColumns))
+  const scaledMaxChars = Math.floor(availableHeight / scaledFontSize)
+  const columns = fillTopToBottomHelper(text, scaledMaxChars)
+  
+  return { fontSize: Math.max(scaledFontSize, 18), columns }
+}
+
+/**
+ * Helper: Fill columns from top to bottom, protecting word pairs
+ */
+function fillTopToBottomHelper(text: string, maxCharsPerColumn: number): string[] {
+  const columns: string[] = []
+  let currentColumn = ''
+  let currentHeight = 0
+  let i = 0
+  
+  console.log(`[fillTopToBottom] Input: "${text}", maxChars: ${maxCharsPerColumn}`)
+  
+  while (i < text.length) {
+    const char = text[i]
+    const charHeight = char === ' ' ? 0.5 : 1.0
+    const remainingText = text.substring(i)
+    
+    // Special case: Check if remaining text starts with "之地基主" (should not be split)
+    if (remainingText.startsWith('之地基主')) {
+      const suffixLength = '之地基主'.length
+      
+      // Check if "之地基主" fits in current column
+      const suffixHeight = suffixLength * 1.0 // All characters in "之地基主" are regular chars
+      
+      if (currentHeight + suffixHeight <= maxCharsPerColumn) {
+        // Fits in current column, add it here
+        currentColumn += '之地基主'
+        i += suffixLength
+        currentHeight += suffixHeight
+      } else if (currentColumn.length > 0) {
+        // Doesn't fit, move "之地基主" to next column
+        console.log(`[fillTopToBottom] Found suffix, pushing column: "${currentColumn}"`)
+        columns.push(currentColumn)
+        currentColumn = '之地基主'
+        currentHeight = suffixLength
+        i += suffixLength
+      } else {
+        // Current column is empty, put "之地基主" here
+        currentColumn = '之地基主'
+        currentHeight = suffixLength
+        i += suffixLength
+      }
+      continue
+    }
+    
+    // Check if adding this char would exceed column height
+    if (currentHeight + charHeight > maxCharsPerColumn && currentColumn.length > 0) {
+      // Check if we're about to break a protected pair
+      const wouldBreakPair = shouldKeepTogether(char, text[i + 1])
+      
+      if (wouldBreakPair && currentHeight + charHeight * 2 <= maxCharsPerColumn) {
+        // Include both characters in current column
+        currentColumn += char + (text[i + 1] || '')
+        i += 2
+        currentHeight += charHeight * 2
+      } else {
+        // Start new column
+        columns.push(currentColumn)
+        currentColumn = ''
+        currentHeight = 0
+        continue
+      }
+    } else {
+      // Add character to current column
+      currentColumn += char
+      currentHeight += charHeight
+      i++
+    }
+  }
+  
+  // Add last column if any
+  if (currentColumn) {
+    columns.push(currentColumn)
+  }
+  
+  return columns
+}
+
+/**
+ * Check if two characters should be kept together (number/letter + unit)
+ */
+function shouldKeepTogether(char1: string, char2: string | undefined): boolean {
+  if (!char2) return false
+  
+  // Check if char1 is number or letter, and char2 is a unit
+  const isNumberOrLetter = /[0-9０-９a-zA-Z]/.test(char1)
+  const isUnit = /[號樓棟室層段區街路巷弄座幢]/.test(char2)
+  
+  return isNumberOrLetter && isUnit
+}
+
+/**
+ * Smart column splitting: avoid breaking number+unit and letter+unit pairs
+ * Examples to keep together: 8號, 10棟, 15樓, 1501室, A座, B棟, 88-90
+ * @deprecated Use fillColumnsTopToBottom for land-deity instead
+ */
+function smartSplitColumns(text: string, numColumns: number): string[] {
+  if (numColumns === 1) {
+    return [text]
+  }
+  
+  const targetCharsPerCol = Math.ceil(text.length / numColumns)
+  const columns: string[] = []
+  let currentCol = ''
+  let i = 0
+  
+  while (i < text.length) {
+    const char = text[i]
+    currentCol += char
+    
+    // Check if we've reached target length for this column
+    if (currentCol.length >= targetCharsPerCol && columns.length < numColumns - 1) {
+      // Look ahead: if next char is a unit (號樓棟室層段區座), don't break here
+      const nextChar = text[i + 1]
+      const isUnitChar = nextChar && /[號樓棟室層段區街路巷弄座幢]/.test(nextChar)
+      
+      // Check if current char is a number or letter (to keep with next unit)
+      const currentIsNumberOrLetter = /[0-9０-９a-zA-Z]/.test(char)
+      
+      if (!isUnitChar && !currentIsNumberOrLetter) {
+        // Safe to break here
+        columns.push(currentCol)
+        currentCol = ''
+      }
+    }
+    
+    i++
+  }
+  
+  // Add remaining text as last column
+  if (currentCol) {
+    columns.push(currentCol)
+  }
+  
+  return columns
 }
 
 /**

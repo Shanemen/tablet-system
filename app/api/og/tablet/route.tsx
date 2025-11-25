@@ -96,16 +96,16 @@ function renderVerticalText(
         width: activeArea.width,
         height: activeArea.height,
         display: 'flex',
-        justifyContent: 'center', // Center the entire text block
-        alignItems: 'center',
+        justifyContent: 'center', // Center horizontally
+        alignItems: allowMultiColumn ? 'flex-start' : 'center', // Land-deity: top align, others: center
       }}
     >
       <div
         style={{
           display: 'flex',
           flexDirection: 'row-reverse', // Chinese tradition: columns go right to left
-          alignItems: 'center',
-          gap: `${fontSize * 0.5}px`, // Space between columns (half font size)
+          alignItems: allowMultiColumn ? 'flex-start' : 'center', // Land-deity: top align, others: center
+          gap: `${fontSize * 0.3}px`, // Space between columns (0.3x font size for tighter layout)
         }}
       >
         {columns.map((columnText, colIndex) => {
@@ -116,7 +116,7 @@ function renderVerticalText(
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
+                justifyContent: allowMultiColumn ? 'flex-start' : 'center', // Land-deity: top align, others: center
                 alignItems: 'center',
               }}
             >
@@ -290,8 +290,8 @@ export async function GET(request: NextRequest) {
             }
             
             // Only render if there's text
-            // Enable multi-column only for aborted-spirits and land-deity center areas
-            const allowMultiColumn = area.purpose === 'honoree' && (isAbortedSpirits || isLandDeity)
+            // Enable multi-column only for land-deity center area
+            const allowMultiColumn = area.purpose === 'honoree' && isLandDeity
             return textToRender ? renderVerticalText(textToRender, area, textColor, allowMultiColumn) : null
           })}
         </div>
