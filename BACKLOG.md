@@ -63,6 +63,87 @@ http://localhost:3000/api/og/tablet?name=Washington-Williamson&type=deceased
 
 ---
 
+#### SVG Corner Anti-aliasing Gray Pixels in Editor
+**SVG 编辑器预览中圆角处的灰色像素**
+
+**Issue**: 
+When viewing original SVG template files in code editors (VS Code, Cursor, etc.), gray pixels appear at the four corners of the rounded rectangle. This is caused by anti-aliasing rendering when a white rounded rectangle (`fill="white"`) is placed on a transparent SVG background (`<svg fill="none">`).
+
+**问题描述**:
+在代码编辑器（VS Code、Cursor 等）中查看原始 SVG 模板文件时，圆角矩形的四个角出现灰色像素。这是由抗锯齿渲染引起的：白色圆角矩形（`fill="white"`）放置在透明 SVG 背景（`<svg fill="none"`）上时产生灰色过渡像素。
+
+**Impact**: 
+- Visual: Only affects editor preview, NOT browser rendering or printing
+- Functionality: Zero impact on actual product
+- User Experience: No impact on end users
+- Developer Experience: Minor cosmetic annoyance when reviewing SVG files
+
+**影响**:
+- 视觉：仅影响编辑器预览，不影响浏览器渲染或打印效果
+- 功能：对实际产品零影响
+- 用户体验：对最终用户无影响
+- 开发者体验：查看 SVG 文件时有轻微视觉干扰
+
+**Root Cause**:
+```xml
+<!-- Current SVG structure -->
+<svg fill="none" viewBox="0 0 320 848">
+  <rect fill="white" rx="20"/>
+  ...
+</svg>
+
+<!-- Issue: Transparent background + white rounded rect = gray anti-aliasing pixels at corners -->
+```
+
+**Verified Status**:
+- ✅ Browser rendering: No gray pixels (tested in Chrome, Safari, Firefox)
+- ✅ OG Image API output: No gray pixels
+- ✅ Print preview: Expected to be perfect (vector format)
+- ❌ Editor preview: Gray pixels visible
+
+**已验证状态**:
+- ✅ 浏览器渲染：无灰色像素（已在 Chrome、Safari、Firefox 测试）
+- ✅ OG Image API 输出：无灰色像素
+- ✅ 打印预览：预期完美（矢量格式）
+- ❌ 编辑器预览：可见灰色像素
+
+**Current Decision**: 
+**Not fixing** - The issue is purely cosmetic in the development environment and has zero impact on the actual product functionality or user experience.
+
+**当前决定**:
+**暂不修复** - 该问题纯粹是开发环境中的视觉问题，对实际产品功能或用户体验零影响。
+
+**Potential Fix (if needed later)**:
+Change SVG background from transparent to white in all template files:
+```xml
+<!-- From -->
+<svg fill="none" ...>
+
+<!-- To -->
+<svg fill="#fff" ...>
+```
+
+**潜在修复方案（如果以后需要）**:
+将所有模板文件的 SVG 背景从透明改为白色。
+
+**Affected Files**:
+- `public/ancestors-template.svg`
+- `public/deceased-template.svg`
+- `public/karmic-creditors-template.svg`
+- `public/long-living-template.svg`
+- `public/aborted-spirits-template-optimized.svg` (copied from deceased)
+
+**Note**: If we re-optimize SVGs with SVGO in the future, we would also need to update the `-optimized.svg` versions.
+
+**注意**: 如果将来使用 SVGO 重新优化 SVG，也需要更新 `-optimized.svg` 版本。
+
+**Priority**: Very Low 🟢  
+**Expected Effort**: 5-10 minutes (batch find-replace)  
+**Created**: 2024-11-25  
+**Last Updated**: 2024-11-25
+
+---
+
 ## ✨ Future Enhancements (未来增强功能)
 
 ### Relationship Title Dropdowns
