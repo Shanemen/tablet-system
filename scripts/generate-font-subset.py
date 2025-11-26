@@ -45,8 +45,14 @@ SPECIAL_CHARS = """
 上下中大小高低新老前后內外左右近远
 """
 
+# Level 6: 地址和关系常用字 (简繁体)
+ADDRESS_RELATION_CHARS = """
+东南西北省市区县州台湾北京人民共和深圳湾座楼叔相科觉溥锋故妙音姓流产孩朝拉
+東南西北省市區縣州台灣北京人民共和深圳灣座樓叔相科覺溥鋒故妙音姓流產孩朝拉
+"""
+
 # Combine all unique characters
-all_text = CORE_CHARS + SURNAMES + NAME_CHARS + AUSPICIOUS_CHARS + SPECIAL_CHARS
+all_text = CORE_CHARS + SURNAMES + NAME_CHARS + AUSPICIOUS_CHARS + SPECIAL_CHARS + ADDRESS_RELATION_CHARS
 unique_chars = "".join(sorted(set(all_text.replace("\n", "").replace(" ", ""))))
 
 print(f"✨ 字符集统计 (简体 + 繁体双覆盖)")
@@ -56,11 +62,13 @@ surnames_clean = SURNAMES.replace(' ', '').replace('\n', '')
 names_clean = NAME_CHARS.replace(' ', '').replace('\n', '')
 auspicious_clean = AUSPICIOUS_CHARS.replace(' ', '').replace('\n', '')
 special_clean = SPECIAL_CHARS.replace(' ', '').replace('\n', '')
+address_clean = ADDRESS_RELATION_CHARS.replace(' ', '').replace('\n', '')
 print(f"  核心业务字: {len(set(core_clean))} 个")
 print(f"  百家姓: {len(set(surnames_clean))} 个")
 print(f"  人名用字: {len(set(names_clean))} 个")
 print(f"  美好寓意字: {len(set(auspicious_clean))} 个")
 print(f"  特殊字符: {len(set(special_clean))} 个")
+print(f"  地址关系字: {len(set(address_clean))} 个")
 print(f"-" * 50)
 print(f"  总计（去重后）: {len(unique_chars)} 个精选字符")
 print(f"=" * 50)
