@@ -276,4 +276,84 @@
   input[type="datetime-local"]:focus::-webkit-datetime-edit-ampm-field:focus {
     @apply bg-primary/10 text-primary rounded px-1;
   }
+
+  /* ========================================================================
+     Elder-Friendly Application Form Styles
+     Specifically designed for elderly users with larger touch targets,
+     bigger text, and better contrast
+     ======================================================================== */
+
+  /* Step titles - Extra large and bold */
+  .form-step-title {
+    @apply text-3xl font-bold text-foreground leading-tight;
+  }
+
+  /* Large input fields for easy interaction */
+  .form-input-large {
+    @apply h-16 text-xl px-4 rounded-lg border-2 border-input 
+           focus:border-primary focus:ring-2 focus:ring-primary/20
+           transition-all duration-200;
+  }
+
+  /* Primary button for elderly users */
+  .btn-primary-elder {
+    @apply h-16 px-8 text-xl font-semibold rounded-xl
+           bg-primary text-primary-foreground
+           hover:bg-primary/90 hover:shadow-lg
+           active:scale-[0.98]
+           transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary button for elderly users */
+  .btn-secondary-elder {
+    @apply h-14 px-6 text-lg font-semibold rounded-lg
+           border-2 border-border bg-background
+           hover:bg-muted hover:border-primary/30
+           active:scale-[0.98]
+           transition-all duration-200;
+  }
+
+  /* Large text for confirmation/preview */
+  .preview-text-large {
+    @apply text-3xl font-bold leading-relaxed tracking-wide;
+  }
+
+  /* Card for step content */
+  .step-card {
+    @apply p-6 sm:p-8 rounded-xl border-2 border-border bg-card shadow-sm;
+  }
+
+  /* Success message styling */
+  .success-message {
+    @apply p-6 rounded-xl bg-green-50 border-2 border-green-200
+           text-green-800 text-xl font-semibold text-center;
+  }
+
+  /* Error message styling */
+  .error-message {
+    @apply p-4 rounded-lg bg-red-50 border border-red-200
+           text-red-700 text-base font-medium;
+  }
+
+  /* Cart badge */
+  .cart-badge {
+    @apply inline-flex items-center justify-center
+           min-w-[2rem] h-8 px-3 rounded-full
+           bg-primary text-primary-foreground
+           text-base font-bold;
+  }
+
+  /* Touch-friendly card button */
+  .card-button {
+    @apply p-6 rounded-lg border-2 text-left
+           transition-all duration-200
+           hover:scale-[1.02] active:scale-[0.98]
+           focus:outline-none focus:ring-2 focus:ring-primary/50;
+  }
+
+  /* Selected state for card button */
+  .card-button-selected {
+    @apply border-primary bg-primary/10 shadow-lg;
+  }
 }

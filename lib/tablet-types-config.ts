@@ -1,0 +1,271 @@
+/**
+ * Tablet Types Configuration System
+ * 
+ * This file defines the configuration for each tablet type, including:
+ * - Display names and descriptions
+ * - Form field configurations
+ * - Validation rules
+ * - Preview requirements
+ * 
+ * To add/modify fields for a tablet type, update the configuration below.
+ * No code changes needed elsewhere!
+ */
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+export type TabletTypeValue =
+  | 'longevity'
+  | 'deceased'
+  | 'ancestors'
+  | 'karmic-creditors'
+  | 'aborted-spirits'
+  | 'land-deity'
+
+export type FieldType = 'text' | 'textarea' | 'select' | 'number'
+
+export interface FormField {
+  name: string
+  label: string
+  type: FieldType
+  required: boolean
+  placeholder?: string
+  helpText?: string
+  maxLength?: number
+  options?: { value: string; label: string }[] // For select fields
+  validation?: {
+    pattern?: RegExp
+    message?: string
+  }
+}
+
+export interface TabletTypeConfig {
+  value: TabletTypeValue
+  label: string // Display name in Chinese
+  description: string // Short description for selection
+  detailedDescription?: string // Longer explanation (optional)
+  fields: FormField[] // Form fields for this tablet type
+  previewFields: string[] // Which field values to show in preview confirmation
+}
+
+// ============================================================================
+// Tablet Types Configuration
+// ============================================================================
+
+export const TABLET_TYPES: TabletTypeConfig[] = [
+  {
+    value: 'longevity',
+    label: '長生祿位',
+    description: '為在世親友祈福',
+    detailedDescription:
+      '為在世的人消災祈福，祈求個人、闔家、或患者轉危為安。',
+    fields: [
+      {
+        name: 'name',
+        label: '祈福受益人姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：陳小華',
+        helpText: '請輸入祈福對象的姓名（最多8個字）',
+        maxLength: 8,
+      },
+    ],
+    previewFields: ['name'],
+  },
+  {
+    value: 'deceased',
+    label: '往生蓮位',
+    description: '超薦往生者',
+    detailedDescription:
+      '超薦去世一年內的亡靈。若是同姓氏的家屬亡靈，去世已逾一年者，則歸入「歷代祖先」牌位中。',
+    fields: [
+      {
+        name: 'name',
+        label: '往生者姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：王大明',
+        helpText: '請輸入往生者的姓名（最多8個字）',
+        maxLength: 8,
+      },
+    ],
+    previewFields: ['name'],
+  },
+  {
+    value: 'ancestors',
+    label: '歷代祖先',
+    description: '超薦家族祖先',
+    detailedDescription:
+      '超薦家族祖先，填上祖先姓氏；申請人只需填寫家族一位家族代表的姓名即可。',
+    fields: [
+      {
+        name: 'surname',
+        label: '祖先姓氏',
+        type: 'text',
+        required: true,
+        placeholder: '例如：陳',
+        helpText: '請輸入祖先的姓氏（單姓或複姓）',
+        maxLength: 4,
+      },
+    ],
+    previewFields: ['surname'],
+  },
+  {
+    value: 'karmic-creditors',
+    label: '冤親債主',
+    description: '超薦累劫冤親債主',
+    detailedDescription:
+      '為在世個人超薦累劫的冤親債主。以個人名義立牌位，請勿用『闔家』、『公司』、『團體』。',
+    fields: [
+      {
+        name: 'name',
+        label: '在世者姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：李美華',
+        helpText: '請輸入在世者的姓名（必須為個人，不可用闔家等）',
+        maxLength: 8,
+        validation: {
+          pattern: /^(?!.*闔家)(?!.*公司)(?!.*團體).+$/,
+          message: '冤親債主牌位不可使用「闔家」、「公司」、「團體」等字眼',
+        },
+      },
+    ],
+    previewFields: ['name'],
+  },
+  {
+    value: 'aborted-spirits',
+    label: '嬰靈排位',
+    description: '超薦嬰靈菩薩',
+    detailedDescription: '超薦墮胎或夭折之胎兒。若有多位，則註明位數。',
+    fields: [
+      {
+        name: 'name',
+        label: '嬰靈名稱',
+        type: 'text',
+        required: true,
+        placeholder: '例如：故兒妙音',
+        helpText: '已取名寫名字，未取名可寫「故兒妙音」',
+        maxLength: 8,
+      },
+    ],
+    previewFields: ['name'],
+  },
+  {
+    value: 'land-deity',
+    label: '地基主',
+    description: '祭祀土地守護神',
+    detailedDescription:
+      '超薦房屋住處、公司團體的地基主，祈求家宅平安順利。',
+    fields: [
+      {
+        name: 'address',
+        label: '地址',
+        type: 'textarea',
+        required: true,
+        placeholder: '例如：台北市中正區羅斯福路四段1號',
+        helpText: '請輸入詳細地址',
+        maxLength: 100,
+      },
+    ],
+    previewFields: ['address'],
+  },
+]
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Get configuration for a specific tablet type
+ */
+export function getTabletTypeConfig(
+  type: TabletTypeValue
+): TabletTypeConfig | undefined {
+  return TABLET_TYPES.find((t) => t.value === type)
+}
+
+/**
+ * Get display label for a tablet type
+ */
+export function getTabletTypeLabel(type: TabletTypeValue): string {
+  return getTabletTypeConfig(type)?.label || type
+}
+
+/**
+ * Get all tablet type options for selection
+ */
+export function getTabletTypeOptions(): {
+  value: TabletTypeValue
+  label: string
+  description: string
+}[] {
+  return TABLET_TYPES.map((t) => ({
+    value: t.value,
+    label: t.label,
+    description: t.description,
+  }))
+}
+
+/**
+ * Validate form data against tablet type configuration
+ */
+export function validateTabletFormData(
+  type: TabletTypeValue,
+  data: Record<string, string>
+): { valid: boolean; errors: Record<string, string> } {
+  const config = getTabletTypeConfig(type)
+  if (!config) {
+    return { valid: false, errors: { _form: '無效的牌位類型' } }
+  }
+
+  const errors: Record<string, string> = {}
+
+  config.fields.forEach((field) => {
+    const value = data[field.name]?.trim() || ''
+
+    // Check required fields
+    if (field.required && !value) {
+      errors[field.name] = `${field.label}為必填項`
+      return
+    }
+
+    if (!value) return // Skip validation for empty optional fields
+
+    // Check max length
+    if (field.maxLength && value.length > field.maxLength) {
+      errors[field.name] = `${field.label}不能超過${field.maxLength}個字`
+      return
+    }
+
+    // Check custom validation pattern
+    if (field.validation?.pattern && !field.validation.pattern.test(value)) {
+      errors[field.name] = field.validation.message || '格式不正確'
+      return
+    }
+  })
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  }
+}
+
+/**
+ * Get preview text for confirmation display
+ */
+export function getPreviewText(
+  type: TabletTypeValue,
+  data: Record<string, string>
+): string {
+  const config = getTabletTypeConfig(type)
+  if (!config) return ''
+
+  const previewParts = config.previewFields
+    .map((fieldName) => data[fieldName])
+    .filter(Boolean)
+
+  return previewParts.join(' ')
+}
+
