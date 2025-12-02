@@ -1,0 +1,103 @@
+/**
+ * Ceremony Header Component
+ * 
+ * Two display modes:
+ * - full: Shows all details (name, date, location, deadline)
+ * - compact: Shows only name with decorative underline
+ * 
+ * Usage:
+ * - First page (Applicant Info): full
+ * - Middle pages (Type Selector, Entry Form): compact
+ * - Summary Page: full
+ */
+
+'use client'
+
+import { Card } from '@/components/ui/card'
+import { Calendar, MapPin, Clock } from 'lucide-react'
+
+export interface CeremonyInfo {
+  name_zh: string
+  start_at: string
+  end_at?: string | null
+  location?: string | null
+  deadline_at: string
+}
+
+interface CeremonyHeaderProps {
+  ceremony: CeremonyInfo
+  variant?: 'full' | 'compact'
+}
+
+function formatDateTime(dateString: string) {
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-TW', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderProps) {
+  // Compact version - name + "牌位申請表" with visual separation
+  if (variant === 'compact') {
+    return (
+      <div className="mb-6">
+        <h1 className="text-xl sm:text-2xl">
+          <span className="text-primary font-bold">{ceremony.name_zh}</span>
+          <span className="text-muted-foreground font-normal"> ｜ 牌位申請表</span>
+        </h1>
+      </div>
+    )
+  }
+
+  // Full version - all details in a card
+  return (
+    <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
+      <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
+        {ceremony.name_zh}
+      </h1>
+
+      <div className="space-y-3 text-base">
+        {/* Date */}
+        <div className="flex items-start gap-3">
+          <Calendar className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div>
+            <span className="text-muted-foreground">法會日期：</span>
+            <span className="text-foreground font-medium">
+              {formatDateTime(ceremony.start_at)}
+              {ceremony.end_at && ceremony.end_at !== ceremony.start_at && (
+                <> 至 {formatDateTime(ceremony.end_at)}</>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Location */}
+        {ceremony.location && (
+          <div className="flex items-start gap-3">
+            <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <span className="text-muted-foreground">地點：</span>
+              <span className="text-foreground font-medium">{ceremony.location}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Deadline */}
+        <div className="flex items-start gap-3">
+          <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div>
+            <span className="text-muted-foreground">申請截止：</span>
+            <span className="font-medium text-foreground">
+              {formatDateTime(ceremony.deadline_at)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+

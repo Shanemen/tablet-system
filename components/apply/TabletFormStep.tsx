@@ -11,11 +11,11 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Check, Edit, Plus, List, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, Check, Edit, Plus, List, ShoppingCart, Trash2 } from 'lucide-react'
 import {
   TabletTypeValue,
   getTabletTypeConfig,
@@ -24,36 +24,54 @@ import {
   getPreviewText,
   FormField as ConfigFormField,
 } from '@/lib/tablet-types-config'
-import { addTabletToCart, getTabletCountByType } from '@/lib/utils/application-storage'
+import { addTabletToCart, getTabletCountByType, getCartTabletsByType, removeTabletFromCart, TabletItem } from '@/lib/utils/application-storage'
 
 interface TabletFormStepProps {
   tabletType: TabletTypeValue
-  onBack: () => void
-  onContinueSameType: () => void
-  onSelectOtherType: () => void
-  onViewCart: () => void
+  onBackToMenu: () => void
 }
 
 type FormState = 'filling' | 'previewing' | 'confirmed'
 
 export function TabletFormStep({
   tabletType,
-  onBack,
-  onContinueSameType,
-  onSelectOtherType,
-  onViewCart,
+  onBackToMenu,
 }: TabletFormStepProps) {
   const config = getTabletTypeConfig(tabletType)
   const [formState, setFormState] = useState<FormState>('filling')
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [showAddSuccess, setShowAddSuccess] = useState(false)
+  const [existingTablets, setExistingTablets] = useState<TabletItem[]>([])
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  // Load existing tablets on mount and when type changes
+  useEffect(() => {
+    refreshExistingTablets()
+  }, [tabletType])
+
+  const refreshExistingTablets = () => {
+    const tabletsByType = getCartTabletsByType()
+    setExistingTablets(tabletsByType[tabletType] || [])
+  }
+
+  const handleDeleteExisting = (tabletId: string) => {
+    if (deleteConfirm === tabletId) {
+      removeTabletFromCart(tabletId)
+      refreshExistingTablets()
+      setDeleteConfirm(null)
+    } else {
+      setDeleteConfirm(tabletId)
+      setTimeout(() => {
+        setDeleteConfirm(null)
+      }, 3000)
+    }
+  }
 
   if (!config) {
     return <div>無效的牌位類型</div>
   }
 
-  const typeCount = getTabletCountByType()[tabletType] || 0
+  const typeCount = existingTablets.length
 
   // Handle field change
   const handleFieldChange = (fieldName: string, value: string) => {
@@ -84,20 +102,14 @@ export function TabletFormStep({
   // Confirm and add to cart
   const handleConfirm = () => {
     addTabletToCart(tabletType, formData)
+    refreshExistingTablets()
     setFormState('confirmed')
-    setShowAddSuccess(true)
-    
-    // Hide success message after 2 seconds
-    setTimeout(() => {
-      setShowAddSuccess(false)
-    }, 2000)
   }
 
-  // Continue adding same type
+  // Continue adding same type (Add more)
   const handleContinueAdding = () => {
     setFormData({}) // Clear form
     setFormState('filling')
-    onContinueSameType()
   }
 
   // Render form field based on type
@@ -167,30 +179,76 @@ export function TabletFormStep({
   if (formState === 'filling') {
     return (
       <div className="space-y-8">
-        {/* Title */}
+        {/* Title with count badge */}
         <div>
-          <h2 className="form-step-title text-3xl font-bold text-foreground mb-2">
-            {getTabletTypeLabel(tabletType)} - 第 {typeCount + 1} 位
-          </h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="form-step-title text-3xl font-bold text-foreground">
+              {getTabletTypeLabel(tabletType)}
+            </h2>
+            {existingTablets.length > 0 && (
+              <div className="bg-primary text-primary-foreground rounded-full px-4 py-1 text-lg font-bold">
+                {existingTablets.length} 位
+              </div>
+            )}
+          </div>
           {config.detailedDescription && (
             <p className="text-lg text-muted-foreground">{config.detailedDescription}</p>
           )}
         </div>
 
-        {/* Form */}
+        {/* Existing tablets list - 简化布局 */}
+        {existingTablets.length > 0 && (
+          <div className="space-y-3">
+            {existingTablets.map((tablet, index) => {
+              const displayText = getPreviewText(tablet.tabletType, tablet.formData)
+              const isConfirmingDelete = deleteConfirm === tablet.id
+
+              return (
+                <div
+                  key={tablet.id}
+                  className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-lg text-muted-foreground">
+                        第 {index + 1} 位
+                      </span>
+                      <span className="text-xl font-semibold text-foreground">
+                        {displayText}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => handleDeleteExisting(tablet.id)}
+                    variant={isConfirmingDelete ? 'destructive' : 'outline'}
+                    className="h-12 px-4 text-base"
+                  >
+                    <Trash2 className="h-5 w-5 mr-2" />
+                    {isConfirmingDelete ? '確認刪除' : '刪除'}
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Form - Add another */}
         <Card className="p-6 space-y-6">
+          <h3 className="text-xl font-semibold text-foreground">
+            {existingTablets.length > 0 ? '添加更多' : '填寫資料'} - 第 {typeCount + 1} 位
+          </h3>
           {config.fields.map((field) => renderFormField(field))}
         </Card>
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
           <Button
-            onClick={onBack}
+            onClick={onBackToMenu}
             variant="outline"
             className="h-14 text-lg font-semibold order-2 sm:order-1"
           >
             <ArrowLeft className="mr-2 h-5 w-5" />
-            返回
+            返回選單
           </Button>
           <Button
             onClick={handleGeneratePreview}
@@ -240,103 +298,101 @@ export function TabletFormStep({
           </div>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Action Buttons - Primary on top */}
+        <div className="flex flex-col gap-4">
+          <Button
+            onClick={handleConfirm}
+            className="btn-primary-elder h-16 text-lg font-semibold bg-green-600 hover:bg-green-700"
+          >
+            <Check className="mr-2 h-6 w-6" />
+            確認，加入清單
+          </Button>
           <Button
             onClick={handleBackToEdit}
             variant="outline"
             className="h-16 text-lg font-semibold"
           >
             <Edit className="mr-2 h-5 w-5" />
-            有錯，返回修改
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            className="btn-primary-elder h-16 text-lg font-semibold bg-green-600 hover:bg-green-700"
-          >
-            <Check className="mr-2 h-6 w-6" />
-            確認無誤，加入清單
+            返回修改
           </Button>
         </div>
       </div>
     )
   }
 
-  // STATE 3C: CONFIRMED - Show next actions
+  // STATE 3C: CONFIRMED - Success page with fixed title + 2 buttons
   return (
     <div className="space-y-8">
-      {/* Success Message */}
-      {showAddSuccess && (
-        <Card className="p-6 bg-green-50 border-green-200">
-          <div className="flex items-center justify-center gap-3 text-green-700">
-            <Check className="h-8 w-8" />
-            <p className="text-2xl font-bold">已成功添加 1 位</p>
-          </div>
-        </Card>
-      )}
-
-      {/* Title */}
+      {/* Success Title with count badge */}
       <div>
-        <h2 className="form-step-title text-3xl font-bold text-foreground mb-2">
-          添加成功！
-        </h2>
-        <p className="text-lg text-muted-foreground">
-          您已添加了 {typeCount + 1} 個{getTabletTypeLabel(tabletType)}，請選擇下一步操作
-        </p>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="form-step-title text-3xl font-bold text-foreground">
+            添加成功！
+          </h2>
+        </div>
       </div>
 
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 gap-4">
-        {/* Continue adding same type */}
-        <button
+      {/* Type header with count badge */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-2xl font-bold text-foreground">
+          {getTabletTypeLabel(tabletType)}
+        </h3>
+        <div className="bg-primary text-primary-foreground rounded-full px-4 py-1 text-lg font-bold">
+          {existingTablets.length} 位
+        </div>
+      </div>
+
+      {/* Added tablets list - 简化布局 */}
+      <div className="space-y-3">
+        {existingTablets.map((tablet, index) => {
+          const displayText = getPreviewText(tablet.tabletType, tablet.formData)
+          const isConfirmingDelete = deleteConfirm === tablet.id
+
+          return (
+            <div
+              key={tablet.id}
+              className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border"
+            >
+              <div className="flex-1">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-lg text-muted-foreground">
+                    第 {index + 1} 位
+                  </span>
+                  <span className="text-xl font-semibold text-foreground">
+                    {displayText}
+                  </span>
+                </div>
+              </div>
+              <Button
+                onClick={() => handleDeleteExisting(tablet.id)}
+                variant={isConfirmingDelete ? 'destructive' : 'outline'}
+                className="h-12 px-4 text-base"
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                {isConfirmingDelete ? '確認刪除' : '刪除'}
+              </Button>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Two buttons: Add more + Go Back to Menu */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Button
           onClick={handleContinueAdding}
-          className="p-6 rounded-lg border-2 border-border hover:border-primary hover:bg-muted/50 text-left transition-all min-h-[100px] flex items-center justify-between group"
+          className="btn-primary-elder h-16 text-lg font-semibold"
         >
-          <div>
-            <h3 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
-              <Plus className="h-6 w-6 text-primary" />
-              繼續添加{getTabletTypeLabel(tabletType)}
-            </h3>
-            <p className="text-base text-muted-foreground">
-              為同類型牌位添加更多名字
-            </p>
-          </div>
-          <ArrowLeft className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors rotate-180" />
-        </button>
-
-        {/* Select other type */}
-        <button
-          onClick={onSelectOtherType}
-          className="p-6 rounded-lg border-2 border-border hover:border-primary hover:bg-muted/50 text-left transition-all min-h-[100px] flex items-center justify-between group"
+          <Plus className="mr-2 h-5 w-5" />
+          繼續添加{getTabletTypeLabel(tabletType)}
+        </Button>
+        <Button
+          onClick={onBackToMenu}
+          variant="outline"
+          className="h-16 text-lg font-semibold"
         >
-          <div>
-            <h3 className="text-xl font-bold text-foreground mb-2 flex items-center gap-2">
-              <List className="h-6 w-6 text-primary" />
-              選擇其他類型
-            </h3>
-            <p className="text-base text-muted-foreground">
-              返回選擇其他牌位類型
-            </p>
-          </div>
-          <ArrowLeft className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors rotate-180" />
-        </button>
-
-        {/* View cart and submit */}
-        <button
-          onClick={onViewCart}
-          className="p-6 rounded-lg border-2 border-primary bg-primary/10 hover:bg-primary/20 text-left transition-all min-h-[100px] flex items-center justify-between group"
-        >
-          <div>
-            <h3 className="text-xl font-bold text-primary mb-2 flex items-center gap-2">
-              <ShoppingCart className="h-6 w-6" />
-              完成添加，查看清單
-            </h3>
-            <p className="text-base text-primary/80">
-              查看所有已添加的牌位並提交申請
-            </p>
-          </div>
-          <ArrowLeft className="h-6 w-6 text-primary transition-colors rotate-180" />
-        </button>
+          <ArrowLeft className="mr-2 h-5 w-5" />
+          返回選單
+        </Button>
       </div>
     </div>
   )

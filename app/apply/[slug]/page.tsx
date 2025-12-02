@@ -19,16 +19,16 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
-import { Loader2, Calendar, MapPin, Clock } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { PageLayout } from '@/components/admin/PageLayout'
 import { getCeremonyBySlug, Ceremony } from '@/app/admin/ceremonies/actions'
 import { submitMultiTypeApplication } from './actions'
 
 // Step Components
 import { ApplicantInfoStep } from '@/components/apply/ApplicantInfoStep'
-import { TabletTypeSelector } from '@/components/apply/TabletTypeSelector'
+import { ApplicationDetailsPage } from '@/components/apply/ApplicationDetailsPage'
 import { TabletFormStep } from '@/components/apply/TabletFormStep'
-import { CartReviewStep } from '@/components/apply/CartReviewStep'
+import { CeremonyHeader } from '@/components/apply/CeremonyHeader'
 
 // Utils
 import {
@@ -39,7 +39,7 @@ import {
 } from '@/lib/utils/application-storage'
 import { TabletTypeValue } from '@/lib/tablet-types-config'
 
-type Step = 'applicant-info' | 'select-type' | 'fill-form' | 'review'
+type Step = 'applicant-info' | 'application-details' | 'fill-form'
 
 export default function ApplicationFormPage() {
   const params = useParams()
@@ -72,12 +72,9 @@ export default function ApplicationFormPage() {
         clearCart()
       }
 
-      // If applicant info already saved, skip to type selection
+      // If applicant info already saved, skip to application details
       if (hasApplicantInfo() && currentStep === 'applicant-info') {
-        const cartCount = getCartCount()
-        if (cartCount > 0) {
-          setCurrentStep('select-type')
-        }
+        setCurrentStep('application-details')
       }
     }
   }, [ceremony, slug])
@@ -102,37 +99,25 @@ export default function ApplicationFormPage() {
 
   // Step Navigation Handlers
   const handleApplicantInfoNext = () => {
-    setCurrentStep('select-type')
+    setCurrentStep('application-details')
   }
 
-  const handleSelectType = (type: TabletTypeValue) => {
+  const handleEditApplicant = () => {
+    setCurrentStep('applicant-info')
+  }
+
+  const handleAddTablet = (type: TabletTypeValue) => {
     setSelectedTabletType(type)
     setCurrentStep('fill-form')
   }
 
-  const handleBackToTypeSelection = () => {
-    setCurrentStep('select-type')
-  }
-
-  const handleBackToApplicantInfo = () => {
-    setCurrentStep('applicant-info')
-  }
-
-  const handleContinueSameType = () => {
-    // Stay on fill-form step, form will be reset in component
-  }
-
-  const handleSelectOtherType = () => {
+  const handleBackToMenu = () => {
     setSelectedTabletType(null)
-    setCurrentStep('select-type')
+    setCurrentStep('application-details')
   }
 
-  const handleViewCart = () => {
-    setCurrentStep('review')
-  }
-
-  const handleBackFromReview = () => {
-    setCurrentStep('select-type')
+  const handleGoBack = () => {
+    setCurrentStep('applicant-info')
   }
 
   const handleSubmit = async () => {
@@ -203,50 +188,16 @@ export default function ApplicationFormPage() {
     )
   }
 
+  // Determine header variant based on current step
+  // Full: first page (applicant-info)
+  // Compact: other pages (application-details, fill-form)
+  const headerVariant = currentStep === 'applicant-info' ? 'full' : 'compact'
+
   // Main Application Form
   return (
     <PageLayout narrow>
-      {/* Ceremony Header - Always visible */}
-      <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
-        <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
-          {ceremony.name_zh}
-        </h1>
-
-        <div className="space-y-3 text-base">
-          <div className="flex items-start gap-3">
-            <Calendar className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div>
-              <span className="text-muted-foreground">法會日期：</span>
-              <span className="text-foreground font-medium">
-                {formatDateTime(ceremony.start_at)}
-                {ceremony.end_at && ceremony.end_at !== ceremony.start_at && (
-                  <> 至 {formatDateTime(ceremony.end_at)}</>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {ceremony.location && (
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <span className="text-muted-foreground">地點：</span>
-                <span className="text-foreground font-medium">{ceremony.location}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-start gap-3">
-            <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div>
-              <span className="text-muted-foreground">申請截止：</span>
-              <span className="font-medium text-foreground">
-                {formatDateTime(ceremony.deadline_at)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/* Ceremony Header - Full on first/last page, Compact on middle pages */}
+      <CeremonyHeader ceremony={ceremony} variant={headerVariant} />
 
       {/* Error/Success Message */}
       {message && (
@@ -273,26 +224,20 @@ export default function ApplicationFormPage() {
           <ApplicantInfoStep ceremonySlug={slug} onNext={handleApplicantInfoNext} />
         )}
 
-        {currentStep === 'select-type' && (
-          <TabletTypeSelector
-            onSelectType={handleSelectType}
-            onBack={handleBackToApplicantInfo}
-            onViewCart={handleViewCart}
+        {currentStep === 'application-details' && (
+          <ApplicationDetailsPage
+            onBack={handleGoBack}
+            onEditApplicant={handleEditApplicant}
+            onAddTablet={handleAddTablet}
+            onSubmit={handleSubmit}
           />
         )}
 
         {currentStep === 'fill-form' && selectedTabletType && (
           <TabletFormStep
             tabletType={selectedTabletType}
-            onBack={handleBackToTypeSelection}
-            onContinueSameType={handleContinueSameType}
-            onSelectOtherType={handleSelectOtherType}
-            onViewCart={handleViewCart}
+            onBackToMenu={handleBackToMenu}
           />
-        )}
-
-        {currentStep === 'review' && (
-          <CartReviewStep onBack={handleBackFromReview} onSubmit={handleSubmit} />
         )}
       </Card>
     </PageLayout>
