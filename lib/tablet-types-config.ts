@@ -46,7 +46,8 @@ export interface TabletTypeConfig {
   description: string // Short description for selection
   detailedDescription?: string // Longer explanation (optional)
   fields: FormField[] // Form fields for this tablet type
-  previewFields: string[] // Which field values to show in preview confirmation
+  previewFields: string[] // Which field values to show in preview confirmation (honoree area)
+  petitionerFields?: string[] // Which field values to show in petitioner/left area (optional)
 }
 
 // ============================================================================
@@ -57,9 +58,9 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'longevity',
     label: '長生祿位',
-    description: '為在世的人消災祈福，祈求個人或闔家',
+    description: '為在世的人消災祈福，添加個人或闔家',
     detailedDescription:
-      '為在世的人消災祈福，祈求個人或闔家。',
+      '為在世的人消災祈福，添加個人或闔家。',
     fields: [
       {
         name: 'name',
@@ -74,9 +75,9 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'deceased',
     label: '往生蓮位',
-    description: '超薦往生者',
+    description: '超薦去世一年內的往生者',
     detailedDescription:
-      '超薦去世一年內的亡靈。若是同姓氏的家屬亡靈，去世已逾一年者，則歸入「歷代祖先」牌位中。',
+      '超薦去世一年內的往生者',
     fields: [
       {
         name: 'name',
@@ -93,7 +94,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'ancestors',
     label: '歷代祖先',
-    description: '超薦家族祖先',
+    description: '超薦家族祖先，填上祖先姓氏',
     detailedDescription:
       '超薦家族祖先，填上祖先姓氏；申請人只需填寫家族一位家族代表的姓名即可。',
     fields: [
@@ -112,7 +113,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'karmic-creditors',
     label: '冤親債主',
-    description: '超薦累劫冤親債主',
+    description: '為在世個的人超薦累劫冤親債主',
     detailedDescription:
       '為在世個人超薦累劫的冤親債主。以個人名義立牌位，請勿用『闔家』、『公司』、『團體』。',
     fields: [
@@ -135,8 +136,8 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'aborted-spirits',
     label: '嬰靈排位',
-    description: '超薦嬰靈菩薩',
-    detailedDescription: '超薦墮胎或夭折之胎兒。若有多位，則註明位數。',
+    description: '超薦墮胎或夭折之胎兒',
+    detailedDescription: '超薦墮胎或夭折之胎兒。有取名請寫「故兒○○○」。未取名者可寫「故兒妙音」或「李姓嬰孩菩薩」。若有多位，則註明數量，如「李姓二位嬰孩菩薩」',
     fields: [
       {
         name: 'name',
@@ -144,16 +145,30 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：故兒妙音',
-        helpText: '已取名寫名字，未取名可寫「故兒妙音」',
         maxLength: 8,
+      },
+      {
+        name: 'father_name',
+        label: '父親姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：陳大明',
+      },
+      {
+        name: 'mother_name',
+        label: '母親姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：李小華',
       },
     ],
     previewFields: ['name'],
+    petitionerFields: ['father_name', 'mother_name'],
   },
   {
     value: 'land-deity',
     label: '地基主',
-    description: '祭祀土地守護神',
+    description: '超薦家宅或公司的土地守護神，祈求平安',
     detailedDescription:
       '超薦房屋住處、公司團體的地基主，祈求家宅平安順利。',
     fields: [
@@ -251,7 +266,7 @@ export function validateTabletFormData(
 }
 
 /**
- * Get preview text for confirmation display
+ * Get preview text for confirmation display (honoree area - center)
  */
 export function getPreviewText(
   type: TabletTypeValue,
@@ -265,5 +280,38 @@ export function getPreviewText(
     .filter(Boolean)
 
   return previewParts.join(' ')
+}
+
+/**
+ * Get petitioner text for left panel display
+ * For aborted-spirits: "父 [father_name] 母 [mother_name]"
+ */
+export function getPetitionerText(
+  type: TabletTypeValue,
+  data: Record<string, string>
+): string {
+  const config = getTabletTypeConfig(type)
+  if (!config || !config.petitionerFields) return ''
+
+  // Special formatting for aborted-spirits
+  if (type === 'aborted-spirits') {
+    const fatherName = data['father_name'] || ''
+    const motherName = data['mother_name'] || ''
+    
+    if (!fatherName && !motherName) return ''
+    
+    const parts: string[] = []
+    if (fatherName) parts.push(`父 ${fatherName}`)
+    if (motherName) parts.push(`母 ${motherName}`)
+    
+    return parts.join(' ')
+  }
+
+  // Default: join all petitioner fields
+  const petitionerParts = config.petitionerFields
+    .map((fieldName) => data[fieldName])
+    .filter(Boolean)
+
+  return petitionerParts.join(' ')
 }
 

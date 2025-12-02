@@ -22,6 +22,7 @@ import {
   getTabletTypeLabel,
   validateTabletFormData,
   getPreviewText,
+  getPetitionerText,
   FormField as ConfigFormField,
 } from '@/lib/tablet-types-config'
 import { addTabletToCart, getTabletCountByType, getCartTabletsByType, removeTabletFromCart, TabletItem } from '@/lib/utils/application-storage'
@@ -265,6 +266,15 @@ export function TabletFormStep({
   // STATE 3B: PREVIEWING
   if (formState === 'previewing') {
     const previewText = getPreviewText(tabletType, formData)
+    const petitionerText = getPetitionerText(tabletType, formData)
+    
+    // Build API URL with petitioner text if available
+    const apiUrl = new URL('/api/og/tablet', window.location.origin)
+    apiUrl.searchParams.set('name', previewText)
+    apiUrl.searchParams.set('type', tabletType)
+    if (petitionerText) {
+      apiUrl.searchParams.set('applicant', petitionerText)
+    }
 
     return (
       <div className="space-y-8">
@@ -283,7 +293,7 @@ export function TabletFormStep({
           {/* Tablet Image Preview */}
           <div className="flex justify-center bg-muted/30 rounded-lg p-4">
             <img
-              src={`/api/og/tablet?name=${encodeURIComponent(previewText)}&type=${tabletType}`}
+              src={apiUrl.toString()}
               alt="牌位預覽"
               className="max-w-full h-auto rounded-lg shadow-lg"
               style={{ maxHeight: '40vh' }}
@@ -296,6 +306,11 @@ export function TabletFormStep({
             <p className="preview-text-large text-3xl font-bold text-foreground tracking-wider">
               {previewText}
             </p>
+            {petitionerText && (
+              <p className="preview-text-large text-2xl font-semibold text-muted-foreground tracking-wider mt-4">
+                {petitionerText}
+              </p>
+            )}
           </div>
         </Card>
 
