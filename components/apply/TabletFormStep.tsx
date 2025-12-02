@@ -146,6 +146,36 @@ export function TabletFormStep({
     const value = formData[field.name] || ''
     const error = errors[field.name]
 
+    if (field.type === 'checkbox') {
+      const isChecked = value === 'true' || value === '1'
+      return (
+        <div key={field.name} className="space-y-3">
+          <label className="flex items-center gap-4 cursor-pointer p-4 rounded-lg border-2 border-input hover:border-primary transition-colors">
+            <input
+              type="checkbox"
+              id={field.name}
+              checked={isChecked}
+              onChange={(e) => handleFieldChange(field.name, e.target.checked ? '1' : '0')}
+              className="w-6 h-6 rounded border-2 border-input cursor-pointer"
+            />
+            <div className="flex-1">
+              <span className="text-xl font-semibold text-foreground">
+                {field.label}
+              </span>
+              {field.helpText && (
+                <p className="text-base text-muted-foreground mt-1">{field.helpText}</p>
+              )}
+            </div>
+          </label>
+          {error && (
+            <p id={`${field.name}-error`} className="text-red-600 text-base" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+      )
+    }
+
     if (field.type === 'textarea') {
       return (
         <div key={field.name} className="space-y-3">

@@ -23,7 +23,7 @@ export type TabletTypeValue =
   | 'aborted-spirits'
   | 'land-deity'
 
-export type FieldType = 'text' | 'textarea' | 'select' | 'number'
+export type FieldType = 'text' | 'textarea' | 'select' | 'number' | 'checkbox'
 
 export interface FormField {
   name: string
@@ -69,8 +69,15 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         required: true,
         placeholder: '例如：陳小華',
       },
+      {
+        name: 'is_family',
+        label: '為闔家祈福',
+        type: 'checkbox',
+        required: false,
+        helpText: '選擇此項將為全家人祈福',
+      },
     ],
-    previewFields: ['name'],
+    previewFields: ['name', 'is_family'],
   },
   {
     value: 'deceased',
@@ -274,6 +281,13 @@ export function getPreviewText(
 ): string {
   const config = getTabletTypeConfig(type)
   if (!config) return ''
+
+  // Special handling for longevity with family option
+  if (type === 'longevity') {
+    const name = data['name'] || ''
+    const isFamily = data['is_family'] === 'true' || data['is_family'] === '1'
+    return isFamily ? `${name}闔家` : name
+  }
 
   const previewParts = config.previewFields
     .map((fieldName) => data[fieldName])
