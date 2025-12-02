@@ -123,7 +123,6 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：李美華',
-        helpText: '請輸入在世者的姓名（必須為個人，不可用闔家等）',
         maxLength: 8,
         validation: {
           pattern: /^(?!.*闔家)(?!.*公司)(?!.*團體).+$/,
