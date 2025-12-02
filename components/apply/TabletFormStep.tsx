@@ -302,19 +302,26 @@ export function TabletFormStep({
     }
 
     // Build combined confirmation text with commas
-    const confirmationParts = [convertedTexts.honoree]
+    let confirmationText = ''
     
-    // For aborted-spirits, add father and mother separately
-    if (tabletType === 'aborted-spirits') {
+    if (tabletType === 'karmic-creditors') {
+      // For karmic-creditors: only show name once (it's both honoree and petitioner)
+      confirmationText = convertedTexts.honoree
+    } else if (tabletType === 'aborted-spirits') {
+      // For aborted-spirits: show baby name + parents
+      const confirmationParts = [convertedTexts.honoree]
       if (convertedTexts.petitioner) {
-        // Petitioner text already formatted as "父 XXX 母 XXX"
         confirmationParts.push(convertedTexts.petitioner)
       }
-    } else if (convertedTexts.petitioner) {
-      confirmationParts.push(convertedTexts.petitioner)
+      confirmationText = confirmationParts.join('，')
+    } else {
+      // For other types: combine honoree and petitioner if both exist
+      const confirmationParts = [convertedTexts.honoree]
+      if (convertedTexts.petitioner) {
+        confirmationParts.push(convertedTexts.petitioner)
+      }
+      confirmationText = confirmationParts.join('，')
     }
-    
-    const confirmationText = confirmationParts.join('，')
 
     return (
       <div className="space-y-8">
