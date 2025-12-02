@@ -131,6 +131,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
       },
     ],
     previewFields: ['name'],
+    petitionerFields: ['name'], // 左区显示在世者姓名（阳上）
   },
   {
     value: 'aborted-spirits',
