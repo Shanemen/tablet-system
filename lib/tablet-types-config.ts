@@ -115,7 +115,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
     label: '冤親債主',
     description: '為在世個的人超薦累劫冤親債主',
     detailedDescription:
-      '為在世個人超薦累劫的冤親債主。以個人名義立牌位，請勿用『闔家』、『公司』、『團體』。',
+      '為在世個人超薦累劫的冤親債主，必須為個人，不可用闔家或公司',
     fields: [
       {
         name: 'name',
