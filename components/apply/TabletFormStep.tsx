@@ -276,6 +276,21 @@ export function TabletFormStep({
       apiUrl.searchParams.set('applicant', petitionerText)
     }
 
+    // Build combined confirmation text with commas
+    const confirmationParts = [previewText]
+    
+    // For aborted-spirits, add father and mother separately
+    if (tabletType === 'aborted-spirits') {
+      const fatherName = formData['father_name']
+      const motherName = formData['mother_name']
+      if (fatherName) confirmationParts.push(`父 ${fatherName}`)
+      if (motherName) confirmationParts.push(`母 ${motherName}`)
+    } else if (petitionerText) {
+      confirmationParts.push(petitionerText)
+    }
+    
+    const confirmationText = confirmationParts.join('，')
+
     return (
       <div className="space-y-8">
         {/* Title */}
@@ -283,36 +298,21 @@ export function TabletFormStep({
           <h2 className="form-step-title text-3xl font-bold text-foreground mb-2">
             請核對牌位信息
           </h2>
-          <p className="text-lg text-muted-foreground">
-            請仔細確認以下信息是否正確
+          <p className="text-xl text-primary font-semibold">
+            {confirmationText}
           </p>
         </div>
 
         {/* Preview Section */}
-        <Card className="p-6 space-y-8">
-          {/* Tablet Image Preview */}
-          <div className="flex justify-center bg-muted/30 rounded-lg p-4">
-            <img
-              src={apiUrl.toString()}
-              alt="牌位預覽"
-              className="max-w-full h-auto rounded-lg shadow-lg"
-              style={{ maxHeight: '40vh' }}
-            />
-          </div>
-
-          {/* Large Text Confirmation */}
-          <div className="bg-primary/5 border-2 border-primary/20 rounded-lg p-6 text-center">
-            <p className="text-lg text-muted-foreground mb-3">請核對信息：</p>
-            <p className="preview-text-large text-3xl font-bold text-foreground tracking-wider">
-              {previewText}
-            </p>
-            {petitionerText && (
-              <p className="preview-text-large text-2xl font-semibold text-muted-foreground tracking-wider mt-4">
-                {petitionerText}
-              </p>
-            )}
-          </div>
-        </Card>
+        {/* Tablet Image Preview */}
+        <div className="flex justify-center bg-muted/30 rounded-lg p-4">
+          <img
+            src={apiUrl.toString()}
+            alt="牌位預覽"
+            className="max-w-full h-auto rounded-lg shadow-lg"
+            style={{ maxHeight: '75vh' }}
+          />
+        </div>
 
         {/* Action Buttons - Primary on top */}
         <div className="flex flex-col gap-4">
