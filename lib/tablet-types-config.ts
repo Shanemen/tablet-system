@@ -112,8 +112,16 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         placeholder: '例如：陳',
         maxLength: 4,
       },
+      {
+        name: 'descendant_name',
+        label: '後裔申請人姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：陳小華',
+      },
     ],
     previewFields: ['surname'],
+    petitionerFields: ['descendant_name'], // 左区显示後裔申請人姓名
   },
   {
     value: 'karmic-creditors',
