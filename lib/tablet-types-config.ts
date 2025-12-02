@@ -110,7 +110,6 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：陳',
-        helpText: '請輸入祖先的姓氏（單姓或複姓）',
         maxLength: 4,
       },
     ],
