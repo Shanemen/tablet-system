@@ -71,10 +71,9 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
       },
       {
         name: 'is_family',
-        label: '為闔家祈福',
+        label: '闔家',
         type: 'checkbox',
         required: false,
-        helpText: '選擇此項將為全家人祈福',
       },
     ],
     previewFields: ['name', 'is_family'],
