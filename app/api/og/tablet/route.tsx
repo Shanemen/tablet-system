@@ -274,15 +274,16 @@ export async function GET(request: NextRequest) {
           {/* Content Layer - Render vertical text in active areas */}
           {config.activeAreas.map((area) => {
             // For center/honoree area: use the main name (surname for ancestors)
-            // For left/petitioner area: use applicant name from query param
+            // For left/petitioner/applicant area: use applicant name from query param
             let textToRender = ''
             
             if (area.purpose === 'honoree') {
               // Center area: Use the full name/surname
               // For Land Deity: append "之地基主" to the address
               textToRender = isLandDeity ? `${name}之地基主` : name
-            } else if (area.purpose === 'petitioner') {
+            } else if (area.purpose === 'petitioner' || area.purpose === 'applicant') {
               // Left area: Use applicant parameter, default to empty
+              // Support both 'petitioner' and 'applicant' for consistency
               const applicant = searchParams.get('applicant') || ''
               textToRender = applicant
             }
