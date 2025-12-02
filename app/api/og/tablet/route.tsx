@@ -8,7 +8,6 @@ import {
   type ActiveArea,
   type ChineseFontResult 
 } from '@/lib/active-areas-config'
-import { convertToTraditional } from '@/lib/utils/chinese-converter'
 
 export const runtime = 'edge'
 
@@ -164,13 +163,12 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || '長生祿位'
-    const nameInput = searchParams.get('name') || 'TEST'
-    const name = convertToTraditional(nameInput)  // 实时转换简繁体
+    const name = searchParams.get('name') || 'TEST'
 
     // Debug: Log parameters
     if (process.env.NODE_ENV === 'development') {
       console.log('[OG Image] Type:', type)
-      console.log(`[OG Image] Input: "${nameInput}" → Converted: "${name}"`)
+      console.log(`[OG Image] Name: "${name}"`)
     }
 
     // Determine template type
@@ -286,7 +284,7 @@ export async function GET(request: NextRequest) {
             } else if (area.purpose === 'petitioner') {
               // Left area: Use applicant parameter, default to empty
               const applicant = searchParams.get('applicant') || ''
-              textToRender = convertToTraditional(applicant)
+              textToRender = applicant
             }
             
             // Only render if there's text
