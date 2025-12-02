@@ -41,13 +41,17 @@ function formatDateTime(dateString: string) {
 }
 
 export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderProps) {
-  // Compact version - name + "牌位申請表" with visual separation
+  // Compact version - name + "牌位申請表" with smart wrapping
+  // When wrapping occurs, separator is hidden and 牌位申請表 moves to next line
   if (variant === 'compact') {
     return (
       <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl">
+        <h1 className="text-xl sm:text-2xl flex flex-wrap items-baseline gap-x-2 gap-y-0">
           <span className="text-primary font-bold">{ceremony.name_zh}</span>
-          <span className="text-muted-foreground font-normal"> ｜ 牌位申請表</span>
+          <span className="text-muted-foreground font-normal whitespace-nowrap">
+            <span className="hidden sm:inline">｜ </span>
+            牌位申請表
+          </span>
         </h1>
       </div>
     )

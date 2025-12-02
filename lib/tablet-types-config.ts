@@ -57,9 +57,9 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'longevity',
     label: '長生祿位',
-    description: '為在世親友祈福',
+    description: '為在世的人消災祈福，祈求個人或闔家',
     detailedDescription:
-      '為在世的人消災祈福，祈求個人、闔家、或患者轉危為安。',
+      '為在世的人消災祈福，祈求個人或闔家。',
     fields: [
       {
         name: 'name',
@@ -67,8 +67,6 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：陳小華',
-        helpText: '請輸入祈福對象的姓名（最多8個字）',
-        maxLength: 8,
       },
     ],
     previewFields: ['name'],

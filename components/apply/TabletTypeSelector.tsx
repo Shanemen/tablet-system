@@ -141,7 +141,7 @@ export function TabletTypeSelector({
         {totalCount > 0 && (
           <Button
             onClick={onViewCart}
-            className="btn-primary-elder h-14 text-lg font-semibold flex-1 order-1 sm:order-2"
+            className="btn-primary-elder flex-1 order-1 sm:order-2"
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
             查看清單並提交 ({totalCount} 位)

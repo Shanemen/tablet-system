@@ -233,28 +233,29 @@ export function TabletFormStep({
         )}
 
         {/* Form - Add another */}
-        <Card className="p-6 space-y-6">
-          <h3 className="text-xl font-semibold text-foreground">
+        <Card className="p-6">
+          <h3 className="text-xl font-semibold text-foreground mb-4">
             {existingTablets.length > 0 ? '添加更多' : '填寫資料'} - 第 {typeCount + 1} 位
           </h3>
-          {config.fields.map((field) => renderFormField(field))}
+          <div className="space-y-4">
+            {config.fields.map((field) => renderFormField(field))}
+          </div>
         </Card>
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
           <Button
-            onClick={onBackToMenu}
-            variant="outline"
-            className="h-14 text-lg font-semibold order-2 sm:order-1"
-          >
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            返回選單
-          </Button>
-          <Button
             onClick={handleGeneratePreview}
-            className="btn-primary-elder h-14 text-lg font-semibold flex-1 order-1 sm:order-2"
+            className="btn-primary-elder flex-1"
           >
             生成牌位預覽
+          </Button>
+          <Button
+            onClick={onBackToMenu}
+            variant="ghost"
+            className="btn-secondary-elder"
+          >
+            返回選單
           </Button>
         </div>
       </div>
@@ -302,17 +303,15 @@ export function TabletFormStep({
         <div className="flex flex-col gap-4">
           <Button
             onClick={handleConfirm}
-            className="btn-primary-elder h-16 text-lg font-semibold bg-green-600 hover:bg-green-700"
+            className="btn-primary-elder bg-green-600 hover:bg-green-700"
           >
-            <Check className="mr-2 h-6 w-6" />
             確認，加入清單
           </Button>
           <Button
             onClick={handleBackToEdit}
-            variant="outline"
-            className="h-16 text-lg font-semibold"
+            variant="ghost"
+            className="btn-secondary-elder"
           >
-            <Edit className="mr-2 h-5 w-5" />
             返回修改
           </Button>
         </div>
@@ -377,20 +376,18 @@ export function TabletFormStep({
       </div>
 
       {/* Two buttons: Add more + Go Back to Menu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <Button
           onClick={handleContinueAdding}
-          className="btn-primary-elder h-16 text-lg font-semibold"
+          className="btn-primary-elder flex-1"
         >
-          <Plus className="mr-2 h-5 w-5" />
           繼續添加{getTabletTypeLabel(tabletType)}
         </Button>
         <Button
           onClick={onBackToMenu}
-          variant="outline"
-          className="h-16 text-lg font-semibold"
+          variant="ghost"
+          className="btn-secondary-elder"
         >
-          <ArrowLeft className="mr-2 h-5 w-5" />
           返回選單
         </Button>
       </div>

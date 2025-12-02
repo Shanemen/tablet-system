@@ -156,7 +156,7 @@ export function ApplicationDetailsPage({
                 </div>
                 <Button
                   onClick={() => onAddTablet(type.value)}
-                  className="btn-primary-elder h-12 text-base font-semibold"
+                  className="btn-primary-elder"
                 >
                   <Plus className="mr-2 h-5 w-5" />
                   添加
@@ -218,37 +218,35 @@ export function ApplicationDetailsPage({
         </Card>
       )}
 
-      {/* Action Buttons - 复用 CartReviewStep 的样式 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Button
-          onClick={onBack}
-          variant="outline"
-          className="h-16 text-lg font-semibold"
-          disabled={submitting}
-        >
-          <ArrowLeft className="mr-2 h-5 w-5" />
-          返回
-        </Button>
-
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-4">
         {totalCount > 0 && (
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="btn-primary-elder h-16 text-lg font-semibold bg-green-600 hover:bg-green-700"
+            className="btn-primary-elder flex-1 bg-green-600 hover:bg-green-700"
           >
             {submitting ? (
               <>
-                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 提交中...
               </>
             ) : (
               <>
-                <CheckCircle className="mr-2 h-6 w-6" />
+                <CheckCircle className="mr-2 h-5 w-5" />
                 確認提交申請 ({totalCount} 位)
               </>
             )}
           </Button>
         )}
+        <Button
+          onClick={onBack}
+          variant="ghost"
+          className="btn-secondary-elder"
+          disabled={submitting}
+        >
+          返回
+        </Button>
       </div>
 
       {/* Help Text - 复用 CartReviewStep 的样式 */}

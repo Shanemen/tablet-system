@@ -80,7 +80,7 @@ export function CartReviewStep({ onBack, onSubmit }: CartReviewStepProps) {
           <p className="text-2xl text-muted-foreground mb-6">
             清單是空的
           </p>
-          <Button onClick={onBack} className="btn-primary-elder h-14 text-lg">
+          <Button onClick={onBack} className="btn-primary-elder">
             返回添加牌位
           </Button>
         </Card>
@@ -190,7 +190,7 @@ export function CartReviewStep({ onBack, onSubmit }: CartReviewStepProps) {
         <Button
           onClick={handleSubmit}
           disabled={submitting}
-          className="btn-primary-elder h-16 text-lg font-semibold bg-green-600 hover:bg-green-700"
+          className="btn-primary-elder bg-green-600 hover:bg-green-700"
         >
           {submitting ? (
             <>

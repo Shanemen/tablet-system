@@ -128,15 +128,14 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
         </div>
       </Card>
 
-      {/* Next Button - Sticky at bottom on mobile */}
-      <div className="sticky bottom-0 left-0 right-0 p-4 bg-background border-t sm:static sm:border-0 sm:p-0 -mx-4 sm:mx-0">
+      {/* Next Button */}
+      <div>
         <Button
           onClick={handleNext}
-          className="btn-primary-elder w-full h-16 text-xl font-semibold"
-          size="lg"
+          className="btn-primary-elder w-full"
         >
           下一步：選擇牌位類型
-          <ArrowRight className="ml-2 h-6 w-6" />
+          <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     </div>
