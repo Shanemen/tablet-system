@@ -26,6 +26,7 @@ import {
   FormField as ConfigFormField,
 } from '@/lib/tablet-types-config'
 import { addTabletToCart, getTabletCountByType, getCartTabletsByType, removeTabletFromCart, TabletItem } from '@/lib/utils/application-storage'
+import { convertToTraditional } from '@/lib/utils/chinese-converter-client'
 
 interface TabletFormStepProps {
   tabletType: TabletTypeValue
@@ -44,6 +45,7 @@ export function TabletFormStep({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [existingTablets, setExistingTablets] = useState<TabletItem[]>([])
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [convertedTexts, setConvertedTexts] = useState<{ honoree: string; petitioner: string }>({ honoree: '', petitioner: '' })
 
   // Load existing tablets on mount and when type changes
   useEffect(() => {
@@ -85,14 +87,40 @@ export function TabletFormStep({
     }
   }
 
-  // Generate preview
-  const handleGeneratePreview = () => {
+  // Generate preview with smart Chinese conversion
+  const handleGeneratePreview = async () => {
     const validation = validateTabletFormData(tabletType, formData)
     if (!validation.valid) {
       setErrors(validation.errors)
       return
     }
+    
     setFormState('previewing')
+    
+    try {
+      // Smart conversion: language + text detection
+      const previewText = getPreviewText(tabletType, formData)
+      const traditionalText = await convertToTraditional(previewText)
+      
+      const petitionerText = getPetitionerText(tabletType, formData)
+      const traditionalPetitioner = petitionerText 
+        ? await convertToTraditional(petitionerText)
+        : ''
+      
+      setConvertedTexts({
+        honoree: traditionalText,
+        petitioner: traditionalPetitioner
+      })
+    } catch (error) {
+      console.error('转换失败:', error)
+      // Fallback: use original text if conversion fails
+      const previewText = getPreviewText(tabletType, formData)
+      const petitionerText = getPetitionerText(tabletType, formData)
+      setConvertedTexts({
+        honoree: previewText,
+        petitioner: petitionerText || ''
+      })
+    }
   }
 
   // Go back to editing
@@ -101,8 +129,8 @@ export function TabletFormStep({
   }
 
   // Confirm and add to cart
-  const handleConfirm = () => {
-    addTabletToCart(tabletType, formData)
+  const handleConfirm = async () => {
+    await addTabletToCart(tabletType, formData)
     refreshExistingTablets()
     setFormState('confirmed')
   }
@@ -265,28 +293,25 @@ export function TabletFormStep({
 
   // STATE 3B: PREVIEWING
   if (formState === 'previewing') {
-    const previewText = getPreviewText(tabletType, formData)
-    const petitionerText = getPetitionerText(tabletType, formData)
-    
-    // Build API URL with petitioner text if available
+    // Build API URL with converted (traditional) text
     const apiUrl = new URL('/api/og/tablet', window.location.origin)
-    apiUrl.searchParams.set('name', previewText)
+    apiUrl.searchParams.set('name', convertedTexts.honoree)
     apiUrl.searchParams.set('type', tabletType)
-    if (petitionerText) {
-      apiUrl.searchParams.set('applicant', petitionerText)
+    if (convertedTexts.petitioner) {
+      apiUrl.searchParams.set('applicant', convertedTexts.petitioner)
     }
 
     // Build combined confirmation text with commas
-    const confirmationParts = [previewText]
+    const confirmationParts = [convertedTexts.honoree]
     
     // For aborted-spirits, add father and mother separately
     if (tabletType === 'aborted-spirits') {
-      const fatherName = formData['father_name']
-      const motherName = formData['mother_name']
-      if (fatherName) confirmationParts.push(`父 ${fatherName}`)
-      if (motherName) confirmationParts.push(`母 ${motherName}`)
-    } else if (petitionerText) {
-      confirmationParts.push(petitionerText)
+      if (convertedTexts.petitioner) {
+        // Petitioner text already formatted as "父 XXX 母 XXX"
+        confirmationParts.push(convertedTexts.petitioner)
+      }
+    } else if (convertedTexts.petitioner) {
+      confirmationParts.push(convertedTexts.petitioner)
     }
     
     const confirmationText = confirmationParts.join('，')

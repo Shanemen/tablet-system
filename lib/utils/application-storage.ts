@@ -10,6 +10,7 @@
  */
 
 import { TabletTypeValue } from '@/lib/tablet-types-config'
+import { convertToTraditional } from './chinese-converter-client'
 
 // ============================================================================
 // Type Definitions
@@ -132,17 +133,28 @@ export function getApplicantInfo(): ApplicantInfo | null {
 
 /**
  * Add a tablet to the cart
+ * Automatically converts all text fields to traditional Chinese
  */
-export function addTabletToCart(
+export async function addTabletToCart(
   tabletType: TabletTypeValue,
   formData: Record<string, string>
-): TabletItem {
+): Promise<TabletItem> {
   const cart = getCart()
+
+  // Convert all text fields to traditional Chinese (dual detection)
+  const convertedData: Record<string, string> = {}
+  for (const [key, value] of Object.entries(formData)) {
+    if (typeof value === 'string' && value.trim()) {
+      convertedData[key] = await convertToTraditional(value)
+    } else {
+      convertedData[key] = value
+    }
+  }
 
   const newItem: TabletItem = {
     id: generateItemId(),
     tabletType,
-    formData,
+    formData: convertedData, // Store converted (traditional) data
     addedAt: Date.now(),
   }
 
