@@ -170,7 +170,7 @@ export function ApplicationDetailsPage({
 
               {/* Added entries list - 复用 CartReviewStep 的列表样式 */}
               {count > 0 && (
-                <div className="space-y-3 pt-4 border-t">
+                <div className="space-y-3">
                   {tablets.map((tablet, index) => {
                     const displayText = getPreviewText(tablet.tabletType, tablet.formData)
                     const isConfirmingDelete = deleteConfirm === tablet.id
@@ -208,23 +208,13 @@ export function ApplicationDetailsPage({
         })}
       </div>
 
-      {/* Total Summary - 复用 CartReviewStep 的样式 */}
-      {totalCount > 0 && (
-        <Card className="p-6 bg-primary/10 border-primary">
-          <div className="flex items-center justify-between">
-            <span className="text-2xl font-bold text-foreground">總計</span>
-            <span className="text-3xl font-bold text-primary">{totalCount} 位</span>
-          </div>
-        </Card>
-      )}
-
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4">
         {totalCount > 0 && (
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="btn-primary-elder flex-1 bg-green-600 hover:bg-green-700"
+            className="btn-primary-elder w-full sm:flex-1 bg-green-600 hover:bg-green-700"
           >
             {submitting ? (
               <>
@@ -242,21 +232,12 @@ export function ApplicationDetailsPage({
         <Button
           onClick={onBack}
           variant="ghost"
-          className="btn-secondary-elder"
+          className="btn-secondary-elder w-full sm:w-auto"
           disabled={submitting}
         >
           返回
         </Button>
       </div>
-
-      {/* Help Text - 复用 CartReviewStep 的样式 */}
-      {totalCount > 0 && (
-        <Card className="p-4 bg-muted/50 border-muted">
-          <p className="text-base text-muted-foreground text-center">
-            提交後，您將收到確認通知。如需修改，請聯繫寺廟工作人員。
-          </p>
-        </Card>
-      )}
     </div>
   )
 }
