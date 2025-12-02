@@ -159,7 +159,7 @@ export function TabletFormStep({
               className="w-6 h-6 rounded border-2 border-input cursor-pointer accent-primary"
             />
             <div className="flex-1">
-              <span className="text-xl font-normal text-foreground">
+              <span className="text-lg text-muted-foreground">
                 {field.label}
               </span>
               {field.helpText && (
