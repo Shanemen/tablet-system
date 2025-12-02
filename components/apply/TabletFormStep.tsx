@@ -156,10 +156,10 @@ export function TabletFormStep({
               id={field.name}
               checked={isChecked}
               onChange={(e) => handleFieldChange(field.name, e.target.checked ? '1' : '0')}
-              className="w-6 h-6 rounded border-2 border-input cursor-pointer"
+              className="w-6 h-6 rounded border-2 border-input cursor-pointer accent-primary"
             />
             <div className="flex-1">
-              <span className="text-xl font-semibold text-foreground">
+              <span className="text-xl font-normal text-foreground">
                 {field.label}
               </span>
               {field.helpText && (
