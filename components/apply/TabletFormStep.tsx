@@ -277,7 +277,7 @@ export function TabletFormStep({
             onClick={handleGeneratePreview}
             className="btn-primary-elder flex-1"
           >
-            生成牌位預覽
+            預覽牌位
           </Button>
           <Button
             onClick={onBackToMenu}
