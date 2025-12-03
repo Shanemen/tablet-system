@@ -144,16 +144,9 @@ export function ApplicationDetailsPage({
             <Card key={type.value} className="p-6">
               {/* Header row with type name and Add button */}
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-2xl font-bold text-foreground">
-                    {type.label}
-                  </h3>
-                  {count > 0 && (
-                    <div className="bg-primary text-primary-foreground rounded-full px-4 py-1 text-lg font-bold">
-                      {count} 位
-                    </div>
-                  )}
-                </div>
+                <h3 className="text-2xl font-bold text-foreground">
+                  {type.label}
+                </h3>
                 <Button
                   onClick={() => onAddTablet(type.value)}
                   className="btn-primary-elder"
@@ -183,7 +176,7 @@ export function ApplicationDetailsPage({
                         <div className="flex-1">
                           <div className="flex items-baseline gap-3">
                             <span className="text-lg text-muted-foreground">
-                              第 {index + 1} 位
+                              {index + 1}.
                             </span>
                             <span className="text-xl font-semibold text-foreground">
                               {displayText}

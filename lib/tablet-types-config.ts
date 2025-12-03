@@ -91,18 +91,38 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：王大明',
-        helpText: '請輸入往生者的姓名（最多8個字）',
-        maxLength: 8,
+      },
+      {
+        name: 'deceased_title',
+        label: '往生者稱謂/與申請人關係',
+        type: 'text',
+        required: true,
+        placeholder: '例如：祖父，姑媽，蓮友',
+      },
+      {
+        name: 'petitioner_name',
+        label: '申請人姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：陳小華',
+      },
+      {
+        name: 'petitioner_title',
+        label: '申請人稱謂/與往生者關係',
+        type: 'text',
+        required: true,
+        placeholder: '例如：孫子，姪女，蓮友',
       },
     ],
-    previewFields: ['name'],
+    previewFields: ['deceased_title', 'name'],
+    petitionerFields: ['petitioner_title', 'petitioner_name'],
   },
   {
     value: 'ancestors',
     label: '歷代祖先',
     description: '超薦家族祖先，填上祖先姓氏',
     detailedDescription:
-      '超薦家族祖先，填上祖先姓氏；申請人只需填寫家族一位家族代表的姓名即可。',
+      '超薦家族祖先，填上祖先姓氏；申請人只需填寫一位家族代表即可。',
     fields: [
       {
         name: 'surname',
@@ -183,7 +203,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
     label: '地基主',
     description: '超薦家宅或公司的土地守護神，祈求平安',
     detailedDescription:
-      '超薦房屋住處、公司團體的地基主，祈求家宅平安順利。',
+      '超薦家宅或公司的土地守護神，祈求平安。請填入詳細地址',
     fields: [
       {
         name: 'address',
@@ -191,11 +211,18 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'textarea',
         required: true,
         placeholder: '例如：台北市中正區羅斯福路四段1號',
-        helpText: '請輸入詳細地址',
         maxLength: 100,
+      },
+      {
+        name: 'applicant_name',
+        label: '申請人姓名',
+        type: 'text',
+        required: true,
+        placeholder: '例如：陳小華',
       },
     ],
     previewFields: ['address'],
+    petitionerFields: ['applicant_name'], // 左区显示申請人姓名
   },
 ]
 

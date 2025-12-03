@@ -270,7 +270,7 @@ export function TabletFormStep({
                   <div className="flex-1">
                     <div className="flex items-baseline gap-3">
                       <span className="text-lg text-muted-foreground">
-                        第 {index + 1} 位
+                        {index + 1}.
                       </span>
                       <span className="text-xl font-semibold text-foreground">
                         {displayText}
@@ -432,7 +432,7 @@ export function TabletFormStep({
               <div className="flex-1">
                 <div className="flex items-baseline gap-3">
                   <span className="text-lg text-muted-foreground">
-                    第 {index + 1} 位
+                    {index + 1}.
                   </span>
                   <span className="text-xl font-semibold text-foreground">
                     {displayText}
