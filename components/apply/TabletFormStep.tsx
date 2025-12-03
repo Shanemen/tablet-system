@@ -178,7 +178,7 @@ export function TabletFormStep({
     if (field.type === 'textarea') {
       return (
         <div key={field.name} className="space-y-3">
-          <label htmlFor={field.name} className="form-label block text-xl font-semibold text-foreground">
+          <label htmlFor={field.name} className="form-label">
             {field.label} {field.required && <span className="text-red-500">*</span>}
           </label>
           <textarea
@@ -188,7 +188,7 @@ export function TabletFormStep({
             placeholder={field.placeholder}
             maxLength={field.maxLength}
             rows={4}
-            className="form-input-large w-full text-xl p-4 rounded-md border-2 border-input bg-background"
+            className="form-input"
             aria-invalid={!!error}
             aria-describedby={error ? `${field.name}-error` : undefined}
           />
@@ -207,7 +207,7 @@ export function TabletFormStep({
     // Default: text input
     return (
       <div key={field.name} className="space-y-3">
-        <label htmlFor={field.name} className="form-label block text-xl font-semibold text-foreground">
+        <label htmlFor={field.name} className="form-label">
           {field.label} {field.required && <span className="text-red-500">*</span>}
         </label>
         <Input
@@ -217,7 +217,7 @@ export function TabletFormStep({
           onChange={(e) => handleFieldChange(field.name, e.target.value)}
           placeholder={field.placeholder}
           maxLength={field.maxLength}
-          className="form-input-large h-16 text-xl"
+          className="form-input"
           aria-invalid={!!error}
           aria-describedby={error ? `${field.name}-error` : undefined}
         />
@@ -240,7 +240,7 @@ export function TabletFormStep({
         {/* Title with count badge */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="form-step-title text-3xl font-bold text-foreground">
+            <h2 className="section-title">
               {getTabletTypeLabel(tabletType)}
             </h2>
             {existingTablets.length > 0 && (
@@ -291,7 +291,7 @@ export function TabletFormStep({
         )}
 
         {/* Form - Add another */}
-        <div className="p-6 bg-card border border-border rounded-lg">
+        <div className="p-4 sm:p-6 bg-card border border-border rounded-lg">
           <h3 className="text-xl font-semibold text-foreground mb-4">
             {existingTablets.length > 0 ? '添加更多' : '填寫資料'} - 第 {typeCount + 1} 位
           </h3>
@@ -356,7 +356,7 @@ export function TabletFormStep({
       <div className="space-y-8">
         {/* Title */}
         <div>
-          <h2 className="form-step-title text-3xl font-bold text-foreground mb-2">
+          <h2 className="section-title mb-2">
             請核對牌位信息
           </h2>
           <p className="text-xl text-primary font-semibold">
@@ -366,7 +366,7 @@ export function TabletFormStep({
 
         {/* Preview Section */}
         {/* Tablet Image Preview */}
-        <div className="flex justify-center bg-muted/30 rounded-lg p-4">
+        <div className="flex justify-center bg-muted/30 rounded-lg p-4 sm:p-6">
           <img
             src={apiUrl.toString()}
             alt="牌位預覽"
@@ -401,7 +401,7 @@ export function TabletFormStep({
       {/* Success Title with count badge */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h2 className="form-step-title text-3xl font-bold text-foreground">
+          <h2 className="section-title">
             添加成功！
           </h2>
         </div>

@@ -90,7 +90,7 @@ export function ApplicationDetailsPage({
       {/* Title with cart indicator - 复用 TabletTypeSelector 的样式 */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h2 className="form-step-title text-3xl font-bold text-foreground mb-2">
+          <h2 className="section-title mb-2">
             牌位申請詳情
           </h2>
           <p className="text-lg text-muted-foreground">
@@ -108,7 +108,7 @@ export function ApplicationDetailsPage({
 
       {/* Applicant Info Summary - 复用 CartReviewStep 的样式 */}
       {applicantInfo && (
-        <Card className="p-6 bg-primary/5 border-primary/20">
+        <Card className="p-3 sm:p-4 bg-primary/5 border-primary/20">
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-xl font-semibold text-foreground mb-3">申請人資料</h3>
@@ -135,16 +135,16 @@ export function ApplicationDetailsPage({
       )}
 
       {/* Tablet Type Cards with Add button and entries - 复用 TabletTypeSelector 的卡片样式 */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {tabletTypes.map((type) => {
           const tablets = tabletsByType[type.value] || []
           const count = tablets.length
 
           return (
-            <Card key={type.value} className="p-6">
+            <Card key={type.value} className="p-3 sm:p-4">
               {/* Header row with type name and Add button */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-foreground">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-semibold text-foreground">
                   {type.label}
                 </h3>
                 <Button
@@ -157,7 +157,7 @@ export function ApplicationDetailsPage({
               </div>
 
               {/* Description */}
-              <p className="text-base text-muted-foreground leading-relaxed mb-4">
+              <p className="text-base text-muted-foreground leading-relaxed mb-3">
                 {type.description}
               </p>
 

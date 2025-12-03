@@ -63,7 +63,7 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
     <div className="space-y-8">
       {/* Title */}
       <div>
-        <h2 className="form-step-title text-3xl font-bold text-foreground mb-2">
+        <h2 className="section-title mb-2">
           申請人資料
         </h2>
         <p className="text-lg text-muted-foreground">
@@ -75,7 +75,7 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
       <div className="space-y-6">
         {/* Name Field */}
         <div className="space-y-3">
-          <label htmlFor="applicant-name" className="form-label block text-xl font-semibold text-foreground">
+          <label htmlFor="applicant-name" className="form-label">
             姓名 <span className="text-red-500">*</span>
           </label>
           <Input
@@ -87,7 +87,7 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
               if (errors.name) setErrors({ ...errors, name: undefined })
             }}
             placeholder="請輸入您的姓名"
-            className="form-input-large h-16 text-xl"
+            className="form-input"
             aria-invalid={!!errors.name}
             aria-describedby={errors.name ? 'name-error' : undefined}
           />
@@ -100,7 +100,7 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
 
         {/* Phone Field */}
         <div className="space-y-3">
-          <label htmlFor="applicant-phone" className="form-label block text-xl font-semibold text-foreground">
+          <label htmlFor="applicant-phone" className="form-label">
             聯絡電話 <span className="text-red-500">*</span>
           </label>
           <Input
@@ -112,7 +112,7 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
               if (errors.phone) setErrors({ ...errors, phone: undefined })
             }}
             placeholder="例如：0912-345-678"
-            className="form-input-large h-16 text-xl"
+            className="form-input"
             aria-invalid={!!errors.phone}
             aria-describedby={errors.phone ? 'phone-error' : undefined}
           />

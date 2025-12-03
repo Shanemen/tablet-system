@@ -58,7 +58,7 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
 
   // Full version - all details in a div
   return (
-    <div className="p-6 mb-6 bg-primary/5 border border-primary/20 rounded-lg">
+    <div className="p-4 sm:p-6 mb-6 bg-primary/5 border border-primary/20 rounded-lg">
       <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
         {ceremony.name_zh}
       </h1>
