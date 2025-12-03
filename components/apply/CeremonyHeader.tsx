@@ -13,7 +13,6 @@
 
 'use client'
 
-import { Card } from '@/components/ui/card'
 import { Calendar, MapPin, Clock } from 'lucide-react'
 
 export interface CeremonyInfo {
@@ -57,9 +56,9 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
     )
   }
 
-  // Full version - all details in a card
+  // Full version - all details in a div
   return (
-    <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
+    <div className="p-6 mb-6 bg-primary/5 border border-primary/20 rounded-lg">
       <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
         {ceremony.name_zh}
       </h1>
@@ -101,7 +100,7 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 

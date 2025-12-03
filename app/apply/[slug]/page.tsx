@@ -45,7 +45,7 @@ export default function ApplicationFormPage() {
   const params = useParams()
   const router = useRouter()
   const slug = params.slug as string
-
+  
   const [ceremony, setCeremony] = useState<Ceremony | null>(null)
   const [loading, setLoading] = useState(true)
   const [isDeadlinePassed, setIsDeadlinePassed] = useState(false)
@@ -53,14 +53,14 @@ export default function ApplicationFormPage() {
   // Multi-step state
   const [currentStep, setCurrentStep] = useState<Step>('applicant-info')
   const [selectedTabletType, setSelectedTabletType] = useState<TabletTypeValue | null>(null)
-
+  
   // Message state
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-
+  
   useEffect(() => {
     loadCeremony()
   }, [slug])
-
+  
   useEffect(() => {
     if (ceremony) {
       const deadline = new Date(ceremony.deadline_at)
@@ -78,14 +78,14 @@ export default function ApplicationFormPage() {
       }
     }
   }, [ceremony, slug])
-
+  
   const loadCeremony = async () => {
     setLoading(true)
     const data = await getCeremonyBySlug(slug)
     setCeremony(data)
     setLoading(false)
   }
-
+  
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleString('zh-TW', {
@@ -96,21 +96,21 @@ export default function ApplicationFormPage() {
       minute: '2-digit',
     })
   }
-
+  
   // Step Navigation Handlers
   const handleApplicantInfoNext = () => {
     setCurrentStep('application-details')
   }
-
+  
   const handleEditApplicant = () => {
     setCurrentStep('applicant-info')
   }
-
+  
   const handleAddTablet = (type: TabletTypeValue) => {
     setSelectedTabletType(type)
     setCurrentStep('fill-form')
   }
-
+  
   const handleBackToMenu = () => {
     setSelectedTabletType(null)
     setCurrentStep('application-details')
@@ -119,20 +119,20 @@ export default function ApplicationFormPage() {
   const handleGoBack = () => {
     setCurrentStep('applicant-info')
   }
-
+  
   const handleSubmit = async () => {
     if (!ceremony) return
-
+    
     try {
       const result = await submitMultiTypeApplication(ceremony.id, slug)
-
-      if (result.error) {
-        setMessage({ type: 'error', text: result.error })
+    
+    if (result.error) {
+      setMessage({ type: 'error', text: result.error })
         window.scrollTo({ top: 0, behavior: 'smooth' })
-      } else {
+    } else {
         // Clear cart and redirect to success page
         clearCart()
-        router.push(`/apply/success/${result.applicationId}`)
+      router.push(`/apply/success/${result.applicationId}`)
       }
     } catch (error) {
       console.error('Submission error:', error)
@@ -140,7 +140,7 @@ export default function ApplicationFormPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
-
+  
   // Loading state
   if (loading) {
     return (
@@ -152,7 +152,7 @@ export default function ApplicationFormPage() {
       </div>
     )
   }
-
+  
   // Ceremony not found
   if (!ceremony) {
     return (
@@ -163,18 +163,18 @@ export default function ApplicationFormPage() {
       </PageLayout>
     )
   }
-
+  
   // Deadline passed
   if (isDeadlinePassed) {
-    return (
-      <PageLayout narrow>
-        {/* Ceremony Header */}
-        <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
-          <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
-            {ceremony.name_zh}
-          </h1>
-        </Card>
-
+  return (
+    <PageLayout narrow>
+      {/* Ceremony Header */}
+      <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
+          {ceremony.name_zh}
+        </h1>
+      </Card>
+      
         <Card className="p-6 bg-red-50 border-red-200">
           <div className="text-center">
             <p className="text-xl font-bold text-red-700 mb-2">申請已截止</p>
@@ -200,10 +200,10 @@ export default function ApplicationFormPage() {
       <CeremonyHeader ceremony={ceremony} variant={headerVariant} />
 
       {/* Error/Success Message */}
-      {message && (
+          {message && (
         <Card
           className={`p-6 mb-6 ${
-            message.type === 'error'
+              message.type === 'error' 
               ? 'bg-red-50 border-red-200'
               : 'bg-green-50 border-green-200'
           }`}
@@ -219,27 +219,25 @@ export default function ApplicationFormPage() {
       )}
 
       {/* Step Content - Single page with conditional rendering */}
-      <Card className="p-6 sm:p-8">
-        {currentStep === 'applicant-info' && (
-          <ApplicantInfoStep ceremonySlug={slug} onNext={handleApplicantInfoNext} />
-        )}
+      {currentStep === 'applicant-info' && (
+        <ApplicantInfoStep ceremonySlug={slug} onNext={handleApplicantInfoNext} />
+      )}
 
-        {currentStep === 'application-details' && (
-          <ApplicationDetailsPage
-            onBack={handleGoBack}
-            onEditApplicant={handleEditApplicant}
-            onAddTablet={handleAddTablet}
-            onSubmit={handleSubmit}
-          />
-        )}
+      {currentStep === 'application-details' && (
+        <ApplicationDetailsPage
+          onBack={handleGoBack}
+          onEditApplicant={handleEditApplicant}
+          onAddTablet={handleAddTablet}
+          onSubmit={handleSubmit}
+        />
+      )}
 
-        {currentStep === 'fill-form' && selectedTabletType && (
-          <TabletFormStep
-            tabletType={selectedTabletType}
-            onBackToMenu={handleBackToMenu}
-          />
-        )}
-      </Card>
+      {currentStep === 'fill-form' && selectedTabletType && (
+        <TabletFormStep
+          tabletType={selectedTabletType}
+          onBackToMenu={handleBackToMenu}
+        />
+      )}
     </PageLayout>
   )
 }

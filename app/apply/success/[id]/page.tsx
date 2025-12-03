@@ -82,24 +82,24 @@ export default async function SuccessPage({ params }: { params: Promise<{ id: st
                 {typeLabel} ({typeNames.length} 位)
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
                 {typeNames.map((nameEntry: any) => {
                   const imageUrl = `/api/og/tablet?name=${encodeURIComponent(nameEntry.display_name)}&type=${tabletType}`
-                  
-                  return (
-                    <div key={nameEntry.id} className="space-y-3 flex flex-col items-center">
-                      <div className="relative bg-gray-100 rounded-lg overflow-hidden shadow-md border border-gray-200 transition-transform hover:scale-105">
-                        <img 
-                          src={imageUrl} 
-                          alt={`Tablet for ${nameEntry.display_name}`} 
-                          className="h-[400px] w-auto object-contain"
-                        />
-                      </div>
-                      <p className="font-medium text-lg">{nameEntry.display_name}</p>
-                    </div>
-                  )
-                })}
+            
+            return (
+              <div key={nameEntry.id} className="space-y-3 flex flex-col items-center">
+                <div className="relative bg-gray-100 rounded-lg overflow-hidden shadow-md border border-gray-200 transition-transform hover:scale-105">
+                  <img 
+                    src={imageUrl} 
+                    alt={`Tablet for ${nameEntry.display_name}`} 
+                    className="h-[400px] w-auto object-contain"
+                  />
+                </div>
+                <p className="font-medium text-lg">{nameEntry.display_name}</p>
               </div>
+            )
+          })}
+        </div>
             </div>
           )
         })}
