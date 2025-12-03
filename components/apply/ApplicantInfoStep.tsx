@@ -13,7 +13,6 @@
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { ArrowRight } from 'lucide-react'
 import { saveApplicantInfo, getApplicantInfo } from '@/lib/utils/application-storage'
 
@@ -73,7 +72,7 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
       </div>
 
       {/* Form Fields */}
-      <Card className="p-6 space-y-6">
+      <div className="space-y-6">
         {/* Name Field */}
         <div className="space-y-3">
           <label htmlFor="applicant-name" className="form-label block text-xl font-semibold text-foreground">
@@ -126,7 +125,7 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
             用於接收申請確認通知
           </p>
         </div>
-      </Card>
+      </div>
 
       {/* Next Button */}
       <div>

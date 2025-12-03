@@ -12,7 +12,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Check, Edit, Plus, List, ShoppingCart, Trash2 } from 'lucide-react'
@@ -292,14 +291,14 @@ export function TabletFormStep({
         )}
 
         {/* Form - Add another */}
-        <Card className="p-6">
+        <div className="p-6 bg-card border border-border rounded-lg">
           <h3 className="text-xl font-semibold text-foreground mb-4">
             {existingTablets.length > 0 ? '添加更多' : '填寫資料'} - 第 {typeCount + 1} 位
           </h3>
           <div className="space-y-4">
             {config.fields.map((field) => renderFormField(field))}
           </div>
-        </Card>
+        </div>
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
