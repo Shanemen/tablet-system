@@ -83,7 +83,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
     label: '往生蓮位',
     description: '超薦一年內去世的往生者',
     detailedDescription:
-      '超薦去世一年內的往生者',
+      '超薦去世一年內的往生者。 若是同姓氏的家屬去世已超過一年，可歸入「歷代祖先」',
     fields: [
       {
         name: 'name',

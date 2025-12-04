@@ -91,7 +91,7 @@ export function ApplicationDetailsPage({
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <h2 className="text-lg text-muted-foreground font-normal mb-2">
-            牌位申請詳情
+            申請詳情
           </h2>
         </div>
         
@@ -160,9 +160,9 @@ export function ApplicationDetailsPage({
                 </Button>
               </div>
 
-              {/* Added entries list - 复用 CartReviewStep 的列表样式 */}
+              {/* Added entries list - 使用分隔线设计，参考 Admin 表格 */}
               {count > 0 && (
-                <div className="mt-2 space-y-3">
+                <div className="mt-2 divide-y divide-border">
                   {tablets.map((tablet, index) => {
                     const displayText = getPreviewText(tablet.tabletType, tablet.formData)
                     const isConfirmingDelete = deleteConfirm === tablet.id
@@ -170,14 +170,14 @@ export function ApplicationDetailsPage({
                     return (
                       <div
                         key={tablet.id}
-                        className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border"
+                        className="flex items-center justify-between py-3 hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex-1">
                           <div className="flex items-baseline gap-3">
                             <span className="text-base text-muted-foreground">
                               {index + 1}.
                             </span>
-                            <span className="text-lg font-semibold text-foreground">
+                            <span className="text-lg font-semibold text-primary">
                               {displayText}
                             </span>
                           </div>
