@@ -14,7 +14,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Check, Edit, Plus, List, ShoppingCart, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, Edit, Plus, List, ShoppingCart, Trash2, Loader2 } from 'lucide-react'
 import {
   TabletTypeValue,
   getTabletTypeConfig,
@@ -45,6 +45,8 @@ export function TabletFormStep({
   const [existingTablets, setExistingTablets] = useState<TabletItem[]>([])
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [convertedTexts, setConvertedTexts] = useState<{ honoree: string; petitioner: string }>({ honoree: '', petitioner: '' })
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
+  const [isImageLoading, setIsImageLoading] = useState(true)
 
   // Load existing tablets on mount and when type changes
   useEffect(() => {
@@ -94,7 +96,16 @@ export function TabletFormStep({
       return
     }
     
+    // Set loading state first, then switch to previewing state
+    // This ensures the loading state is visible before any async operations
+    setIsGeneratingPreview(true)
+    
+    // Use setTimeout to ensure state update is processed before switching form state
+    await new Promise(resolve => setTimeout(resolve, 0))
     setFormState('previewing')
+    
+    // Minimum display time for loading state (ensures users see feedback)
+    const minLoadingTime = Promise.resolve().then(() => new Promise(resolve => setTimeout(resolve, 300)))
     
     try {
       // Smart conversion: language + text detection
@@ -106,6 +117,10 @@ export function TabletFormStep({
         ? await convertToTraditional(petitionerText)
         : ''
       
+      // Wait for minimum loading time to ensure users see the loading state
+      await minLoadingTime
+      
+      setIsImageLoading(true)
       setConvertedTexts({
         honoree: traditionalText,
         petitioner: traditionalPetitioner
@@ -115,15 +130,24 @@ export function TabletFormStep({
       // Fallback: use original text if conversion fails
       const previewText = getPreviewText(tabletType, formData)
       const petitionerText = getPetitionerText(tabletType, formData)
+      
+      // Wait for minimum loading time even on error
+      await minLoadingTime
+      
+      setIsImageLoading(true)
       setConvertedTexts({
         honoree: previewText,
         petitioner: petitionerText || ''
       })
+    } finally {
+      setIsGeneratingPreview(false)
     }
   }
 
   // Go back to editing
   const handleBackToEdit = () => {
+    setIsGeneratingPreview(false)
+    setIsImageLoading(true)
     setFormState('filling')
   }
 
@@ -366,13 +390,31 @@ export function TabletFormStep({
 
         {/* Preview Section */}
         {/* Tablet Image Preview */}
-        <div className="flex justify-center bg-muted/30 rounded-lg p-4 sm:p-6">
-          <img
-            src={apiUrl.toString()}
-            alt="牌位預覽"
-            className="max-w-full h-auto rounded-lg shadow-lg"
-            style={{ maxHeight: '75vh' }}
-          />
+        <div className="flex justify-center bg-muted/30 rounded-lg p-4 sm:p-6 min-h-[400px] items-center relative">
+          {/* Loading overlay - shown while generating or image loading */}
+          {(isGeneratingPreview || isImageLoading) && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 bg-muted/30 rounded-lg">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-lg text-muted-foreground">生成預覽中...</p>
+            </div>
+          )}
+          {/* Image - only render when conversion is complete */}
+          {convertedTexts.honoree && !isGeneratingPreview && (
+            <img
+              key={`${convertedTexts.honoree}-${convertedTexts.petitioner}`}
+              src={apiUrl.toString()}
+              alt="牌位預覽"
+              className={`max-w-full h-auto rounded-lg shadow-lg transition-opacity duration-300 ${
+                isImageLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              style={{ maxHeight: '75vh' }}
+              onLoad={() => setIsImageLoading(false)}
+              onError={() => {
+                setIsImageLoading(false)
+                console.error('Failed to load preview image')
+              }}
+            />
+          )}
         </div>
 
         {/* Action Buttons - Primary on top */}
