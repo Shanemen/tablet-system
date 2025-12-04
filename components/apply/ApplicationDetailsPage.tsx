@@ -114,11 +114,11 @@ export function ApplicationDetailsPage({
                 <div className="space-y-2 text-lg">
                   <p>
                     <span className="text-muted-foreground">姓名：</span>
-                    <span className="font-medium">{applicantInfo.name}</span>
+                    <span className="font-medium text-muted-foreground">{applicantInfo.name}</span>
                   </p>
                   <p>
                     <span className="text-muted-foreground">電話：</span>
-                    <span className="font-medium">{applicantInfo.phone}</span>
+                    <span className="font-medium text-muted-foreground">{applicantInfo.phone}</span>
                   </p>
                 </div>
               </div>
