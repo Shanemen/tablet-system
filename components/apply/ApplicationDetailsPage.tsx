@@ -88,14 +88,11 @@ export function ApplicationDetailsPage({
   return (
     <div className="space-y-8">
       {/* Title with cart indicator - 复用 TabletTypeSelector 的样式 */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex-1">
-          <h2 className="section-title mb-2">
+          <h2 className="text-lg text-muted-foreground font-normal mb-2">
             牌位申請詳情
           </h2>
-          <p className="text-lg text-muted-foreground">
-            添加牌位或提交申請
-          </p>
         </div>
         
         {totalCount > 0 && (
@@ -106,47 +103,54 @@ export function ApplicationDetailsPage({
         )}
       </div>
 
-      {/* Applicant Info Summary - 复用 CartReviewStep 的样式 */}
-      {applicantInfo && (
-        <Card className="p-3 sm:p-4 bg-primary/5 border-primary/20">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">申請人資料</h3>
-              <div className="space-y-2 text-lg">
-                <p>
-                  <span className="text-muted-foreground">姓名：</span>
-                  <span className="font-medium">{applicantInfo.name}</span>
-                </p>
-                <p>
-                  <span className="text-muted-foreground">電話：</span>
-                  <span className="font-medium">{applicantInfo.phone}</span>
-                </p>
+      {/* All Cards - Applicant Info + Tablet Types */}
+      <div className="space-y-4">
+        {/* Applicant Info Summary - 复用 CartReviewStep 的样式 */}
+        {applicantInfo && (
+          <Card className="p-4 sm:p-5 bg-primary/5 border-primary/20">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="section-title mb-3">申請人資料</h3>
+                <div className="space-y-2 text-lg">
+                  <p>
+                    <span className="text-muted-foreground">姓名：</span>
+                    <span className="font-medium">{applicantInfo.name}</span>
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">電話：</span>
+                    <span className="font-medium">{applicantInfo.phone}</span>
+                  </p>
+                </div>
               </div>
+              <Button
+                onClick={onEditApplicant}
+                variant="outline"
+                className="h-12 px-4 text-base"
+              >
+                編輯
+              </Button>
             </div>
-            <Button
-              onClick={onEditApplicant}
-              variant="outline"
-              className="h-12 px-4 text-base"
-            >
-              編輯
-            </Button>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
 
-      {/* Tablet Type Cards with Add button and entries - 复用 TabletTypeSelector 的卡片样式 */}
-      <div className="space-y-3">
+        {/* Tablet Type Cards with Add button and entries - 复用 TabletTypeSelector 的卡片样式 */}
         {tabletTypes.map((type) => {
           const tablets = tabletsByType[type.value] || []
           const count = tablets.length
 
           return (
-            <Card key={type.value} className="p-3 sm:p-4">
+            <Card key={type.value} className="p-4 sm:p-5 gap-2 sm:gap-4">
               {/* Header row with type name and Add button */}
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-semibold text-foreground">
-                  {type.label}
-                </h3>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="section-title mb-3">
+                    {type.label}
+                  </h3>
+                  {/* Description */}
+                  <p className="text-base text-muted-foreground leading-relaxed mb-0">
+                    {type.description}
+                  </p>
+                </div>
                 <Button
                   onClick={() => onAddTablet(type.value)}
                   className="btn-primary-elder"
@@ -156,14 +160,9 @@ export function ApplicationDetailsPage({
                 </Button>
               </div>
 
-              {/* Description */}
-              <p className="text-base text-muted-foreground leading-relaxed mb-3">
-                {type.description}
-              </p>
-
               {/* Added entries list - 复用 CartReviewStep 的列表样式 */}
               {count > 0 && (
-                <div className="space-y-3">
+                <div className="mt-2 space-y-3">
                   {tablets.map((tablet, index) => {
                     const displayText = getPreviewText(tablet.tabletType, tablet.formData)
                     const isConfirmingDelete = deleteConfirm === tablet.id
@@ -175,10 +174,10 @@ export function ApplicationDetailsPage({
                       >
                         <div className="flex-1">
                           <div className="flex items-baseline gap-3">
-                            <span className="text-lg text-muted-foreground">
+                            <span className="text-base text-muted-foreground">
                               {index + 1}.
                             </span>
-                            <span className="text-xl font-semibold text-foreground">
+                            <span className="text-lg font-semibold text-foreground">
                               {displayText}
                             </span>
                           </div>

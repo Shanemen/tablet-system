@@ -58,9 +58,9 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'longevity',
     label: '長生祿位',
-    description: '為在世的人消災祈福，添加個人或闔家',
+    description: '為在世的人消災祈福',
     detailedDescription:
-      '為在世的人消災祈福，添加個人或闔家。',
+      '為在世的人消災祈福，可添加個人或闔家',
     fields: [
       {
         name: 'name',
@@ -81,7 +81,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'deceased',
     label: '往生蓮位',
-    description: '超薦去世一年內的往生者',
+    description: '超薦一年內去世的往生者',
     detailedDescription:
       '超薦去世一年內的往生者',
     fields: [
