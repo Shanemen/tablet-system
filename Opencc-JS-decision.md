@@ -261,7 +261,7 @@ export async function addTabletToCart(
 
 ---
 
-## 代码优化：检测列表实现方案 (2024-12-XX)
+## 代码优化：检测列表实现方案 (2024-12-04)
 
 ### 背景
 
