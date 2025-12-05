@@ -62,7 +62,7 @@ export function PreviewConfirmStep({ onBack, onConfirm }: PreviewConfirmStepProp
       <div className="space-y-8">
         {/* Title */}
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-primary">請仔細檢查預覽，確認無誤後提交</h1>
+          <h1 className="text-2xl font-bold text-primary">請仔細檢查確認無誤後提交</h1>
     
           <div className="text-lg font-semibold text-foreground">
             總計：{totalCount} 位

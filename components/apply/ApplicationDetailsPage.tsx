@@ -88,10 +88,10 @@ export function ApplicationDetailsPage({
           <Button
             onClick={onPreview}
             variant="ghost"
-            className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-2 bg-primary/10 text-primary h-12 px-4 text-base rounded-lg hover:bg-primary/20 transition-colors"
           >
             <Eye className="h-5 w-5" />
-            <span className="text-lg font-semibold">查看</span>
+            <span className="font-semibold">查看</span>
           </Button>
         )}
       </div>
