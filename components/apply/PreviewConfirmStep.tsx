@@ -1,0 +1,139 @@
+/**
+ * Preview Confirm Step - Show all tablets before final submission
+ * 
+ * Features:
+ * - Display all added tablets grouped by type
+ * - Show preview images for each tablet
+ * - Buttons: 返回修改 + 確認提交
+ */
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
+import {
+  getApplicantInfo,
+  getCartTablets,
+  getCartCount,
+  TabletItem,
+} from '@/lib/utils/application-storage'
+import {
+  getTabletTypeLabel,
+  TabletTypeValue,
+} from '@/lib/tablet-types-config'
+
+interface PreviewConfirmStepProps {
+  onBack: () => void
+  onConfirm: () => Promise<void>
+}
+
+export function PreviewConfirmStep({ onBack, onConfirm }: PreviewConfirmStepProps) {
+  const [tablets, setTablets] = useState<TabletItem[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    setTablets(getCartTablets())
+    setTotalCount(getCartCount())
+  }, [])
+
+  // Group tablets by type
+  const tabletsByType: Record<string, TabletItem[]> = {}
+  tablets.forEach((tablet) => {
+    if (!tabletsByType[tablet.tabletType]) {
+      tabletsByType[tablet.tabletType] = []
+    }
+    tabletsByType[tablet.tabletType].push(tablet)
+  })
+
+  const handleConfirm = async () => {
+    setSubmitting(true)
+    try {
+      await onConfirm()
+    } catch (error) {
+      console.error('Confirmation error:', error)
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="space-y-8">
+        {/* Title */}
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-primary">請仔細檢查預覽，確認無誤後提交</h1>
+    
+          <div className="text-lg font-semibold text-foreground">
+            總計：{totalCount} 位
+          </div>
+        </div>
+
+        {/* Preview Images Grouped by Type */}
+        {Object.entries(tabletsByType).map(([tabletType, items]) => {
+          const typeLabel = getTabletTypeLabel(tabletType as TabletTypeValue)
+          
+          return (
+            <div key={tabletType} className="space-y-4">
+              <h2 className="text-xl font-bold text-primary border-b pb-2">
+                {typeLabel} ({items.length} 位)
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
+                {items.map((tablet) => {
+                  // Fallback for old data
+                  const displayText = tablet.displayText || Object.values(tablet.formData).filter(v => v).join('，')
+                  const imageUrl = tablet.previewUrl || `/api/og/tablet?name=${encodeURIComponent(displayText)}&type=${tabletType}`
+                  
+                  return (
+                    <div key={tablet.id} className="space-y-3 flex flex-col items-center">
+                      <div className="relative bg-gray-100 rounded-lg overflow-hidden shadow-md border border-gray-200 transition-transform hover:scale-105">
+                        <img 
+                          src={imageUrl} 
+                          alt={`Tablet for ${displayText}`} 
+                          className="h-[400px] w-auto object-contain"
+                        />
+                      </div>
+                      <p className="font-medium text-lg">{displayText}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+          <Button
+            onClick={onBack}
+            variant="outline"
+            className="btn-secondary-elder w-full sm:w-auto"
+            disabled={submitting}
+          >
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            返回
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={submitting}
+            className="btn-primary-elder w-full sm:flex-1 bg-green-600 hover:bg-green-700"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                提交中...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="mr-2 h-5 w-5" />
+                確認提交（{totalCount}位）
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+

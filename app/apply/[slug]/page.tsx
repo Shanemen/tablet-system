@@ -28,6 +28,7 @@ import { submitMultiTypeApplication } from './actions'
 import { ApplicantInfoStep } from '@/components/apply/ApplicantInfoStep'
 import { ApplicationDetailsPage } from '@/components/apply/ApplicationDetailsPage'
 import { TabletFormStep } from '@/components/apply/TabletFormStep'
+import { PreviewConfirmStep } from '@/components/apply/PreviewConfirmStep'
 import { CeremonyHeader } from '@/components/apply/CeremonyHeader'
 
 // Utils
@@ -36,10 +37,12 @@ import {
   isCartForCeremony,
   hasApplicantInfo,
   getCartCount,
+  getApplicantInfo,
+  getCartTablets,
 } from '@/lib/utils/application-storage'
 import { TabletTypeValue } from '@/lib/tablet-types-config'
 
-type Step = 'applicant-info' | 'application-details' | 'fill-form'
+type Step = 'applicant-info' | 'application-details' | 'fill-form' | 'preview-confirm'
 
 export default function ApplicationFormPage() {
   const params = useParams()
@@ -119,24 +122,44 @@ export default function ApplicationFormPage() {
   const handleGoBack = () => {
     setCurrentStep('applicant-info')
   }
+
+  const handlePreview = () => {
+    setCurrentStep('preview-confirm')
+  }
+
+  const handleBackFromPreview = () => {
+    setCurrentStep('application-details')
+  }
   
-  const handleSubmit = async () => {
+  const handleConfirmSubmit = async () => {
     if (!ceremony) return
     
-    try {
-      const result = await submitMultiTypeApplication(ceremony.id, slug)
+    // Read data from localStorage on client
+    const applicantInfo = getApplicantInfo()
+    const tablets = getCartTablets()
     
-    if (result.error) {
-      setMessage({ type: 'error', text: result.error })
+    // Submit to server with data
+    try {
+      const result = await submitMultiTypeApplication(
+        ceremony.id, 
+        slug,
+        applicantInfo,
+        tablets
+      )
+    
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error })
+        setCurrentStep('application-details')
         window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
+      } else {
         // Clear cart and redirect to success page
         clearCart()
-      router.push(`/apply/success/${result.applicationId}`)
+        router.push(`/apply/success/${result.applicationId}`)
       }
     } catch (error) {
       console.error('Submission error:', error)
       setMessage({ type: 'error', text: '提交失敗，請稍後再試' })
+      setCurrentStep('application-details')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
@@ -228,7 +251,14 @@ export default function ApplicationFormPage() {
           onBack={handleGoBack}
           onEditApplicant={handleEditApplicant}
           onAddTablet={handleAddTablet}
-          onSubmit={handleSubmit}
+          onPreview={handlePreview}
+        />
+      )}
+
+      {currentStep === 'preview-confirm' && (
+        <PreviewConfirmStep
+          onBack={handleBackFromPreview}
+          onConfirm={handleConfirmSubmit}
         />
       )}
 

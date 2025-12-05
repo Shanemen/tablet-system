@@ -153,7 +153,47 @@ export function TabletFormStep({
 
   // Confirm and add to cart
   const handleConfirm = async () => {
-    await addTabletToCart(tabletType, formData)
+    // Ensure we have converted texts (in case user skipped preview)
+    let honoreeText = convertedTexts.honoree
+    let petitionerText = convertedTexts.petitioner
+    
+    if (!honoreeText) {
+      // Need to convert first
+      const previewText = getPreviewText(tabletType, formData)
+      honoreeText = await convertToTraditional(previewText)
+      
+      const petitionerRaw = getPetitionerText(tabletType, formData)
+      petitionerText = petitionerRaw ? await convertToTraditional(petitionerRaw) : ''
+    }
+
+    // Build the preview URL (same as in previewing state)
+    const apiUrl = new URL('/api/og/tablet', window.location.origin)
+    apiUrl.searchParams.set('name', honoreeText)
+    apiUrl.searchParams.set('type', tabletType)
+    if (petitionerText) {
+      apiUrl.searchParams.set('applicant', petitionerText)
+    }
+
+    // Build display text (same as confirmationText in previewing state)
+    let displayText = ''
+    if (tabletType === 'karmic-creditors') {
+      displayText = honoreeText
+    } else if (tabletType === 'aborted-spirits') {
+      const parts = [honoreeText]
+      if (petitionerText) {
+        parts.push(petitionerText)
+      }
+      displayText = parts.join('，')
+    } else {
+      const parts = [honoreeText]
+      if (petitionerText) {
+        parts.push(petitionerText)
+      }
+      displayText = parts.join('，')
+    }
+
+    // Save with complete preview info
+    addTabletToCart(tabletType, formData, apiUrl.toString(), displayText)
     refreshExistingTablets()
     setFormState('confirmed')
   }
@@ -282,7 +322,8 @@ export function TabletFormStep({
         {existingTablets.length > 0 && (
           <div className="space-y-3">
             {existingTablets.map((tablet, index) => {
-              const displayText = getPreviewText(tablet.tabletType, tablet.formData)
+              // Fallback for old data without displayText
+              const displayText = tablet.displayText || Object.values(tablet.formData).filter(v => v).join('，')
               const isConfirmingDelete = deleteConfirm === tablet.id
 
               return (
@@ -462,7 +503,8 @@ export function TabletFormStep({
       {/* Added tablets list - 简化布局 */}
       <div className="space-y-3">
         {existingTablets.map((tablet, index) => {
-          const displayText = getPreviewText(tablet.tabletType, tablet.formData)
+          // Fallback for old data without displayText
+          const displayText = tablet.displayText || Object.values(tablet.formData).filter(v => v).join('，')
           const isConfirmingDelete = deleteConfirm === tablet.id
 
           return (

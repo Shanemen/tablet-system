@@ -23,17 +23,15 @@ export interface ApplicationFormData {
 
 /**
  * Submit application with multiple tablet types
- * Reads from localStorage cart on client, then submits all tablets in one transaction
+ * Receives applicant info and tablets from client (already read from localStorage)
  */
 export async function submitMultiTypeApplication(
   ceremonyId: number,
-  slug: string
+  slug: string,
+  applicantInfo: { name: string; phone: string } | null,
+  tablets: any[]
 ): Promise<{ success?: string; applicationId?: number; error?: string }> {
   const supabase = await createClient()
-
-  // Get data from localStorage (client-side data passed via context)
-  const applicantInfo = getApplicantInfo()
-  const tablets = getCartTablets()
 
   // Validation
   if (!applicantInfo || !applicantInfo.name || !applicantInfo.phone) {

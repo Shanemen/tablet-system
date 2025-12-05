@@ -16,11 +16,10 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, CheckCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, CheckCircle, Loader2, Eye } from 'lucide-react'
 import {
   getTabletTypeOptions,
   TabletTypeValue,
-  getPreviewText,
   getTabletTypeLabel,
 } from '@/lib/tablet-types-config'
 import {
@@ -35,20 +34,19 @@ interface ApplicationDetailsPageProps {
   onBack: () => void
   onEditApplicant: () => void
   onAddTablet: (type: TabletTypeValue) => void
-  onSubmit: () => Promise<void>
+  onPreview: () => void
 }
 
 export function ApplicationDetailsPage({
   onBack,
   onEditApplicant,
   onAddTablet,
-  onSubmit,
+  onPreview,
 }: ApplicationDetailsPageProps) {
   const [applicantInfo, setApplicantInfo] = useState<{ name: string; phone: string } | null>(null)
   const [tabletsByType, setTabletsByType] = useState<Partial<Record<TabletTypeValue, TabletItem[]>>>({})
   const [totalCount, setTotalCount] = useState(0)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
 
   const tabletTypes = getTabletTypeOptions()
 
@@ -75,31 +73,26 @@ export function ApplicationDetailsPage({
     }
   }
 
-  const handleSubmit = async () => {
-    setSubmitting(true)
-    try {
-      await onSubmit()
-    } catch (error) {
-      console.error('Submission error:', error)
-      setSubmitting(false)
-    }
-  }
 
   return (
     <div className="space-y-8">
-      {/* Title with cart indicator - 复用 TabletTypeSelector 的样式 */}
+      {/* Title with View button */}
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <h2 className="text-lg text-muted-foreground font-normal mb-2">
-            申請詳情
+            申請詳情：已添加 {totalCount} 位
           </h2>
         </div>
         
         {totalCount > 0 && (
-          <div className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg">
-            <ShoppingCart className="h-5 w-5" />
-            <span className="text-lg font-semibold">{totalCount} 位</span>
-          </div>
+          <Button
+            onClick={onPreview}
+            variant="ghost"
+            className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            <Eye className="h-5 w-5" />
+            <span className="text-lg font-semibold">查看</span>
+          </Button>
         )}
       </div>
 
@@ -164,7 +157,8 @@ export function ApplicationDetailsPage({
               {count > 0 && (
                 <div className="mt-2 divide-y divide-border">
                   {tablets.map((tablet, index) => {
-                    const displayText = getPreviewText(tablet.tabletType, tablet.formData)
+                    // Fallback for old data without displayText
+                    const displayText = tablet.displayText || Object.values(tablet.formData).filter(v => v).join('，')
                     const isConfirmingDelete = deleteConfirm === tablet.id
 
                     return (
@@ -204,28 +198,17 @@ export function ApplicationDetailsPage({
       <div className="flex flex-col sm:flex-row gap-4">
         {totalCount > 0 && (
           <Button
-            onClick={handleSubmit}
-            disabled={submitting}
+            onClick={onPreview}
             className="btn-primary-elder w-full sm:flex-1 bg-green-600 hover:bg-green-700"
           >
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                提交中...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="mr-2 h-5 w-5" />
-                確認提交申請 ({totalCount} 位)
-              </>
-            )}
+            <Eye className="mr-2 h-5 w-5" />
+            預覽並確認（{totalCount}位）
           </Button>
         )}
         <Button
           onClick={onBack}
           variant="ghost"
           className="btn-secondary-elder w-full sm:w-auto"
-          disabled={submitting}
         >
           返回
         </Button>

@@ -25,6 +25,8 @@ export interface TabletItem {
   id: string // Unique ID for this cart item
   tabletType: TabletTypeValue
   formData: Record<string, string> // Field values for this tablet
+  previewUrl: string // Complete preview image URL (with all params)
+  displayText: string // Text to show in lists (converted to traditional)
   addedAt: number // Timestamp when added
 }
 
@@ -133,28 +135,22 @@ export function getApplicantInfo(): ApplicantInfo | null {
 
 /**
  * Add a tablet to the cart
- * Automatically converts all text fields to traditional Chinese
+ * Stores the complete preview URL to ensure consistency
  */
-export async function addTabletToCart(
+export function addTabletToCart(
   tabletType: TabletTypeValue,
-  formData: Record<string, string>
-): Promise<TabletItem> {
+  formData: Record<string, string>,
+  previewUrl: string,
+  displayText: string
+): TabletItem {
   const cart = getCart()
-
-  // Convert all text fields to traditional Chinese (dual detection)
-  const convertedData: Record<string, string> = {}
-  for (const [key, value] of Object.entries(formData)) {
-    if (typeof value === 'string' && value.trim()) {
-      convertedData[key] = await convertToTraditional(value)
-    } else {
-      convertedData[key] = value
-    }
-  }
 
   const newItem: TabletItem = {
     id: generateItemId(),
     tabletType,
-    formData: convertedData, // Store converted (traditional) data
+    formData, // Store form data as-is
+    previewUrl, // Store the exact preview URL user saw
+    displayText, // Store the display text for lists
     addedAt: Date.now(),
   }
 
