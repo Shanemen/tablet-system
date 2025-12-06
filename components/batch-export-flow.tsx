@@ -106,6 +106,11 @@ const generateMockApplicants = (): Applicant[] => {
       phone,
       tablet: selectedTypes.join("  "),
       tabletNames,
+      tabletDetails: tabletNames.map((name, idx) => ({
+        display_name: name,
+        image_url: null, // Mock data doesn't have real images
+        tablet_type: tabletTypes[Math.floor(idx / 5) % tabletTypes.length].type
+      })),
       total,
       status
     })

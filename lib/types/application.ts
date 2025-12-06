@@ -1,11 +1,18 @@
 // Application and tablet types for the admin dashboard
 
+export interface TabletName {
+  display_name: string
+  image_url: string | null // Permanent URL from Supabase Storage
+  tablet_type: string
+}
+
 export interface Applicant {
   id: number
   name: string
   phone: string
   tablet: string
   tabletNames: string[]
+  tabletDetails: TabletName[] // Full details including image_url for each tablet
   total: number
   status: "exported" | "pending" | "problematic"
 }

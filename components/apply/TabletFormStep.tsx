@@ -26,6 +26,7 @@ import {
 } from '@/lib/tablet-types-config'
 import { addTabletToCart, getTabletCountByType, getCartTabletsByType, removeTabletFromCart, TabletItem } from '@/lib/utils/application-storage'
 import { convertToTraditional } from '@/lib/utils/chinese-converter-client'
+import { createClient } from '@/lib/supabase/client'
 
 interface TabletFormStepProps {
   tabletType: TabletTypeValue
@@ -153,49 +154,96 @@ export function TabletFormStep({
 
   // Confirm and add to cart
   const handleConfirm = async () => {
-    // Ensure we have converted texts (in case user skipped preview)
-    let honoreeText = convertedTexts.honoree
-    let petitionerText = convertedTexts.petitioner
-    
-    if (!honoreeText) {
-      // Need to convert first
-      const previewText = getPreviewText(tabletType, formData)
-      honoreeText = await convertToTraditional(previewText)
+    try {
+      // Ensure we have converted texts (in case user skipped preview)
+      let honoreeText = convertedTexts.honoree
+      let petitionerText = convertedTexts.petitioner
       
-      const petitionerRaw = getPetitionerText(tabletType, formData)
-      petitionerText = petitionerRaw ? await convertToTraditional(petitionerRaw) : ''
-    }
-
-    // Build the preview URL (same as in previewing state)
-    const apiUrl = new URL('/api/og/tablet', window.location.origin)
-    apiUrl.searchParams.set('name', honoreeText)
-    apiUrl.searchParams.set('type', tabletType)
-    if (petitionerText) {
-      apiUrl.searchParams.set('applicant', petitionerText)
-    }
-
-    // Build display text (same as confirmationText in previewing state)
-    let displayText = ''
-    if (tabletType === 'karmic-creditors') {
-      displayText = honoreeText
-    } else if (tabletType === 'aborted-spirits') {
-      const parts = [honoreeText]
-      if (petitionerText) {
-        parts.push(petitionerText)
+      if (!honoreeText) {
+        // Need to convert first
+        const previewText = getPreviewText(tabletType, formData)
+        honoreeText = await convertToTraditional(previewText)
+        
+        const petitionerRaw = getPetitionerText(tabletType, formData)
+        petitionerText = petitionerRaw ? await convertToTraditional(petitionerRaw) : ''
       }
-      displayText = parts.join('，')
-    } else {
-      const parts = [honoreeText]
-      if (petitionerText) {
-        parts.push(petitionerText)
-      }
-      displayText = parts.join('，')
-    }
 
-    // Save with complete preview info
-    addTabletToCart(tabletType, formData, apiUrl.toString(), displayText)
-    refreshExistingTablets()
-    setFormState('confirmed')
+      // Build the API URL to generate the image
+      const apiUrl = new URL('/api/og/tablet', window.location.origin)
+      apiUrl.searchParams.set('name', honoreeText)
+      apiUrl.searchParams.set('type', tabletType)
+      if (petitionerText) {
+        apiUrl.searchParams.set('applicant', petitionerText)
+      }
+
+      // 1. 获取生成的图片
+      const response = await fetch(apiUrl.toString())
+      if (!response.ok) {
+        throw new Error('图片生成失败')
+      }
+      const blob = await response.blob()
+
+      // 2. 上传到 Supabase Storage
+      const supabase = createClient()
+      const fileName = `${Date.now()}-${tabletType}-${Math.random().toString(36).substr(2, 9)}.png`
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('tablet-images')
+        .upload(fileName, blob, {
+          contentType: 'image/png',
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) {
+        console.error('图片上传失败:', uploadError)
+        throw new Error('图片上传失败')
+      }
+
+      // 3. 获取图片 URL
+      // CRITICAL: This URL MUST be the same one used everywhere (preview, admin, PDF)
+      // For private bucket with RLS allowing anon read, getPublicUrl should work
+      const { data: { publicUrl } } = supabase.storage
+        .from('tablet-images')
+        .getPublicUrl(fileName)
+
+      if (!publicUrl) {
+        throw new Error('无法获取图片 URL')
+      }
+
+      // Verify the URL format is correct
+      if (!publicUrl.includes('supabase.co/storage/v1/object/public/tablet-images/')) {
+        console.error('Unexpected URL format:', publicUrl)
+        throw new Error('图片 URL 格式不正确')
+      }
+
+      // Build display text (same as confirmationText in previewing state)
+      let displayText = ''
+      if (tabletType === 'karmic-creditors') {
+        displayText = honoreeText
+      } else if (tabletType === 'aborted-spirits') {
+        const parts = [honoreeText]
+        if (petitionerText) {
+          parts.push(petitionerText)
+        }
+        displayText = parts.join('，')
+      } else {
+        const parts = [honoreeText]
+        if (petitionerText) {
+          parts.push(petitionerText)
+        }
+        displayText = parts.join('，')
+      }
+
+      // CRITICAL: Save the EXACT URL that will be used everywhere
+      // This ensures: user approved image = preview image = admin image = PDF image
+      addTabletToCart(tabletType, formData, publicUrl, displayText)
+      refreshExistingTablets()
+      setFormState('confirmed')
+    } catch (error) {
+      console.error('确认添加失败:', error)
+      alert('添加失败，请重试')
+    }
   }
 
   // Continue adding same type (Add more)

@@ -81,9 +81,26 @@ export function PreviewConfirmStep({ onBack, onConfirm }: PreviewConfirmStepProp
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
                 {items.map((tablet) => {
-                  // Fallback for old data
                   const displayText = tablet.displayText || Object.values(tablet.formData).filter(v => v).join('，')
-                  const imageUrl = tablet.previewUrl || `/api/og/tablet?name=${encodeURIComponent(displayText)}&type=${tabletType}`
+                  
+                  // CRITICAL: Only use the saved Supabase Storage URL
+                  // This MUST be the same image the user approved in the form
+                  // NO dynamic generation - consistency is the core requirement!
+                  const imageUrl = tablet.previewUrl
+                  
+                  if (!imageUrl) {
+                    // If no image URL, this is a data integrity issue
+                    console.error('Missing image URL for tablet:', tablet.id, displayText)
+                    return (
+                      <div key={tablet.id} className="space-y-3 flex flex-col items-center">
+                        <div className="relative bg-red-50 border-2 border-red-300 rounded-lg p-8 text-center">
+                          <p className="text-red-600 font-semibold">圖片缺失</p>
+                          <p className="text-sm text-red-500 mt-2">請刪除此牌位並重新添加</p>
+                        </div>
+                        <p className="font-medium text-lg">{displayText}</p>
+                      </div>
+                    )
+                  }
                   
                   return (
                     <div key={tablet.id} className="space-y-3 flex flex-col items-center">
@@ -92,6 +109,18 @@ export function PreviewConfirmStep({ onBack, onConfirm }: PreviewConfirmStepProp
                           src={imageUrl} 
                           alt={`Tablet for ${displayText}`} 
                           className="h-[400px] w-auto object-contain"
+                          onError={(e) => {
+                            // Image load failed - show error instead of generating new image
+                            console.error('Image load error for saved URL:', imageUrl)
+                            e.currentTarget.style.display = 'none'
+                            const errorDiv = document.createElement('div')
+                            errorDiv.className = 'p-8 text-center text-red-600'
+                            errorDiv.innerHTML = `
+                              <p class="font-semibold">圖片加載失敗</p>
+                              <p class="text-sm mt-2">URL: ${imageUrl.substring(0, 50)}...</p>
+                            `
+                            e.currentTarget.parentElement?.appendChild(errorDiv)
+                          }}
                         />
                       </div>
                       <p className="font-medium text-lg">{displayText}</p>

@@ -63,15 +63,17 @@ export async function submitMultiTypeApplication(
     return { error: `提交失敗：${appError?.message || '未知錯誤'}` }
   }
 
-  // Create application_name entries with tablet_type
+  // Create application_name entries with tablet_type and image_url
   const nameEntries = tablets.map((tablet, index) => {
-    // Get display text from form data (use the first field value as display name)
-    const displayName = Object.values(tablet.formData)[0] || ''
+    // Get display text from tablet (already includes converted text)
+    const displayName = tablet.displayText || Object.values(tablet.formData)[0] || ''
 
     return {
       application_id: application.id,
       display_name: displayName,
       tablet_type: tablet.tabletType,
+      image_url: tablet.previewUrl, // Save the permanent Supabase Storage URL
+      image_generation_status: 'generated',
       order_index: index + 1,
       is_main: index === 0, // First entry is main
     }
