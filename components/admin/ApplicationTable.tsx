@@ -1,6 +1,7 @@
 "use client"
 
 import { Eye } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Applicant, statusConfig, ApplicationStatus, SelectedCount, Stats } from "@/lib/types/application"
@@ -28,6 +29,8 @@ export function ApplicationTable({
   onExport,
   stats
 }: ApplicationTableProps) {
+  const router = useRouter()
+  
   const getTableTitle = () => {
     if (searchActive) return `搜索結果：找到 ${applications.length} 個結果`
     if (!activeCard) return "全部申請表格"
@@ -90,7 +93,12 @@ export function ApplicationTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:border-primary hover:text-primary cursor-pointer">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:bg-primary/10 hover:border-primary hover:text-primary cursor-pointer"
+                      onClick={() => router.push(`/admin/applications/${item.id}`)}
+                    >
                       <Eye className="h-4 w-4 mr-1" />
                       查看
                     </Button>
