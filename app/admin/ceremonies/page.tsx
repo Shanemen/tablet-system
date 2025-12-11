@@ -8,6 +8,7 @@ import { PageLayout } from '@/components/admin/PageLayout'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { FormField } from '@/components/admin/FormField'
 import { PasswordConfirmDialog } from '@/components/admin/PasswordConfirmDialog'
+import { NotificationDialog } from '@/components/admin/NotificationDialog'
 import { getCurrentCeremony, updateCeremony, createCeremony, verifyPasswordAndDelete, Ceremony } from './actions'
 import { Loader2, Edit2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
@@ -23,6 +24,7 @@ export default function CeremoniesPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleted, setIsDeleted] = useState(false) // Flag to prevent re-loading after delete
   const [showDonation, setShowDonation] = useState(false) // Track donation toggle state
+  const [showCopyNotification, setShowCopyNotification] = useState(false) // Copy URL notification
 
   useEffect(() => {
     if (!isDeleted) {
@@ -251,7 +253,7 @@ export default function CeremoniesPage() {
                         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
                         const urlToCopy = fullUrl || `${baseUrl}/apply/${ceremony.slug}`
                         navigator.clipboard.writeText(urlToCopy)
-                        alert('鏈接已複製到剪貼板！')
+                        setShowCopyNotification(true)
                       }}
                       className="btn-secondary-large whitespace-nowrap"
                     >
@@ -472,7 +474,7 @@ export default function CeremoniesPage() {
                         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
                         const urlToCopy = fullUrl || `${baseUrl}/apply/${ceremony.slug}`
                         navigator.clipboard.writeText(urlToCopy)
-                        alert('鏈接已複製到剪貼板！')
+                        setShowCopyNotification(true)
                       }}
                       className="btn-secondary-large whitespace-nowrap"
                     >
@@ -563,6 +565,14 @@ export default function CeremoniesPage() {
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
           isLoading={saving}
+        />
+      )}
+
+      {/* Copy URL Notification Dialog */}
+      {showCopyNotification && (
+        <NotificationDialog
+          message="鏈接已複製！"
+          onClose={() => setShowCopyNotification(false)}
         />
       )}
     </PageLayout>

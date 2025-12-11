@@ -76,7 +76,7 @@ export default async function SuccessPage({ params }: { params: Promise<{ id: st
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-md hover:shadow-lg"
               >
-                Donate 捐贈
+                Donate 捐贈護持
               </a>
             </div>
           )}

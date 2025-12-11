@@ -122,8 +122,11 @@ function generateSlug(nameZh: string, startAt: string): string {
   // Convert Chinese name to slug-friendly format
   // Simple approach: use date + simplified name
   const nameSlug = nameZh
+    .trim() // Remove leading/trailing spaces first
     .replace(/\s+/g, '-')
     .replace(/[^\w\u4e00-\u9fff-]/g, '')
+    .replace(/-+$/, '') // Remove trailing dashes
+    .replace(/^-+/, '') // Remove leading dashes
     .toLowerCase()
     .substring(0, 30)
   
@@ -215,14 +218,21 @@ export async function updateCeremony(ceremonyId: number, formData: FormData) {
  * Get ceremony by slug (for public application form)
  */
 export async function getCeremonyBySlug(slug: string): Promise<Ceremony | null> {
+  noStore() // Disable caching
   const supabase = await createClient()
+  
+  // Decode URL-encoded slug (e.g., %E4%BD%9B -> 佛)
+  const decodedSlug = decodeURIComponent(slug)
+  console.log('[getCeremonyBySlug] Looking for slug:', decodedSlug)
   
   const { data, error } = await supabase
     .from('ceremony')
     .select('*')
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
     .eq('status', 'active')
     .single()
+  
+  console.log('[getCeremonyBySlug] Result - data:', data?.id, data?.name_zh, 'error:', error?.message)
   
   if (error) {
     console.error('Error fetching ceremony by slug:', error)
