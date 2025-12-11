@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { unstable_noStore as noStore } from 'next/cache'
 
 export interface Ceremony {
   id: number
@@ -13,12 +14,15 @@ export interface Ceremony {
   location: string | null
   deadline_at: string
   status: string
+  show_donation: boolean
+  donation_url: string | null
 }
 
 /**
  * Get current ceremony - prioritizes active, then draft
  */
 export async function getCurrentCeremony(): Promise<Ceremony | null> {
+  noStore() // Disable caching to always get fresh data
   const supabase = await createClient()
   
   // First try to get active ceremony
@@ -29,6 +33,8 @@ export async function getCurrentCeremony(): Promise<Ceremony | null> {
     .order('start_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+  
+  console.log('[getCurrentCeremony] Active ceremony:', activeData?.id, activeData?.name_zh)
   
   if (activeData) {
     return activeData
@@ -43,11 +49,14 @@ export async function getCurrentCeremony(): Promise<Ceremony | null> {
     .limit(1)
     .maybeSingle()
   
+  console.log('[getCurrentCeremony] Draft ceremony:', draftData?.id, draftData?.name_zh)
+  
   if (draftData) {
     return draftData
   }
   
   // No ceremony found
+  console.log('[getCurrentCeremony] No ceremony found')
   return null
 }
 
@@ -82,6 +91,8 @@ export async function createCeremony(formData: FormData) {
     start_at: startAt,
     end_at: formData.get('end_at') as string || startAt,
     deadline_at: formData.get('deadline_at') as string,
+    show_donation: formData.get('show_donation') === 'true',
+    donation_url: formData.get('donation_url') as string || null,
     status: 'active' as const, // Directly create as active
     slug: slug,
     temple_id: 1, // Default temple_id
@@ -183,6 +194,8 @@ export async function updateCeremony(ceremonyId: number, formData: FormData) {
     start_at: formData.get('start_at') as string,
     end_at: formData.get('end_at') as string || formData.get('start_at') as string,
     deadline_at: formData.get('deadline_at') as string,
+    show_donation: formData.get('show_donation') === 'true',
+    donation_url: formData.get('donation_url') as string || null,
   }
   
   const { error } = await supabase
@@ -275,15 +288,26 @@ export async function verifyPasswordAndDelete(ceremonyId: number, password: stri
   }
   
   // Delete ceremony
-  const { error: ceremonyError } = await supabase
+  console.log('[DELETE] Attempting to delete ceremony:', ceremonyId)
+  const { data: deleteData, error: ceremonyError } = await supabase
     .from('ceremony')
     .delete()
     .eq('id', ceremonyId)
+    .select()
+  
+  console.log('[DELETE] Result - data:', deleteData, 'error:', ceremonyError)
   
   if (ceremonyError) {
+    console.error('[DELETE] Failed:', ceremonyError)
     return { error: `刪除失敗：${ceremonyError.message}` }
   }
   
+  if (!deleteData || deleteData.length === 0) {
+    console.error('[DELETE] No rows deleted - ceremony may not exist or RLS blocked')
+    return { error: '刪除失敗：找不到該法會或權限不足' }
+  }
+  
+  console.log('[DELETE] Success! Ceremony deleted.')
   revalidatePath('/admin/ceremonies')
   return { success: '表格已成功刪除！' }
 }

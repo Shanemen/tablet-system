@@ -23,12 +23,12 @@ export default async function SuccessPage({ params }: { params: Promise<{ id: st
   const { id } = await params
   const supabase = await createClient()
 
-  // Fetch application with names
+  // Fetch application with names and ceremony donation settings
   const { data: application } = await supabase
     .from('application')
     .select(`
       *,
-      ceremony:ceremony_id (slug),
+      ceremony:ceremony_id (slug, show_donation, donation_url),
       application_name (*)
     `)
     .eq('id', id)
@@ -39,6 +39,7 @@ export default async function SuccessPage({ params }: { params: Promise<{ id: st
   }
 
   const names = application.application_name || []
+  const ceremony = application.ceremony
   
   // Group names by tablet type for display
   const namesByType: Record<string, any[]> = {}
@@ -65,6 +66,20 @@ export default async function SuccessPage({ params }: { params: Promise<{ id: st
           <div className="text-lg font-semibold text-foreground">
             總計：{names.length} 位
           </div>
+
+          {/* Donation Button - Show if enabled by admin */}
+          {ceremony?.show_donation && ceremony?.donation_url && (
+            <div className="mt-6">
+              <a
+                href={ceremony.donation_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-md hover:shadow-lg"
+              >
+                Donate 捐贈
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Tablet Names List Grouped by Type */}

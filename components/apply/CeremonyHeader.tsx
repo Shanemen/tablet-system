@@ -77,11 +77,11 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
           </div>
         )}
 
-        {/* Date/Time - 法會日期 */}
+        {/* Date/Time - 時間 */}
         <div className="flex items-start gap-3">
           <Calendar className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div>
-            <span className="text-muted-foreground">法會日期：</span>
+            <span className="text-muted-foreground">時間：</span>
             <span className="text-foreground font-medium">
               {formatDateTime(ceremony.start_at)}
               {ceremony.end_at && ceremony.end_at !== ceremony.start_at && (

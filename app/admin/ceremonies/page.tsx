@@ -22,6 +22,7 @@ export default function CeremoniesPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleted, setIsDeleted] = useState(false) // Flag to prevent re-loading after delete
+  const [showDonation, setShowDonation] = useState(false) // Track donation toggle state
 
   useEffect(() => {
     if (!isDeleted) {
@@ -42,6 +43,7 @@ export default function CeremoniesPage() {
     setLoading(true)
     const data = await getCurrentCeremony()
     setCeremony(data)
+    setShowDonation(data?.show_donation || false) // Initialize donation toggle state
     setHasChanges(false) // Reset changes flag when loading
     setIsEditing(!data) // Auto-enable editing for new ceremony
     setLoading(false)
@@ -55,6 +57,7 @@ export default function CeremoniesPage() {
 
   const handleEdit = () => {
     setIsEditing(true)
+    setShowDonation(ceremony?.show_donation || false) // Reset donation state when entering edit mode
     setMessage(null)
   }
 
@@ -213,6 +216,20 @@ export default function CeremoniesPage() {
                   <p className="text-lg text-foreground mt-1">{ceremony.location}</p>
                 </div>
               )}
+
+              {/* Donation Settings */}
+              <div>
+                <label className="form-label">提交後顯示捐贈功能？</label>
+                <p className="text-lg text-foreground mt-1">
+                  {ceremony.show_donation ? 'Yes' : 'No'}
+                </p>
+                {ceremony.show_donation && ceremony.donation_url && (
+                  <div className="mt-2">
+                    <label className="form-label text-sm">捐贈頁面 URL</label>
+                    <p className="text-base text-foreground mt-1 break-all">{ceremony.donation_url}</p>
+                  </div>
+                )}
+              </div>
 
               {/* Public URL and QR Code */}
               <div>
@@ -387,6 +404,48 @@ export default function CeremoniesPage() {
                 className="form-input"
               />
             </FormField>
+
+            {/* Donation Settings - Inline layout */}
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="text-base text-muted-foreground whitespace-nowrap">
+                  提交後顯示捐贈功能？
+                </span>
+                <select
+                  id="show_donation"
+                  name="show_donation"
+                  value={showDonation ? 'true' : 'false'}
+                  onChange={(e) => {
+                    setShowDonation(e.target.value === 'true')
+                    setHasChanges(true)
+                  }}
+                  className="border border-input rounded-md pl-3 pr-8 py-1.5 text-sm bg-background appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat"
+                >
+                  <option value="false">No</option>
+                  <option value="true">Yes</option>
+                </select>
+              </div>
+
+              {/* Conditional URL input - only show when Yes is selected */}
+              {showDonation && (
+                <div className="mt-4">
+                  <FormField 
+                    label="捐贈頁面 URL" 
+                    htmlFor="donation_url"
+                    helpText="信眾點擊捐贈按鈕後將跳轉到此鏈接"
+                  >
+                    <Input
+                      id="donation_url"
+                      name="donation_url"
+                      type="url"
+                      defaultValue={ceremony?.donation_url || ''}
+                      placeholder="https://example.com/donate"
+                      className="form-input"
+                    />
+                  </FormField>
+                </div>
+              )}
+            </div>
 
             {/* Public URL and QR Code - Show when ceremony exists */}
             {ceremony && (
