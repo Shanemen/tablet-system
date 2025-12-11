@@ -130,7 +130,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：陳',
-        maxLength: 4,
+        maxLength: 50,
       },
       {
         name: 'descendant_name',
