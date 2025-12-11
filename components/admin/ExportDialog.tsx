@@ -5,6 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { SelectedCount } from "@/lib/types/application"
 
+// PDF Result type
+export interface PDFResult {
+  type: string
+  typeName: string
+  pdfBase64: string
+  count: number
+  pageCount: number
+}
+
 // Step 2 - Export Confirmation
 interface ExportConfirmationProps {
   selectedCount: SelectedCount
@@ -51,8 +60,8 @@ export function ExportConfirmation({ selectedCount, onCancel, onConfirm }: Expor
               <div className="text-base font-medium text-foreground mb-2">📋 自動處理規則：</div>
               <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                 <li>• 按6種牌位類型自動分組</li>
-                <li>• 同類型牌位按申請人姓名拼音排序</li>
-                <li>• 每頁排版 6-8 個牌位，自動分頁</li>
+                <li>• 每頁排版 5 個牌位（單列垂直），自動分頁</li>
+                <li>• A4 尺寸含 3mm 出血區，適合專業印刷</li>
               </ul>
             </div>
 
@@ -177,18 +186,70 @@ export function ExportProgress({ progress }: ExportProgressProps) {
 // Step 4 - Completion
 interface ExportCompletionProps {
   selectedCount: SelectedCount
+  pdfResults: PDFResult[]
   onClose: () => void
 }
 
-export function ExportCompletion({ selectedCount, onClose }: ExportCompletionProps) {
-  const files = [
-    { name: '長生祿位.pdf', count: 300, size: '8.2MB', paper: '紅紙' },
-    { name: '往生蓮位.pdf', count: 800, size: '21.5MB', paper: '黃紙' },
-    { name: '歷代祖先.pdf', count: 150, size: '4.1MB', paper: '黃紙' },
-    { name: '冤親債主.pdf', count: 100, size: '2.8MB', paper: '黃紙' },
-    { name: '墮胎嬰靈.pdf', count: 50, size: '1.4MB', paper: '黃紙' },
-    { name: '地基主.pdf', count: 30, size: '0.9MB', paper: '黃紙' }
-  ]
+// Paper type mapping
+const PAPER_TYPE_MAP: Record<string, string> = {
+  'longevity': '紅紙',
+  'long-living': '紅紙',
+  'deceased': '黃紙',
+  'ancestors': '黃紙',
+  'karmic_creditors': '黃紙',
+  'karmic-creditors': '黃紙',
+  'aborted_spirits': '黃紙',
+  'aborted-spirits': '黃紙',
+  'land_deity': '黃紙',
+  'land-deity': '黃紙'
+}
+
+export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportCompletionProps) {
+  // Helper function to download a single PDF
+  const downloadPDF = (result: PDFResult) => {
+    try {
+      // Convert base64 to blob
+      const binaryString = atob(result.pdfBase64)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'application/pdf' })
+      
+      // Create download link
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${new Date().toISOString().split('T')[0]}_${result.typeName}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('下載失敗，請重試')
+    }
+  }
+
+  // Helper function to download all PDFs as ZIP
+  const downloadAllAsZip = async () => {
+    // For now, download one by one
+    // TODO: Implement actual ZIP creation if needed
+    for (const result of pdfResults) {
+      downloadPDF(result)
+      // Small delay between downloads to avoid browser blocking
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+  }
+
+  // Calculate file sizes (rough estimate: base64 length / 1.37 to get original size)
+  const getFileSize = (base64: string): string => {
+    const sizeInBytes = (base64.length * 3) / 4
+    const sizeInMB = sizeInBytes / (1024 * 1024)
+    return sizeInMB < 1 
+      ? `${(sizeInBytes / 1024).toFixed(1)}KB`
+      : `${sizeInMB.toFixed(1)}MB`
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -199,26 +260,32 @@ export function ExportCompletion({ selectedCount, onClose }: ExportCompletionPro
               <Check className="text-primary" size={32} />
             </div>
             <h3 className="text-2xl font-bold text-foreground">生成完成！</h3>
-            <p className="text-sm text-muted-foreground mt-1">已成功生成 6 個 PDF 文件</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              已成功生成 {pdfResults.length} 個 PDF 文件
+            </p>
           </div>
 
           <div className="space-y-3">
-            {files.map((file, i) => (
+            {pdfResults.map((result, i) => (
               <div key={i} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-grow">
                     <FileText className="text-slate-600" size={32} />
                     <div>
-                      <div className="font-semibold text-base text-foreground">2024-03-15_觀音法會_{file.name}</div>
-                      <div className="text-base text-muted-foreground">{file.count}個牌位 • {file.size} • {file.paper}打印</div>
+                      <div className="font-semibold text-base text-foreground">
+                        {new Date().toISOString().split('T')[0]}_{result.typeName}.pdf
+                      </div>
+                      <div className="text-base text-muted-foreground">
+                        {result.count}個牌位 • {result.pageCount}頁 • {getFileSize(result.pdfBase64)} • {PAPER_TYPE_MAP[result.type]}打印
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
-                      <Eye className="mr-1 h-4 w-4" />
-                      預覽
-                    </Button>
-                    <Button size="sm" className="bg-primary hover:bg-primary/85 hover:shadow-md transition-all">
+                    <Button 
+                      onClick={() => downloadPDF(result)}
+                      size="sm" 
+                      className="bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
+                    >
                       <Download className="mr-1 h-4 w-4" />
                       下載
                     </Button>
@@ -229,10 +296,15 @@ export function ExportCompletion({ selectedCount, onClose }: ExportCompletionPro
           </div>
 
           <div className="flex gap-3 mt-6">
-            <Button className="flex-1 bg-primary hover:bg-primary/85 hover:shadow-md transition-all">
-              <Download className="mr-2 h-5 w-5" />
-              全部下載 (ZIP)
-            </Button>
+            {pdfResults.length > 1 && (
+              <Button 
+                onClick={downloadAllAsZip}
+                className="flex-1 bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
+              >
+                <Download className="mr-2 h-5 w-5" />
+                下載全部
+              </Button>
+            )}
             <Button onClick={onClose} variant="outline" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
               關閉
             </Button>

@@ -35,14 +35,17 @@ export function BatchExportSection({
               <span className="text-base font-normal text-foreground/60 whitespace-nowrap">
                 選擇要導出的申請：
               </span>
-              <Button
-                onClick={() => onSelectChange(first100Count, first100Tablets)}
-                variant="outline"
-                size="lg"
-                className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-base sm:text-lg whitespace-nowrap"
-              >
-                前100份 ({first100Tablets}個牌位)
-              </Button>
+              {/* Only show "First 100" button when there are 100+ pending applications */}
+              {pendingApplications.length >= 100 && (
+                <Button
+                  onClick={() => onSelectChange(first100Count, first100Tablets)}
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-primary/50 text-primary hover:bg-primary/10 text-base sm:text-lg whitespace-nowrap"
+                >
+                  前100份 ({first100Tablets}個牌位)
+                </Button>
+              )}
               <Button
                 onClick={() => onSelectChange(pendingApplications.length, totalPendingTablets)}
                 variant="outline"

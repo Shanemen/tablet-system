@@ -6,9 +6,10 @@ import { PageHeader } from "@/components/admin/PageHeader"
 import { ApplicationStats } from "@/components/admin/ApplicationStats"
 import { ApplicationSearch } from "@/components/admin/ApplicationSearch"
 import { ApplicationTable } from "@/components/admin/ApplicationTable"
-import { ExportConfirmation, ExportProgress, ExportCompletion } from "@/components/admin/ExportDialog"
+import { ExportConfirmation, ExportProgress, ExportCompletion, PDFResult } from "@/components/admin/ExportDialog"
 import { Applicant, Stats, SelectedCount, ApplicationStatus } from "@/lib/types/application"
 import { getApplications } from "./actions"
+import { exportTabletsToPDF } from "./export-actions"
 
 export default function AdminDashboardPage() {
   // Data state
@@ -24,6 +25,11 @@ export default function AdminDashboardPage() {
   const [exportProgress, setExportProgress] = useState(0)
   const [highlightExported, setHighlightExported] = useState(false)
   const [highlightPending, setHighlightPending] = useState(false)
+  
+  // Export state
+  const [selectedApplicationIds, setSelectedApplicationIds] = useState<number[]>([])
+  const [pdfResults, setPdfResults] = useState<PDFResult[]>([])
+  const [exportError, setExportError] = useState<string | null>(null)
   
   // Statistics state
   const [stats, setStats] = useState<Stats>({
@@ -58,24 +64,44 @@ export default function AdminDashboardPage() {
     loadData()
   }, [])
 
-  // Simulate export progress
+  // Real export process
   useEffect(() => {
-    if (step === 3) {
+    if (step === 3 && selectedApplicationIds.length > 0) {
+      // Start export
       setExportProgress(0)
-      const interval = setInterval(() => {
-        setExportProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval)
-            setTimeout(() => setStep(4), 500)
-            return 100
-          }
-          return prev + 2
+      setExportError(null)
+      
+      // Simulate progress during export
+      const progressInterval = setInterval(() => {
+        setExportProgress(prev => Math.min(prev + 5, 90)) // Cap at 90% until real completion
+      }, 200)
+      
+      // Call actual export function
+      exportTabletsToPDF(selectedApplicationIds)
+        .then((results) => {
+          clearInterval(progressInterval)
+          setPdfResults(results)
+          setExportProgress(100)
+          
+          // Move to completion step after a brief delay
+          setTimeout(() => {
+            setStep(4)
+          }, 500)
         })
-      }, 100)
-     
-      return () => clearInterval(interval)
+        .catch((error) => {
+          clearInterval(progressInterval)
+          console.error('Export failed:', error)
+          setExportError(error.message || '導出失敗，請重試')
+          setExportProgress(0)
+          
+          // Show error and go back to step 1
+          alert(`導出失敗：${error.message || '未知錯誤'}`)
+          setStep(1)
+        })
+      
+      return () => clearInterval(progressInterval)
     }
-  }, [step])
+  }, [step, selectedApplicationIds])
 
   // Filter logic
   const filterData = () => {
@@ -126,6 +152,15 @@ export default function AdminDashboardPage() {
 
   const handleSelectChange = (applications: number, tablets: number) => {
     setSelectedCount({ applications, tablets })
+    
+    // Get IDs of the first N pending applications
+    if (applications > 0) {
+      const pendingApps = filtered.filter(app => app.status === "pending")
+      const selectedIds = pendingApps.slice(0, applications).map(app => app.id)
+      setSelectedApplicationIds(selectedIds)
+    } else {
+      setSelectedApplicationIds([])
+    }
   }
 
   const handleCloseStep4 = () => {
@@ -210,9 +245,10 @@ export default function AdminDashboardPage() {
           />
         )}
         {step === 3 && <ExportProgress progress={exportProgress} />}
-        {step === 4 && (
+        {step === 4 && pdfResults.length > 0 && (
           <ExportCompletion
             selectedCount={selectedCount}
+            pdfResults={pdfResults}
             onClose={handleCloseStep4}
           />
         )}
