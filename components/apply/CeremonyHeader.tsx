@@ -2,7 +2,7 @@
  * Ceremony Header Component
  * 
  * Two display modes:
- * - full: Shows all details (name, date, location, deadline)
+ * - full: Shows all details (name, presiding monk, date, location, deadline)
  * - compact: Shows only name with decorative underline
  * 
  * Usage:
@@ -13,10 +13,11 @@
 
 'use client'
 
-import { Calendar, MapPin, Clock } from 'lucide-react'
+import { Calendar, MapPin, Clock, User } from 'lucide-react'
 
 export interface CeremonyInfo {
   name_zh: string
+  presiding_monk?: string | null
   start_at: string
   end_at?: string | null
   location?: string | null
@@ -57,6 +58,7 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
   }
 
   // Full version - all details in a div
+  // Order: name, presiding monk, date/time, location, deadline
   return (
     <div className="p-4 sm:p-6 mb-6 bg-primary/5 border border-primary/20 rounded-lg">
       <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-4">
@@ -64,7 +66,18 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
       </h1>
 
       <div className="space-y-3 text-base">
-        {/* Date */}
+        {/* Presiding Monk - 主法和尚 */}
+        {ceremony.presiding_monk && (
+          <div className="flex items-start gap-3">
+            <User className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <span className="text-muted-foreground">主法和尚：</span>
+              <span className="text-foreground font-medium">{ceremony.presiding_monk}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Date/Time - 法會日期 */}
         <div className="flex items-start gap-3">
           <Calendar className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div>
@@ -78,7 +91,7 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
           </div>
         </div>
 
-        {/* Location */}
+        {/* Location - 地點 */}
         {ceremony.location && (
           <div className="flex items-start gap-3">
             <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -89,7 +102,7 @@ export function CeremonyHeader({ ceremony, variant = 'full' }: CeremonyHeaderPro
           </div>
         )}
 
-        {/* Deadline */}
+        {/* Deadline - 申請截止 */}
         <div className="flex items-start gap-3">
           <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
           <div>

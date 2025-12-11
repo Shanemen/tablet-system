@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 export interface Ceremony {
   id: number
   name_zh: string
+  presiding_monk: string | null
   slug: string
   start_at: string
   end_at: string | null
@@ -76,6 +77,7 @@ export async function createCeremony(formData: FormData) {
   
   const ceremonyData = {
     name_zh: nameZh,
+    presiding_monk: formData.get('presiding_monk') as string || null,
     location: formData.get('location') as string || null,
     start_at: startAt,
     end_at: formData.get('end_at') as string || startAt,
@@ -176,6 +178,7 @@ export async function updateCeremony(ceremonyId: number, formData: FormData) {
   
   const updates = {
     name_zh: formData.get('name_zh') as string,
+    presiding_monk: formData.get('presiding_monk') as string || null,
     location: formData.get('location') as string || null,
     start_at: formData.get('start_at') as string,
     end_at: formData.get('end_at') as string || formData.get('start_at') as string,
@@ -217,7 +220,76 @@ export async function getCeremonyBySlug(slug: string): Promise<Ceremony | null> 
 }
 
 /**
- * Delete a specific ceremony and all its applications
+ * Delete a specific ceremony and all its applications (with password verification)
+ */
+export async function verifyPasswordAndDelete(ceremonyId: number, password: string) {
+  const supabase = await createClient()
+  
+  // Get current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  
+  if (userError || !user) {
+    return { error: '請先登錄' }
+  }
+  
+  // Verify password by attempting to sign in
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: user.email!,
+    password: password,
+  })
+  
+  if (authError) {
+    return { error: '密碼錯誤，請重試' }
+  }
+  
+  // Password verified, proceed with deletion
+  // Delete in correct order (respecting foreign keys)
+  // First, get all applications for this ceremony
+  const { data: applications } = await supabase
+    .from('application')
+    .select('id')
+    .eq('ceremony_id', ceremonyId)
+  
+  if (applications && applications.length > 0) {
+    const applicationIds = applications.map(app => app.id)
+    
+    // Delete application names
+    const { error: namesError } = await supabase
+      .from('application_name')
+      .delete()
+      .in('application_id', applicationIds)
+    
+    if (namesError) {
+      return { error: `刪除失敗：${namesError.message}` }
+    }
+    
+    // Delete applications
+    const { error: appsError } = await supabase
+      .from('application')
+      .delete()
+      .eq('ceremony_id', ceremonyId)
+    
+    if (appsError) {
+      return { error: `刪除失敗：${appsError.message}` }
+    }
+  }
+  
+  // Delete ceremony
+  const { error: ceremonyError } = await supabase
+    .from('ceremony')
+    .delete()
+    .eq('id', ceremonyId)
+  
+  if (ceremonyError) {
+    return { error: `刪除失敗：${ceremonyError.message}` }
+  }
+  
+  revalidatePath('/admin/ceremonies')
+  return { success: '表格已成功刪除！' }
+}
+
+/**
+ * Delete a specific ceremony and all its applications (legacy function - kept for backwards compatibility)
  */
 export async function deleteCeremony(ceremonyId: number) {
   const supabase = await createClient()

@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { PageLayout } from '@/components/admin/PageLayout'
 import { PageHeader } from '@/components/admin/PageHeader'
 import { FormField } from '@/components/admin/FormField'
-import { getCurrentCeremony, updateCeremony, createCeremony, deleteCeremony, Ceremony } from './actions'
-import { Loader2 } from 'lucide-react'
+import { PasswordConfirmDialog } from '@/components/admin/PasswordConfirmDialog'
+import { getCurrentCeremony, updateCeremony, createCeremony, verifyPasswordAndDelete, Ceremony } from './actions'
+import { Loader2, Edit2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
 export default function CeremoniesPage() {
@@ -18,10 +19,15 @@ export default function CeremoniesPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [fullUrl, setFullUrl] = useState<string>('')
   const [hasChanges, setHasChanges] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleted, setIsDeleted] = useState(false) // Flag to prevent re-loading after delete
 
   useEffect(() => {
-    loadCeremony()
-  }, [])
+    if (!isDeleted) {
+      loadCeremony()
+    }
+  }, [isDeleted])
 
   useEffect(() => {
     // Set full URL once ceremony is loaded (client-side only)
@@ -37,6 +43,7 @@ export default function CeremoniesPage() {
     const data = await getCurrentCeremony()
     setCeremony(data)
     setHasChanges(false) // Reset changes flag when loading
+    setIsEditing(!data) // Auto-enable editing for new ceremony
     setLoading(false)
   }
 
@@ -46,11 +53,17 @@ export default function CeremoniesPage() {
     }
   }
 
+  const handleEdit = () => {
+    setIsEditing(true)
+    setMessage(null)
+  }
+
   const handleCancel = async () => {
     if (!ceremony) return
     
     // Reload ceremony data to discard changes
     await loadCeremony()
+    setIsEditing(false)
     setMessage(null)
   }
 
@@ -71,6 +84,7 @@ export default function CeremoniesPage() {
       } else {
         setMessage({ type: 'success', text: result.success || '法會已創建！' })
         await loadCeremony()
+        setIsEditing(false)
       }
     } else {
       // Update existing ceremony
@@ -82,36 +96,43 @@ export default function CeremoniesPage() {
         setMessage({ type: 'success', text: result.success || '法會信息已成功更新！' })
         setHasChanges(false) // Reset changes flag after successful save
         await loadCeremony()
+        setIsEditing(false)
       }
     }
     
     setSaving(false)
   }
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true)
+  }
+
+  const handleDeleteConfirm = async (password: string) => {
     if (!ceremony) return
-    
-    // Show confirmation dialog
-    const confirmed = confirm(
-      '確定要刪除此表格嗎？\n\n此操作將永久刪除：\n• 法會信息\n• 所有相關的申請記錄\n• 申請表單鏈接將失效\n\n此操作無法撤銷！'
-    )
-    
-    if (!confirmed) return
     
     setSaving(true)
     setMessage(null)
     
-    const result = await deleteCeremony(ceremony.id)
+    const result = await verifyPasswordAndDelete(ceremony.id, password)
     
     if (result.error) {
       setMessage({ type: 'error', text: result.error })
       setSaving(false)
+      setShowDeleteDialog(false)
     } else {
+      // Set flag to prevent re-loading
+      setIsDeleted(true)
       // Clear ceremony state to show empty STARTING STATE
       setCeremony(null)
       setMessage({ type: 'success', text: result.success || '表格已刪除！' })
       setSaving(false)
+      setShowDeleteDialog(false)
+      setIsEditing(true) // Show create form after deletion
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false)
   }
 
   if (loading) {
@@ -125,6 +146,20 @@ export default function CeremoniesPage() {
     )
   }
 
+  // Format date for display (read-only view)
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    return date.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  }
+
   return (
     <PageLayout narrow>
       <PageHeader 
@@ -132,7 +167,7 @@ export default function CeremoniesPage() {
         subtitle={ceremony ? "編輯申請表上的法會詳情" : "創建新的法會牌位申請表"} 
       />
 
-      {message && ceremony && (
+      {message && (
         <div className={`mb-6 p-4 rounded-lg text-lg ${
           message.type === 'error' 
             ? 'bg-red-50 text-red-700 border border-red-200' 
@@ -143,193 +178,334 @@ export default function CeremoniesPage() {
       )}
 
       <Card className="p-6">
-        <form key={ceremony?.id || 'new'} onSubmit={handleSubmit} onChange={handleFormChange} className="form-section">
-          {/* Chinese Name */}
-          <FormField label="法會名稱（中文 + 英文）" required htmlFor="name_zh">
-            <Input
-              id="name_zh"
-              name="name_zh"
-              type="text"
-              required
-              defaultValue={ceremony?.name_zh || ''}
-              placeholder="例如：三時繫念法會 Amitabha Service"
-              className="form-input"
-            />
-          </FormField>
-
-          {/* Location */}
-          <FormField label="法會地點" required htmlFor="location">
-            <Input
-              id="location"
-              name="location"
-              type="text"
-              required
-              defaultValue={ceremony?.location || ''}
-              placeholder="例如：123 Main Street, City, State, 10000"
-              className="form-input"
-            />
-          </FormField>
-
-          {/* Ceremony Duration */}
-          <div>
-            <label className="form-label">
-              法會日期和時間<span className="text-red-500 ml-1">*</span>
-              <span className="text-sm text-muted-foreground font-normal ml-2">
-                （點擊選擇或直接輸入，例如：2024/03/15 9:00 AM）
-              </span>
-            </label>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <label htmlFor="start_at" className="sr-only">開始時間</label>
-                <Input
-                  id="start_at"
-                  name="start_at"
-                  type="datetime-local"
-                  required
-                  defaultValue={ceremony?.start_at ? ceremony.start_at.slice(0, 16) : ''}
-                  className="form-input"
-                />
+        {/* Read-only view when ceremony exists and not editing */}
+        {ceremony && !isEditing ? (
+          <div className="space-y-6">
+            {/* Display ceremony details */}
+            <div className="space-y-4">
+              <div>
+                <label className="form-label">法會名稱</label>
+                <p className="text-lg text-foreground mt-1">{ceremony.name_zh}</p>
               </div>
-              <span className="text-lg text-muted-foreground font-medium">—</span>
-              <div className="flex-1">
-                <label htmlFor="end_at" className="sr-only">結束時間</label>
-                <Input
-                  id="end_at"
-                  name="end_at"
-                  type="datetime-local"
-                  required
-                  defaultValue={ceremony?.end_at ? ceremony.end_at.slice(0, 16) : ceremony?.start_at ? ceremony.start_at.slice(0, 16) : ''}
-                  className="form-input"
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* Deadline */}
-          <FormField 
-            label="網上申請截止時間" 
-            required 
-            htmlFor="deadline_at"
-            helpText="超過此時間後，申請表單將自動關閉"
-          >
-            <Input
-              id="deadline_at"
-              name="deadline_at"
-              type="datetime-local"
-              required
-              defaultValue={ceremony?.deadline_at ? ceremony.deadline_at.slice(0, 16) : ''}
-              className="form-input"
-            />
-          </FormField>
-
-          {/* Public URL and QR Code - Show when ceremony exists */}
-          {ceremony && (
-            <div>
-              <label className="form-label">
-                信眾申請鏈接
-              </label>
-              
-              {/* URL Copy Section */}
-              <div className="mb-4">
-                <div className="flex gap-3">
-                  <Input
-                    id="slug"
-                    name="slug"
-                    type="text"
-                    value={fullUrl || `/apply/${ceremony.slug}`}
-                    readOnly
-                    className="bg-primary/10 text-primary font-mono border-primary/20 h-9 py-2 text-base"
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => {
-                      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
-                      const urlToCopy = fullUrl || `${baseUrl}/apply/${ceremony.slug}`
-                      navigator.clipboard.writeText(urlToCopy)
-                      alert('鏈接已複製到剪貼板！')
-                    }}
-                    className="btn-secondary-large whitespace-nowrap"
-                  >
-                    複製鏈接
-                  </Button>
+              {ceremony.presiding_monk && (
+                <div>
+                  <label className="form-label">主法和尚</label>
+                  <p className="text-lg text-foreground mt-1">{ceremony.presiding_monk}</p>
                 </div>
+              )}
+
+              <div>
+                <label className="form-label">法會日期和時間</label>
+                <p className="text-lg text-foreground mt-1">
+                  {formatDateTime(ceremony.start_at)} — {formatDateTime(ceremony.end_at)}
+                </p>
               </div>
 
-              {/* QR Code Section */}
-              <div className="flex items-start gap-4 p-4 bg-primary/10 rounded-lg">
-                <div className="flex-shrink-0">
-                  {fullUrl && (
-                    <QRCodeSVG
-                      value={fullUrl}
-                      size={120}
-                      level="H"
-                      includeMargin={true}
+              <div>
+                <label className="form-label">網上申請截止時間</label>
+                <p className="text-lg text-foreground mt-1">{formatDateTime(ceremony.deadline_at)}</p>
+              </div>
+
+              {ceremony.location && (
+                <div>
+                  <label className="form-label">法會地點</label>
+                  <p className="text-lg text-foreground mt-1">{ceremony.location}</p>
+                </div>
+              )}
+
+              {/* Public URL and QR Code */}
+              <div>
+                <label className="form-label">信眾申請鏈接</label>
+                
+                {/* URL Copy Section */}
+                <div className="mb-4 mt-2">
+                  <div className="flex gap-3">
+                    <Input
+                      type="text"
+                      value={fullUrl || `/apply/${ceremony.slug}`}
+                      readOnly
+                      className="bg-primary/10 text-primary font-mono border-primary/20 h-9 py-2 text-base"
                     />
-                  )}
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => {
+                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+                        const urlToCopy = fullUrl || `${baseUrl}/apply/${ceremony.slug}`
+                        navigator.clipboard.writeText(urlToCopy)
+                        alert('鏈接已複製到剪貼板！')
+                      }}
+                      className="btn-secondary-large whitespace-nowrap"
+                    >
+                      複製鏈接
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex-1 pt-2">
-                  <p className="text-base text-primary mb-2">
-                    <strong className="text-primary">二維碼分享</strong>
-                  </p>
-                  <p className="text-sm text-primary">
-                    掃描二維碼即可訪問申請表單，方便信眾使用手機填寫
-                  </p>
+
+                {/* QR Code Section */}
+                <div className="flex items-start gap-4 p-4 bg-primary/10 rounded-lg">
+                  <div className="flex-shrink-0">
+                    {fullUrl && (
+                      <QRCodeSVG
+                        value={fullUrl}
+                        size={120}
+                        level="H"
+                        includeMargin={true}
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 pt-2">
+                    <p className="text-base text-primary mb-2">
+                      <strong className="text-primary">二維碼分享</strong>
+                    </p>
+                    <p className="text-sm text-primary">
+                      掃描二維碼即可訪問申請表單，方便信眾使用手機填寫
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Submit Button */}
-          <div className="flex items-center justify-between pt-6">
-            {/* Left: Delete button */}
-            <div>
-              {ceremony && (
+            {/* Action Buttons for Read-only View */}
+            <div className="flex items-center justify-between pt-6">
+              {/* Left: Delete button */}
+              <div>
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                   disabled={saving}
                   className="text-muted-foreground hover:text-red-600 hover:bg-red-50 underline underline-offset-4 text-base px-6 py-3 font-normal"
                 >
                   刪除表格
                 </Button>
-              )}
-            </div>
+              </div>
 
-            {/* Right: Cancel and Save buttons */}
-            <div className="flex gap-4">
-              {ceremony && (
+              {/* Right: Edit button */}
+              <div>
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={saving || !hasChanges}
-                  className="btn-secondary-large"
+                  onClick={handleEdit}
+                  className="btn-primary-large"
                 >
-                  放棄修改
+                  <Edit2 className="mr-2 h-5 w-5" />
+                  編輯
                 </Button>
-              )}
-              <Button
-                type="submit"
-                disabled={saving || (!!ceremony && !hasChanges)}
-                className="btn-primary-large"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    {ceremony ? '保存中...' : '創建中...'}
-                  </>
-                ) : ceremony ? (
-                  '保存修改'
-                ) : (
-                  '創建申請表格'
-                )}
-              </Button>
+              </div>
             </div>
           </div>
-        </form>
+        ) : (
+          /* Edit form when creating new ceremony or editing existing one */
+          <form key={ceremony?.id || 'new'} onSubmit={handleSubmit} onChange={handleFormChange} className="form-section">
+            {/* Chinese Name */}
+            <FormField label="法會名稱（中文 + 英文）" required htmlFor="name_zh">
+              <Input
+                id="name_zh"
+                name="name_zh"
+                type="text"
+                required
+                defaultValue={ceremony?.name_zh || ''}
+                placeholder="例如：三時繫念法會 Amitabha Service"
+                className="form-input"
+              />
+            </FormField>
+
+            {/* Presiding Monk - NEW FIELD */}
+            <FormField label="主法和尚" htmlFor="presiding_monk">
+              <Input
+                id="presiding_monk"
+                name="presiding_monk"
+                type="text"
+                defaultValue={ceremony?.presiding_monk || ''}
+                placeholder="例如：釋某某法師"
+                className="form-input"
+              />
+            </FormField>
+
+            {/* Ceremony Duration - MOVED BEFORE LOCATION */}
+            <div>
+              <label className="form-label">
+                法會日期和時間<span className="text-red-500 ml-1">*</span>
+                <span className="text-sm text-muted-foreground font-normal ml-2">
+                  （點擊選擇或直接輸入，例如：2024/03/15 9:00 AM）
+                </span>
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <label htmlFor="start_at" className="sr-only">開始時間</label>
+                  <Input
+                    id="start_at"
+                    name="start_at"
+                    type="datetime-local"
+                    required
+                    defaultValue={ceremony?.start_at ? ceremony.start_at.slice(0, 16) : ''}
+                    className="form-input"
+                  />
+                </div>
+                <span className="text-lg text-muted-foreground font-medium">—</span>
+                <div className="flex-1">
+                  <label htmlFor="end_at" className="sr-only">結束時間</label>
+                  <Input
+                    id="end_at"
+                    name="end_at"
+                    type="datetime-local"
+                    required
+                    defaultValue={ceremony?.end_at ? ceremony.end_at.slice(0, 16) : ceremony?.start_at ? ceremony.start_at.slice(0, 16) : ''}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Deadline */}
+            <FormField 
+              label="網上申請截止時間" 
+              required 
+              htmlFor="deadline_at"
+              helpText="超過此時間後，申請表單將自動關閉"
+            >
+              <Input
+                id="deadline_at"
+                name="deadline_at"
+                type="datetime-local"
+                required
+                defaultValue={ceremony?.deadline_at ? ceremony.deadline_at.slice(0, 16) : ''}
+                className="form-input"
+              />
+            </FormField>
+
+            {/* Location - MOVED AFTER TIME FIELDS */}
+            <FormField label="法會地點" required htmlFor="location">
+              <Input
+                id="location"
+                name="location"
+                type="text"
+                required
+                defaultValue={ceremony?.location || ''}
+                placeholder="例如：123 Main Street, City, State, 10000"
+                className="form-input"
+              />
+            </FormField>
+
+            {/* Public URL and QR Code - Show when ceremony exists */}
+            {ceremony && (
+              <div>
+                <label className="form-label">
+                  信眾申請鏈接
+                </label>
+                
+                {/* URL Copy Section */}
+                <div className="mb-4">
+                  <div className="flex gap-3">
+                    <Input
+                      id="slug"
+                      name="slug"
+                      type="text"
+                      value={fullUrl || `/apply/${ceremony.slug}`}
+                      readOnly
+                      className="bg-primary/10 text-primary font-mono border-primary/20 h-9 py-2 text-base"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => {
+                        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+                        const urlToCopy = fullUrl || `${baseUrl}/apply/${ceremony.slug}`
+                        navigator.clipboard.writeText(urlToCopy)
+                        alert('鏈接已複製到剪貼板！')
+                      }}
+                      className="btn-secondary-large whitespace-nowrap"
+                    >
+                      複製鏈接
+                    </Button>
+                  </div>
+                </div>
+
+                {/* QR Code Section */}
+                <div className="flex items-start gap-4 p-4 bg-primary/10 rounded-lg">
+                  <div className="flex-shrink-0">
+                    {fullUrl && (
+                      <QRCodeSVG
+                        value={fullUrl}
+                        size={120}
+                        level="H"
+                        includeMargin={true}
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 pt-2">
+                    <p className="text-base text-primary mb-2">
+                      <strong className="text-primary">二維碼分享</strong>
+                    </p>
+                    <p className="text-sm text-primary">
+                      掃描二維碼即可訪問申請表單，方便信眾使用手機填寫
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <div className="flex items-center justify-between pt-6">
+              {/* Left: Delete button (only show when editing existing ceremony) */}
+              <div>
+                {ceremony && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleDeleteClick}
+                    disabled={saving}
+                    className="text-muted-foreground hover:text-red-600 hover:bg-red-50 underline underline-offset-4 text-base px-6 py-3 font-normal"
+                  >
+                    刪除表格
+                  </Button>
+                )}
+              </div>
+
+              {/* Right: Cancel and Save buttons */}
+              <div className="flex gap-4">
+                {ceremony && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={saving}
+                    className="btn-secondary-large"
+                  >
+                    放棄修改
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  disabled={saving || (!!ceremony && !hasChanges)}
+                  className="btn-primary-large"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      {ceremony ? '保存中...' : '創建中...'}
+                    </>
+                  ) : ceremony ? (
+                    '保存修改'
+                  ) : (
+                    '創建申請表格'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </form>
+        )}
       </Card>
+
+      {/* Password Confirm Dialog */}
+      {showDeleteDialog && (
+        <PasswordConfirmDialog
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+          isLoading={saving}
+        />
+      )}
     </PageLayout>
   )
 }
