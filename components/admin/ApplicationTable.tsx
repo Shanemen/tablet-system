@@ -1,6 +1,6 @@
 "use client"
 
-import { Eye } from "lucide-react"
+import { Eye, RotateCcw } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -17,6 +17,9 @@ interface ApplicationTableProps {
   onSelectChange?: (applications: number, tablets: number) => void
   onExport?: () => void
   stats?: Stats
+  // Test functions - for resetting status
+  onResetStatus?: (applicationId: number) => void
+  onResetAllExported?: () => void
 }
 
 export function ApplicationTable({ 
@@ -27,7 +30,9 @@ export function ApplicationTable({
   selectedCount,
   onSelectChange,
   onExport,
-  stats
+  stats,
+  onResetStatus,
+  onResetAllExported
 }: ApplicationTableProps) {
   const router = useRouter()
   
@@ -55,10 +60,23 @@ export function ApplicationTable({
         </div>
       )}
       
-      <div className="mb-2">
+      <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">
           {getTableTitle()}
         </h3>
+        
+        {/* Test Reset Button - only show for exported applications in development */}
+        {activeCard === "exported" && applications.length > 0 && onResetAllExported && process.env.NODE_ENV === 'development' && (
+          <Button
+            onClick={onResetAllExported}
+            variant="outline"
+            size="sm"
+            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-300"
+          >
+            <RotateCcw className="h-4 w-4 mr-1" />
+            全部重置為待處理（測試）
+          </Button>
+        )}
       </div>
       
       <div className="overflow-x-auto">
@@ -93,15 +111,30 @@ export function ApplicationTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="hover:bg-primary/10 hover:border-primary hover:text-primary cursor-pointer"
-                      onClick={() => router.push(`/admin/applications/${item.id}`)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      查看
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="hover:bg-primary/10 hover:border-primary hover:text-primary cursor-pointer"
+                        onClick={() => router.push(`/admin/applications/${item.id}`)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        查看
+                      </Button>
+                      
+                      {/* Test Reset Button - only for exported items in development */}
+                      {item.status === 'exported' && onResetStatus && process.env.NODE_ENV === 'development' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onResetStatus(item.id)}
+                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          重置
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

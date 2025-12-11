@@ -263,5 +263,18 @@ export async function exportTabletsToPDF(
   
   console.log(`[Export] Export complete: ${results.length} PDFs generated`)
   
+  // Update application status to 'generated' after successful export
+  const { error: updateError } = await supabase
+    .from('application')
+    .update({ status: 'generated' })
+    .in('id', applicationIds)
+  
+  if (updateError) {
+    console.error('[Export] Failed to update status:', updateError)
+    // Don't throw - PDFs were created successfully
+  } else {
+    console.log(`[Export] Updated ${applicationIds.length} applications to 'generated' status`)
+  }
+  
   return results
 }

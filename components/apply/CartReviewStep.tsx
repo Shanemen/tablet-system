@@ -31,7 +31,7 @@ interface CartReviewStepProps {
 
 export function CartReviewStep({ onBack, onSubmit }: CartReviewStepProps) {
   const [tablets, setTablets] = useState<TabletItem[]>([])
-  const [tabletsByType, setTabletsByType] = useState<Record<TabletTypeValue, TabletItem[]>>({})
+  const [tabletsByType, setTabletsByType] = useState<Partial<Record<TabletTypeValue, TabletItem[]>>>({})
   const [applicantInfo, setApplicantInfo] = useState<{ name: string; phone: string } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)

@@ -10,6 +10,7 @@ import { ExportConfirmation, ExportProgress, ExportCompletion, PDFResult } from 
 import { Applicant, Stats, SelectedCount, ApplicationStatus } from "@/lib/types/application"
 import { getApplications } from "./actions"
 import { exportTabletsToPDF } from "./export-actions"
+import { resetApplicationsToPending, resetAllExportedToPending } from "./test-actions"
 
 export default function AdminDashboardPage() {
   // Data state
@@ -163,18 +164,30 @@ export default function AdminDashboardPage() {
     }
   }
 
-  const handleCloseStep4 = () => {
-    // Update stats after export
-    const exportedCount = selectedCount.applications
-    setStats(prevStats => ({
-      ...prevStats,
-      exported: prevStats.exported + exportedCount,
-      pending: Math.max(0, prevStats.pending - exportedCount)
-    }))
+  const handleCloseStep4 = async () => {
+    // Reload data from database to get updated stats
+    setLoading(true)
+    try {
+      const data = await getApplications()
+      setApplicants(data)
+      
+      // Recalculate stats from fresh data
+      setStats({
+        total: data.length,
+        exported: data.filter((a) => a.status === "exported").length,
+        pending: data.filter((a) => a.status === "pending").length,
+        problematic: data.filter((a) => a.status === "problematic").length,
+      })
+    } catch (error) {
+      console.error("Failed to reload applications:", error)
+    } finally {
+      setLoading(false)
+    }
     
     setStep(1)
     setSelectedCount({ applications: 0, tablets: 0 })
     setExportProgress(0)
+    setPdfResults([])
     
     // Trigger highlight animation
     setHighlightExported(true)
@@ -183,6 +196,68 @@ export default function AdminDashboardPage() {
       setHighlightExported(false)
       setHighlightPending(false)
     }, 3000)
+  }
+
+  // Test function: Reset application status back to pending
+  const handleResetStatus = async (applicationId: number) => {
+    if (!confirm('重置此申請為待處理狀態？（僅用於測試）')) {
+      return
+    }
+    
+    setLoading(true)
+    try {
+      await resetApplicationsToPending([applicationId])
+      
+      // Reload data
+      const data = await getApplications()
+      setApplicants(data)
+      
+      // Recalculate stats
+      setStats({
+        total: data.length,
+        exported: data.filter((a) => a.status === "exported").length,
+        pending: data.filter((a) => a.status === "pending").length,
+        problematic: data.filter((a) => a.status === "problematic").length,
+      })
+      
+      alert('已重置為待處理狀態')
+    } catch (error) {
+      console.error("Failed to reset application:", error)
+      alert('重置失敗')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Test function: Reset ALL exported applications to pending
+  const handleResetAllExported = async () => {
+    if (!confirm('重置所有已導出申請為待處理狀態？（僅用於測試）')) {
+      return
+    }
+    
+    setLoading(true)
+    try {
+      await resetAllExportedToPending()
+      
+      // Reload data
+      const data = await getApplications()
+      setApplicants(data)
+      
+      // Recalculate stats
+      setStats({
+        total: data.length,
+        exported: data.filter((a) => a.status === "exported").length,
+        pending: data.filter((a) => a.status === "pending").length,
+        problematic: data.filter((a) => a.status === "problematic").length,
+      })
+      
+      alert('已重置所有已導出申請')
+    } catch (error) {
+      console.error("Failed to reset applications:", error)
+      alert('重置失敗')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (loading) {
@@ -232,6 +307,8 @@ export default function AdminDashboardPage() {
               onSelectChange={handleSelectChange}
               onExport={() => setStep(2)}
               stats={stats}
+              onResetStatus={handleResetStatus}
+              onResetAllExported={handleResetAllExported}
             />
           </div>
         )}
