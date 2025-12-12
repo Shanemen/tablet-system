@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { X, Loader, Check, FileText, Download, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -17,11 +18,12 @@ export interface PDFResult {
 // Step 2 - Export Confirmation
 interface ExportConfirmationProps {
   selectedCount: SelectedCount
+  ceremonyName?: string
   onCancel: () => void
   onConfirm: () => void
 }
 
-export function ExportConfirmation({ selectedCount, onCancel, onConfirm }: ExportConfirmationProps) {
+export function ExportConfirmation({ selectedCount, ceremonyName = '法會', onCancel, onConfirm }: ExportConfirmationProps) {
   const files = [
     { name: '長生祿位.pdf', paper: '紅紙' },
     { name: '往生蓮位.pdf', paper: '黃紙' },
@@ -60,7 +62,7 @@ export function ExportConfirmation({ selectedCount, onCancel, onConfirm }: Expor
               <div className="text-base font-medium text-foreground mb-2">📋 自動處理規則：</div>
               <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                 <li>• 按6種牌位類型自動分組</li>
-                <li>• 每頁排版 5 個牌位（單列垂直），自動分頁</li>
+                <li>• 每頁排版 5 個牌位（橫列單行），自動分頁</li>
                 <li>• A4 尺寸含 3mm 出血區，適合專業印刷</li>
               </ul>
             </div>
@@ -71,7 +73,7 @@ export function ExportConfirmation({ selectedCount, onCancel, onConfirm }: Expor
               <div className="space-y-1.5">
                 {files.map((file, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-foreground">{i + 1}. 2024-03-15_觀音法會_{file.name}</span>
+                    <span className="text-foreground">{i + 1}. {new Date().toISOString().split('T')[0]}_{ceremonyName}_{file.name}</span>
                     <span className="text-muted-foreground text-xs">({file.paper}打印)</span>
                   </div>
                 ))}
@@ -205,6 +207,9 @@ const PAPER_TYPE_MAP: Record<string, string> = {
 }
 
 export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportCompletionProps) {
+  // Track downloaded files
+  const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set())
+
   // Helper function to download a single PDF
   const downloadPDF = (result: PDFResult) => {
     try {
@@ -231,14 +236,32 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
     }
   }
 
-  // Helper function to download all PDFs as ZIP
-  const downloadAllAsZip = async () => {
-    // For now, download one by one
-    // TODO: Implement actual ZIP creation if needed
-    for (const result of pdfResults) {
-      downloadPDF(result)
-      // Small delay between downloads to avoid browser blocking
-      await new Promise(resolve => setTimeout(resolve, 500))
+  // Handle download with state tracking
+  const handleDownload = (result: PDFResult) => {
+    downloadPDF(result)
+    setDownloadedFiles(prev => new Set(prev).add(result.typeName))
+  }
+
+  // Preview PDF in new tab
+  const previewPDF = (result: PDFResult) => {
+    try {
+      // Convert base64 to blob
+      const binaryString = atob(result.pdfBase64)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'application/pdf' })
+      
+      // Open in new tab
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      
+      // Clean up after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (error) {
+      console.error('Preview failed:', error)
+      alert('預覽失敗，請重試')
     }
   }
 
@@ -281,13 +304,25 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      onClick={() => previewPDF(result)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Eye className="mr-1 h-4 w-4" />
+                      預覽
+                    </Button>
                     <Button 
-                      onClick={() => downloadPDF(result)}
-                      size="sm" 
-                      className="bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
+                      onClick={() => handleDownload(result)}
+                      size="sm"
+                      variant={downloadedFiles.has(result.typeName) ? "outline" : "default"}
+                      className={downloadedFiles.has(result.typeName) 
+                        ? "" 
+                        : "bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
+                      }
                     >
                       <Download className="mr-1 h-4 w-4" />
-                      下載
+                      {downloadedFiles.has(result.typeName) ? "再次下載" : "下載"}
                     </Button>
                   </div>
                 </div>
@@ -295,16 +330,11 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
             ))}
           </div>
 
-          <div className="flex gap-3 mt-6">
-            {pdfResults.length > 1 && (
-              <Button 
-                onClick={downloadAllAsZip}
-                className="flex-1 bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
-              >
-                <Download className="mr-2 h-5 w-5" />
-                下載全部
-              </Button>
-            )}
+          <div className="text-sm text-muted-foreground text-center mt-4 mb-4">
+            進度：{downloadedFiles.size}/{pdfResults.length} 已下載
+          </div>
+
+          <div className="flex justify-center mt-6">
             <Button onClick={onClose} variant="outline" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
               關閉
             </Button>

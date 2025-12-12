@@ -39,15 +39,15 @@ const PAGE_HEIGHT = 216 * MM_TO_POINTS // 216mm LANDSCAPE (210mm + 3mm bleed on 
 const BLEED_SIZE = 3 * MM_TO_POINTS
 
 // Safe margins
-const MARGIN_LEFT = 8 * MM_TO_POINTS   // Left margin
-const MARGIN_RIGHT = 8 * MM_TO_POINTS  // Right margin
-const MARGIN_TOP = 10 * MM_TO_POINTS   // Top margin
-const MARGIN_BOTTOM = 15 * MM_TO_POINTS // Bottom margin (for page numbers)
+const MARGIN_LEFT = 5 * MM_TO_POINTS   // Left margin (reduced for more space)
+const MARGIN_RIGHT = 5 * MM_TO_POINTS  // Right margin (reduced for more space)
+const MARGIN_TOP = 5 * MM_TO_POINTS    // Top margin (reduced for more space)
+const MARGIN_BOTTOM = 10 * MM_TO_POINTS // Bottom margin (for page numbers)
 
 // Tablet sizing (single row horizontal, 5 per page)
 const TABLETS_PER_PAGE = 5
-const TABLET_WIDTH = 50 * MM_TO_POINTS  // 50mm wide (each tablet)
-const TABLET_HEIGHT = 133 * MM_TO_POINTS // 133mm tall (to fit in landscape height)
+const TABLET_WIDTH = 57.8 * MM_TO_POINTS  // 57.8mm wide (maximized while maintaining aspect ratio)
+const TABLET_HEIGHT = 153.2 * MM_TO_POINTS // 153.2mm tall (maintains original 320:848 ratio)
 
 // Calculate horizontal spacing between tablets
 const AVAILABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
@@ -136,7 +136,8 @@ async function addPageNumber(
  */
 async function createPDFForType(
   type: string,
-  tablets: TabletDetail[]
+  tablets: TabletDetail[],
+  ceremonyName: string
 ): Promise<PDFResult> {
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
@@ -198,9 +199,11 @@ async function createPDFForType(
   const pdfBytes = await pdfDoc.save()
   const pdfBase64 = Buffer.from(pdfBytes).toString('base64')
   
+  const tabletTypeName = TABLET_TYPE_NAMES[type] || type
+  
   return {
     type,
-    typeName: TABLET_TYPE_NAMES[type] || type,
+    typeName: `${ceremonyName}_${tabletTypeName}`,
     pdfBase64,
     count: tablets.length,
     pageCount: totalPages
@@ -215,10 +218,12 @@ async function createPDFForType(
  * Export tablets to PDF, grouped by type
  * 
  * @param applicationIds - Array of application IDs to export
+ * @param ceremonyName - Name of the ceremony (for PDF filename)
  * @returns Array of PDF results (one per tablet type)
  */
 export async function exportTabletsToPDF(
-  applicationIds: number[]
+  applicationIds: number[],
+  ceremonyName: string = '法會'
 ): Promise<PDFResult[]> {
   const supabase = await createClient()
   
@@ -252,7 +257,7 @@ export async function exportTabletsToPDF(
     console.log(`[Export] Creating PDF for ${type} (${typeTablets.length} tablets)`)
     
     try {
-      const result = await createPDFForType(type, typeTablets)
+      const result = await createPDFForType(type, typeTablets, ceremonyName)
       results.push(result)
       console.log(`[Export] ✓ Created PDF for ${type}: ${result.pageCount} pages`)
     } catch (error) {

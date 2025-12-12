@@ -11,11 +11,13 @@ import { Applicant, Stats, SelectedCount, ApplicationStatus } from "@/lib/types/
 import { getApplications } from "./actions"
 import { exportTabletsToPDF } from "./export-actions"
 import { resetApplicationsToPending, resetAllExportedToPending } from "./test-actions"
+import { getCurrentCeremony, type Ceremony } from "../ceremonies/actions"
 
 export default function AdminDashboardPage() {
   // Data state
   const [applicants, setApplicants] = useState<Applicant[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentCeremony, setCurrentCeremony] = useState<Ceremony | null>(null)
   
   // UI state
   const [step, setStep] = useState(1)
@@ -55,6 +57,11 @@ export default function AdminDashboardPage() {
           problematic: data.filter((a) => a.status === "problematic").length,
         })
         
+        // Load current ceremony
+        const ceremony = await getCurrentCeremony()
+        setCurrentCeremony(ceremony)
+        console.log('[Dashboard] Loaded ceremony:', ceremony?.name_zh)
+        
         setLoading(false)
       } catch (error) {
         console.error("Failed to load applications:", error)
@@ -78,7 +85,7 @@ export default function AdminDashboardPage() {
       }, 200)
       
       // Call actual export function
-      exportTabletsToPDF(selectedApplicationIds)
+      exportTabletsToPDF(selectedApplicationIds, currentCeremony?.name_zh || '法會')
         .then((results) => {
           clearInterval(progressInterval)
           setPdfResults(results)
@@ -317,6 +324,7 @@ export default function AdminDashboardPage() {
         {step === 2 && (
           <ExportConfirmation
             selectedCount={selectedCount}
+            ceremonyName={currentCeremony?.name_zh}
             onCancel={() => setStep(1)}
             onConfirm={() => setStep(3)}
           />
