@@ -121,7 +121,7 @@ const generateMockApplicants = (): Applicant[] => {
 
 // Status badge styling - 柔和配色
 const statusConfig = {
-  exported: { label: "已導出", color: "text-slate-700 bg-muted" },
+  exported: { label: "已下載", color: "text-slate-700 bg-muted" },
   pending: { label: "待處理", color: "text-primary bg-primary/10" },
   problematic: { label: "有問題", color: "text-[#770002] bg-[#770002]/10" },
 }
@@ -349,7 +349,7 @@ const Step1View = ({
             highlight={false}
           />
           <StatCard
-            label="已導出"
+            label="已下載圖片"
             value={stats.exported}
             status="exported"
             activeCard={activeCard}
@@ -384,7 +384,7 @@ const Step1View = ({
           <h3 className="text-lg font-semibold text-foreground">
             {searchActive && `搜索結果：找到 ${filtered.length} 個結果`}
             {!searchActive && !activeCard && "全部申請表格"}
-            {!searchActive && activeCard === "exported" && "已導出申請表格"}
+            {!searchActive && activeCard === "exported" && "已下載圖片申請表格"}
             {!searchActive && activeCard === "pending" && "待處理申請表格"}
             {!searchActive && activeCard === "problematic" && "有問題申請表格"}
           </h3>

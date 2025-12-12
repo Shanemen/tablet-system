@@ -218,47 +218,12 @@ export default function AdminDashboardPage() {
     }, 3000)
   }
 
-  // Test function: Reset application status back to pending
-  const handleResetStatus = (applicationId: number) => {
-    setConfirmDialog({
-      show: true,
-      title: '重置申請狀態',
-      message: '確定要將此申請重置為待處理狀態嗎？（僅用於測試）',
-      onConfirm: async () => {
-        setConfirmDialog(null)
-        setLoading(true)
-        try {
-          await resetApplicationsToPending([applicationId])
-          
-          // Reload data
-          const data = await getApplications()
-          setApplicants(data)
-          
-          // Recalculate stats
-          setStats({
-            total: data.length,
-            exported: data.filter((a) => a.status === "exported").length,
-            pending: data.filter((a) => a.status === "pending").length,
-            problematic: data.filter((a) => a.status === "problematic").length,
-          })
-          
-          setNotification('已重置為待處理狀態')
-        } catch (error) {
-          console.error("Failed to reset application:", error)
-          setNotification('重置失敗')
-        } finally {
-          setLoading(false)
-        }
-      }
-    })
-  }
-
-  // Test function: Reset ALL exported applications to pending
+  // Reset ALL exported applications to pending (for emergency recovery)
   const handleResetAllExported = () => {
     setConfirmDialog({
       show: true,
-      title: '重置所有已導出申請',
-      message: '確定要將所有已導出申請重置為待處理狀態嗎？（僅用於測試）',
+      title: '重置所有已下載圖片申請',
+      message: '確定要將所有已下載圖片申請重置為待處理狀態嗎？',
       onConfirm: async () => {
         setConfirmDialog(null)
         setLoading(true)
@@ -277,7 +242,7 @@ export default function AdminDashboardPage() {
             problematic: data.filter((a) => a.status === "problematic").length,
           })
       
-          setNotification('已重置所有已導出申請')
+          setNotification('已重置所有已下載圖片申請')
         } catch (error) {
           console.error("Failed to reset applications:", error)
           setNotification('重置失敗')
@@ -335,7 +300,6 @@ export default function AdminDashboardPage() {
               onSelectChange={handleSelectChange}
               onExport={() => setStep(2)}
               stats={stats}
-              onResetStatus={handleResetStatus}
               onResetAllExported={handleResetAllExported}
             />
           </div>

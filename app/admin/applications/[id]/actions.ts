@@ -17,6 +17,7 @@ export async function getApplicationById(id: number): Promise<Applicant | null> 
       phone,
       tablet_type,
       status,
+      notes,
       application_name (
         display_name,
         image_url,
@@ -69,20 +70,23 @@ export async function getApplicationById(id: number): Promise<Applicant | null> 
     tabletNames,
     tabletDetails,
     total: tabletNames.length,
-    status: statusMap[app.status] || 'pending'
+    status: statusMap[app.status] || 'pending',
+    notes: app.notes || undefined
   }
 }
 
 /**
- * Mark application as problematic
- * Note: We're not saving the note to DB for now (no notes column)
+ * Mark application as problematic with a note
  */
-export async function markAsProblematic(id: number): Promise<{ success: boolean; error?: string }> {
+export async function markAsProblematic(id: number, note: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
   
   const { error } = await supabase
     .from('application')
-    .update({ status: 'problem' })
+    .update({ 
+      status: 'problem',
+      notes: note 
+    })
     .eq('id', id)
   
   if (error) {

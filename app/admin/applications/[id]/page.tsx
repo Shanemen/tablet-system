@@ -61,7 +61,7 @@ export default function ApplicationDetailPage() {
     if (!problemNote.trim()) return
     
     setIsSubmitting(true)
-    const result = await markAsProblematic(applicationId)
+    const result = await markAsProblematic(applicationId, problemNote.trim())
     setIsSubmitting(false)
     
     if (result.success) {
@@ -170,6 +170,12 @@ export default function ApplicationDetailPage() {
                 {statusConfig[application.status].label}
               </span>
             </p>
+            {application.notes && (
+              <p className="sm:col-span-2">
+                <span className="text-muted-foreground">問題備註：</span>
+                <span className="font-medium text-foreground">{application.notes}</span>
+              </p>
+            )}
           </div>
           
           {/* Action Buttons - show based on current status */}

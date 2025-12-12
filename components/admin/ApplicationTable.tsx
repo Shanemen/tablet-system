@@ -17,8 +17,7 @@ interface ApplicationTableProps {
   onSelectChange?: (applications: number, tablets: number) => void
   onExport?: () => void
   stats?: Stats
-  // Test functions - for resetting status
-  onResetStatus?: (applicationId: number) => void
+  // Reset all exported - for emergency recovery
   onResetAllExported?: () => void
 }
 
@@ -31,7 +30,6 @@ export function ApplicationTable({
   onSelectChange,
   onExport,
   stats,
-  onResetStatus,
   onResetAllExported
 }: ApplicationTableProps) {
   const router = useRouter()
@@ -39,7 +37,7 @@ export function ApplicationTable({
   const getTableTitle = () => {
     if (searchActive) return `搜索結果：找到 ${applications.length} 個結果`
     if (!activeCard) return "全部申請表格"
-    if (activeCard === "exported") return "已導出申請表格"
+    if (activeCard === "exported") return "已下載圖片申請表格"
     if (activeCard === "pending") return "待處理申請表格"
     if (activeCard === "problematic") return "有問題申請表格"
     return "申請表格"
@@ -65,16 +63,16 @@ export function ApplicationTable({
           {getTableTitle()}
         </h3>
         
-        {/* Test Reset Button - only show for exported applications in development */}
-        {activeCard === "exported" && applications.length > 0 && onResetAllExported && process.env.NODE_ENV === 'development' && (
+        {/* Reset All Button - for emergency recovery, only show for exported applications */}
+        {activeCard === "exported" && applications.length > 0 && onResetAllExported && (
           <Button
             onClick={onResetAllExported}
             variant="outline"
             size="sm"
-            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-300"
+            className="hover:bg-primary/10 hover:border-primary hover:text-primary"
           >
             <RotateCcw className="h-4 w-4 mr-1" />
-            全部重置為待處理（測試）
+            全部重置為待處理
           </Button>
         )}
       </div>
@@ -113,30 +111,15 @@ export function ApplicationTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="hover:bg-primary/10 hover:border-primary hover:text-primary cursor-pointer"
-                        onClick={() => router.push(`/admin/applications/${item.id}`)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        查看
-                      </Button>
-                      
-                      {/* Test Reset Button - only for exported items in development */}
-                      {item.status === 'exported' && onResetStatus && process.env.NODE_ENV === 'development' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onResetStatus(item.id)}
-                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                        >
-                          <RotateCcw className="h-4 w-4 mr-1" />
-                          重置
-                        </Button>
-                      )}
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:bg-primary/10 hover:border-primary hover:text-primary cursor-pointer"
+                      onClick={() => router.push(`/admin/applications/${item.id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      查看
+                    </Button>
                   </td>
                 </tr>
               ))

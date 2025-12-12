@@ -15,6 +15,7 @@ export interface Applicant {
   tabletDetails: TabletName[] // Full details including image_url for each tablet
   total: number
   status: "exported" | "pending" | "problematic"
+  notes?: string // Problem notes when marked as problematic
 }
 
 export interface Stats {
@@ -33,7 +34,7 @@ export type ApplicationStatus = "exported" | "pending" | "problematic"
 
 // Status configuration for UI display
 export const statusConfig = {
-  exported: { label: "已導出", color: "text-slate-700 bg-muted" },
+  exported: { label: "已下載", color: "text-slate-700 bg-muted" },
   pending: { label: "待處理", color: "text-primary bg-primary/10" },
   problematic: { label: "有問題", color: "text-[#770002] bg-[#770002]/10" },
 } as const

@@ -71,7 +71,7 @@ export function ApplicationStats({
           highlight={false}
         />
         <StatCard
-          label="已導出"
+          label="已下載圖片"
           value={stats.exported}
           status="exported"
           activeCard={activeCard}
