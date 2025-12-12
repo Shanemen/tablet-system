@@ -2,10 +2,29 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Calendar, Users, LogOut } from 'lucide-react'
 import { logout } from '@/app/admin/login/actions'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+
+// Manual avatar assignments - add users here!
+// Available: boba, cheesecake, daffodil, fairy-jar, grapefruit, hyacinth, 
+//            latte, lily-pad, lotus, pearl, pine, pinwheel, tea, tomato
+const USER_AVATARS: Record<string, string> = {
+  'shanemen@gmail.com': 'pearl.png',
+  // Add more users here:
+  // 'another@example.com': 'lotus.png',
+}
+
+// Default avatar for users not in the list
+const DEFAULT_AVATAR = 'lotus.png'
+
+// Get avatar image path for a user
+function getAvatarForEmail(email: string): string {
+  const avatar = USER_AVATARS[email.toLowerCase()] || DEFAULT_AVATAR
+  return `/avatars/${avatar}`
+}
 
 interface SidebarProps {
   userEmail: string
@@ -42,8 +61,8 @@ export function Sidebar({ userEmail }: SidebarProps) {
     },
   ]
 
-  // Get first letter of email for avatar
-  const initial = userEmail.charAt(0).toUpperCase()
+  // Get avatar image for this user
+  const avatarSrc = getAvatarForEmail(userEmail)
 
   return (
     <div className="flex h-screen w-64 flex-col bg-card border-r border-border">
@@ -80,9 +99,15 @@ export function Sidebar({ userEmail }: SidebarProps) {
       {/* User Info */}
       <div className="p-4">
         <div className="flex flex-col items-center gap-3">
-          {/* Avatar Circle */}
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-lg font-semibold">
-            {initial}
+          {/* Avatar Circle with cute image */}
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary p-1.5">
+            <Image
+              src={avatarSrc}
+              alt="User avatar"
+              width={52}
+              height={52}
+              className="object-contain"
+            />
           </div>
           
           {/* Email */}
