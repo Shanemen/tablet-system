@@ -83,6 +83,7 @@ export function ApplicationTable({
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
+              <th className="px-2 pt-1 pb-3 text-left text-base font-bold text-muted-foreground w-10">#</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">申請人</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">電話</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">牌位詳情</th>
@@ -94,13 +95,14 @@ export function ApplicationTable({
           <tbody>
             {applications.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   {searchActive ? "未找到匹配的申請" : "暫無申請"}
                 </td>
               </tr>
             ) : (
-              applications.map((item) => (
+              applications.map((item, index) => (
                 <tr key={item.id} className="border-b border-border hover:bg-muted">
+                  <td className="px-2 py-3 text-sm text-muted-foreground">{index + 1}</td>
                   <td className="px-4 py-3 text-base text-foreground font-medium">{item.name}</td>
                   <td className="px-4 py-3 text-base text-foreground">{item.phone}</td>
                   <td className="px-4 py-3 text-base text-foreground">{item.tablet}</td>

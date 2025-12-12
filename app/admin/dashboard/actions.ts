@@ -49,16 +49,16 @@ async function getApplicationsFromSupabase(): Promise<Applicant[]> {
       tablet_type: n.tablet_type || app.tablet_type
     }))
     
-    // Map tablet_type to Chinese display
+    // Map tablet_type to abbreviated Chinese display (for table column)
     const tabletTypeMap: Record<string, string> = {
-      'longevity': '長生祿位',
-      'long-living': '長生祿位',
-      'deceased': '往生蓮位',
-      'ancestors': '歷代祖先',
-      'karmic_creditors': '冤親債主',
-      'karmic-creditors': '冤親債主',
-      'aborted_spirits': '墮胎嬰靈',
-      'aborted-spirits': '墮胎嬰靈',
+      'longevity': '長生',
+      'long-living': '長生',
+      'deceased': '往生',
+      'ancestors': '祖先',
+      'karmic_creditors': '冤親',
+      'karmic-creditors': '冤親',
+      'aborted_spirits': '嬰靈',
+      'aborted-spirits': '嬰靈',
       'land_deity': '地基主',
       'land-deity': '地基主'
     }

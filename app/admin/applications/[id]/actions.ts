@@ -73,3 +73,42 @@ export async function getApplicationById(id: number): Promise<Applicant | null> 
   }
 }
 
+/**
+ * Mark application as problematic
+ * Note: We're not saving the note to DB for now (no notes column)
+ */
+export async function markAsProblematic(id: number): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from('application')
+    .update({ status: 'problem' })
+    .eq('id', id)
+  
+  if (error) {
+    console.error('Error marking as problematic:', error)
+    return { success: false, error: error.message }
+  }
+  
+  return { success: true }
+}
+
+/**
+ * Mark application as exported/downloaded
+ */
+export async function markAsExported(id: number): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+  
+  const { error } = await supabase
+    .from('application')
+    .update({ status: 'generated' })
+    .eq('id', id)
+  
+  if (error) {
+    console.error('Error marking as exported:', error)
+    return { success: false, error: error.message }
+  }
+  
+  return { success: true }
+}
+
