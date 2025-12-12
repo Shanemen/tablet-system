@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { X, Loader, Check, FileText, Download, Eye } from "lucide-react"
+import { X, Loader, Check, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { SelectedCount } from "@/lib/types/application"
@@ -209,6 +209,18 @@ const PAPER_TYPE_MAP: Record<string, string> = {
 export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportCompletionProps) {
   // Track downloaded files
   const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set())
+  // Show close warning dialog
+  const [showCloseWarning, setShowCloseWarning] = useState(false)
+
+  // Handle close button click
+  const handleCloseClick = () => {
+    const remainingCount = pdfResults.length - downloadedFiles.size
+    if (remainingCount > 0) {
+      setShowCloseWarning(true)
+    } else {
+      onClose()
+    }
+  }
 
   // Helper function to download a single PDF
   const downloadPDF = (result: PDFResult) => {
@@ -242,29 +254,6 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
     setDownloadedFiles(prev => new Set(prev).add(result.typeName))
   }
 
-  // Preview PDF in new tab
-  const previewPDF = (result: PDFResult) => {
-    try {
-      // Convert base64 to blob
-      const binaryString = atob(result.pdfBase64)
-      const bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-      const blob = new Blob([bytes], { type: 'application/pdf' })
-      
-      // Open in new tab
-      const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
-      
-      // Clean up after a delay
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-    } catch (error) {
-      console.error('Preview failed:', error)
-      alert('預覽失敗，請重試')
-    }
-  }
-
   // Calculate file sizes (rough estimate: base64 length / 1.37 to get original size)
   const getFileSize = (base64: string): string => {
     const sizeInBytes = (base64.length * 3) / 4
@@ -276,15 +265,25 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <Card className="max-w-2xl w-full relative">
+        {/* Close button - top right */}
+        <Button 
+          onClick={handleCloseClick} 
+          variant="ghost" 
+          size="icon" 
+          className="absolute top-3 right-3 hover:bg-muted z-10 h-10 w-10"
+        >
+          <X className="h-6 w-6" />
+        </Button>
+
         <div className="p-6">
-          <div className="text-center mb-6">
+          <div className="flex flex-col items-center mb-6">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-3">
               <Check className="text-primary" size={32} />
             </div>
-            <h3 className="text-2xl font-bold text-foreground">生成完成！</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              已成功生成 {pdfResults.length} 個 PDF 文件
+            <h3 className="text-2xl font-bold text-foreground text-center">已生成 {pdfResults.length} 個 PDF</h3>
+            <p className="text-sm text-muted-foreground mt-1 text-center">
+              {downloadedFiles.size}/{pdfResults.length} 已下載
             </p>
           </div>
 
@@ -303,43 +302,50 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => previewPDF(result)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Eye className="mr-1 h-4 w-4" />
-                      預覽
-                    </Button>
-                    <Button 
-                      onClick={() => handleDownload(result)}
-                      size="sm"
-                      variant={downloadedFiles.has(result.typeName) ? "outline" : "default"}
-                      className={downloadedFiles.has(result.typeName) 
-                        ? "" 
-                        : "bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
-                      }
-                    >
-                      <Download className="mr-1 h-4 w-4" />
-                      {downloadedFiles.has(result.typeName) ? "再次下載" : "下載"}
-                    </Button>
-                  </div>
+                  <Button 
+                    onClick={() => handleDownload(result)}
+                    size="sm"
+                    variant={downloadedFiles.has(result.typeName) ? "outline" : "default"}
+                    className={downloadedFiles.has(result.typeName) 
+                      ? "" 
+                      : "bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
+                    }
+                  >
+                    <Download className="mr-1 h-4 w-4" />
+                    {downloadedFiles.has(result.typeName) ? "再次下載" : "下載"}
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
-
-          <div className="text-sm text-muted-foreground text-center mt-4 mb-4">
-            進度：{downloadedFiles.size}/{pdfResults.length} 已下載
-          </div>
-
-          <div className="flex justify-center mt-6">
-            <Button onClick={onClose} variant="outline" className="hover:bg-primary/10 hover:border-primary hover:text-primary">
-              關閉
-            </Button>
-          </div>
         </div>
+
+        {/* Close Warning Dialog */}
+        {showCloseWarning && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-lg">
+            <div className="bg-background border border-border rounded-lg p-6 mx-4 shadow-lg">
+              <h4 className="text-lg font-bold text-foreground mb-2">尚有未下載的文件</h4>
+              <p className="text-muted-foreground mb-4">
+                還有 {pdfResults.length - downloadedFiles.size} 個文件未下載。關閉後將丟失無法恢復，確定要關閉嗎？
+              </p>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={onClose} 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  確認關閉
+                </Button>
+                <Button 
+                  onClick={() => setShowCloseWarning(false)} 
+                  className="flex-1 bg-primary hover:bg-primary/85"
+                >
+                  返回下載
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   )

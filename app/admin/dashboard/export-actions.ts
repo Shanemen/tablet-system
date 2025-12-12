@@ -46,12 +46,16 @@ const MARGIN_BOTTOM = 10 * MM_TO_POINTS // Bottom margin (for page numbers)
 
 // Tablet sizing (single row horizontal, 5 per page)
 const TABLETS_PER_PAGE = 5
-const TABLET_WIDTH = 57.8 * MM_TO_POINTS  // 57.8mm wide (maximized while maintaining aspect ratio)
-const TABLET_HEIGHT = 153.2 * MM_TO_POINTS // 153.2mm tall (maintains original 320:848 ratio)
 
-// Calculate horizontal spacing between tablets
+// Negative horizontal spacing to allow tablets to overlap slightly and extend into margins
+const HORIZONTAL_SPACING = -4 * MM_TO_POINTS  // -4mm overlap between tablets
+
+// Calculate tablet size based on available space with negative spacing
 const AVAILABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
-const HORIZONTAL_SPACING = (AVAILABLE_WIDTH - (TABLETS_PER_PAGE * TABLET_WIDTH)) / (TABLETS_PER_PAGE - 1)
+// With negative spacing: total_width = 5 * tablet_width + 4 * (-2mm) = available_width
+// 5 * tablet_width = available_width + 8mm
+const TABLET_WIDTH = (AVAILABLE_WIDTH - (TABLETS_PER_PAGE - 1) * HORIZONTAL_SPACING) / TABLETS_PER_PAGE
+const TABLET_HEIGHT = TABLET_WIDTH * (848 / 320)  // Maintain original 320:848 aspect ratio
 
 // Tablet type name mapping
 const TABLET_TYPE_NAMES: Record<string, string> = {
@@ -118,9 +122,9 @@ async function addPageNumber(
   const fontSize = 10
   const textWidth = font.widthOfTextAtSize(text, fontSize)
   
-  // Position: bottom right, with margin
-  const x = PAGE_WIDTH - BLEED_SIZE - 10 - textWidth
-  const y = BLEED_SIZE + 10
+  // Position: bottom right, safe from trim (at least 5mm from trim line)
+  const x = PAGE_WIDTH - BLEED_SIZE - (8 * MM_TO_POINTS) - textWidth  // 8mm from trim edge
+  const y = BLEED_SIZE + (5 * MM_TO_POINTS)  // 5mm above trim line (safe zone)
   
   page.drawText(text, {
     x,
