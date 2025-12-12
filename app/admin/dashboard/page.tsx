@@ -14,6 +14,7 @@ import { getApplications } from "./actions"
 import { exportTabletsToPDF } from "./export-actions"
 import { resetApplicationsToPending, resetAllExportedToPending } from "./test-actions"
 import { getCurrentCeremony, type Ceremony } from "../ceremonies/actions"
+import { convertToTraditional } from "@/lib/utils/chinese-converter-client"
 
 export default function AdminDashboardPage() {
   // Data state
@@ -24,6 +25,7 @@ export default function AdminDashboardPage() {
   // UI state
   const [step, setStep] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
+  const [convertedQuery, setConvertedQuery] = useState("") // Traditional Chinese version of query
   const [searchActive, setSearchActive] = useState(false)
   const [activeCard, setActiveCard] = useState<ApplicationStatus | null>("pending")
   const [selectedCount, setSelectedCount] = useState<SelectedCount>({ applications: 0, tablets: 0 })
@@ -128,13 +130,13 @@ export default function AdminDashboardPage() {
   const filterData = () => {
     let result = applicants
 
-    // Search filter
-    if (searchActive && searchQuery.trim()) {
+    // Search filter (uses converted traditional Chinese query)
+    if (searchActive && convertedQuery) {
       result = result.filter(
         (item) =>
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.name.toLowerCase().includes(convertedQuery) ||
           item.phone.includes(searchQuery) ||
-          item.tabletNames.some(name => name.toLowerCase().includes(searchQuery.toLowerCase()))
+          item.tabletNames.some(name => name.toLowerCase().includes(convertedQuery))
       )
     }
 
@@ -155,19 +157,24 @@ export default function AdminDashboardPage() {
   const filtered = filterData()
 
   // Event handlers
-  const handleSearch = () => {
+  const handleSearch = async () => {
+    // Convert simplified to traditional for searching
+    const traditional = await convertToTraditional(searchQuery)
+    setConvertedQuery(traditional.toLowerCase().trim())
     setSearchActive(true)
   }
 
   const handleClearSearch = () => {
     setSearchActive(false)
     setSearchQuery("")
+    setConvertedQuery("")
   }
 
   const handleCardClick = (status: ApplicationStatus | null) => {
     setActiveCard(activeCard === status ? null : status)
     setSearchActive(false)
     setSearchQuery("")
+    setConvertedQuery("")
     setSelectedCount({ applications: 0, tablets: 0 })
   }
 
