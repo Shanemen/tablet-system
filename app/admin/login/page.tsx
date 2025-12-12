@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function LoginPage() {
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const router = useRouter()
 
   // Check if user is already logged in on mount
@@ -21,6 +22,9 @@ export default function LoginPage() {
       
       if (user) {
         router.push('/admin/dashboard')
+      } else {
+        // Only show login form if user is NOT logged in
+        setCheckingAuth(false)
       }
     }
     
@@ -46,6 +50,25 @@ export default function LoginPage() {
       setMessage({ type: 'error', text: '发生错误，请重试' })
       setIsLoading(false)
     }
+  }
+
+  // Show loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8 shadow-xl">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-primary mb-4">
+              牌位管理系統
+            </h1>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span>驗證中...</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   return (

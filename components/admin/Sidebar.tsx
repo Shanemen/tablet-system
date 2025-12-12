@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Calendar, Users, LogOut } from 'lucide-react'
 import { logout } from '@/app/admin/login/actions'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 
 interface SidebarProps {
   userEmail: string
@@ -11,11 +13,15 @@ interface SidebarProps {
 
 export function Sidebar({ userEmail }: SidebarProps) {
   const pathname = usePathname()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   
-  const handleLogout = async () => {
-    if (confirm('确定要退出登录吗？')) {
-      await logout()
-    }
+  const handleLogout = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = async () => {
+    setShowLogoutConfirm(false)
+    await logout()
   }
 
   const navigation = [
@@ -96,6 +102,19 @@ export function Sidebar({ userEmail }: SidebarProps) {
           </button>
         </div>
       </div>
+
+      {/* Logout Confirm Dialog */}
+      {showLogoutConfirm && (
+        <ConfirmDialog
+          title="退出登錄"
+          message="確定要退出登錄嗎？"
+          type="logout"
+          confirmText="確認"
+          cancelText="取消"
+          onConfirm={confirmLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
+      )}
     </div>
   )
 }

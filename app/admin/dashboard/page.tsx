@@ -7,6 +7,8 @@ import { ApplicationStats } from "@/components/admin/ApplicationStats"
 import { ApplicationSearch } from "@/components/admin/ApplicationSearch"
 import { ApplicationTable } from "@/components/admin/ApplicationTable"
 import { ExportConfirmation, ExportProgress, ExportCompletion, PDFResult } from "@/components/admin/ExportDialog"
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog"
+import { NotificationDialog } from "@/components/admin/NotificationDialog"
 import { Applicant, Stats, SelectedCount, ApplicationStatus } from "@/lib/types/application"
 import { getApplications } from "./actions"
 import { exportTabletsToPDF } from "./export-actions"
@@ -41,6 +43,17 @@ export default function AdminDashboardPage() {
     pending: 0,
     problematic: 0,
   })
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    show: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+  } | null>(null)
+
+  // Notification dialog state
+  const [notification, setNotification] = useState<string | null>(null)
 
   // Load data on mount
   useEffect(() => {
@@ -206,65 +219,73 @@ export default function AdminDashboardPage() {
   }
 
   // Test function: Reset application status back to pending
-  const handleResetStatus = async (applicationId: number) => {
-    if (!confirm('重置此申請為待處理狀態？（僅用於測試）')) {
-      return
-    }
-    
-    setLoading(true)
-    try {
-      await resetApplicationsToPending([applicationId])
-      
-      // Reload data
-      const data = await getApplications()
-      setApplicants(data)
-      
-      // Recalculate stats
-      setStats({
-        total: data.length,
-        exported: data.filter((a) => a.status === "exported").length,
-        pending: data.filter((a) => a.status === "pending").length,
-        problematic: data.filter((a) => a.status === "problematic").length,
-      })
-      
-      alert('已重置為待處理狀態')
-    } catch (error) {
-      console.error("Failed to reset application:", error)
-      alert('重置失敗')
-    } finally {
-      setLoading(false)
-    }
+  const handleResetStatus = (applicationId: number) => {
+    setConfirmDialog({
+      show: true,
+      title: '重置申請狀態',
+      message: '確定要將此申請重置為待處理狀態嗎？（僅用於測試）',
+      onConfirm: async () => {
+        setConfirmDialog(null)
+        setLoading(true)
+        try {
+          await resetApplicationsToPending([applicationId])
+          
+          // Reload data
+          const data = await getApplications()
+          setApplicants(data)
+          
+          // Recalculate stats
+          setStats({
+            total: data.length,
+            exported: data.filter((a) => a.status === "exported").length,
+            pending: data.filter((a) => a.status === "pending").length,
+            problematic: data.filter((a) => a.status === "problematic").length,
+          })
+          
+          setNotification('已重置為待處理狀態')
+        } catch (error) {
+          console.error("Failed to reset application:", error)
+          setNotification('重置失敗')
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
 
   // Test function: Reset ALL exported applications to pending
-  const handleResetAllExported = async () => {
-    if (!confirm('重置所有已導出申請為待處理狀態？（僅用於測試）')) {
-      return
-    }
-    
-    setLoading(true)
-    try {
-      await resetAllExportedToPending()
+  const handleResetAllExported = () => {
+    setConfirmDialog({
+      show: true,
+      title: '重置所有已導出申請',
+      message: '確定要將所有已導出申請重置為待處理狀態嗎？（僅用於測試）',
+      onConfirm: async () => {
+        setConfirmDialog(null)
+        setLoading(true)
+        try {
+          await resetAllExportedToPending()
+          
+          // Reload data
+          const data = await getApplications()
+          setApplicants(data)
+          
+          // Recalculate stats
+          setStats({
+            total: data.length,
+            exported: data.filter((a) => a.status === "exported").length,
+            pending: data.filter((a) => a.status === "pending").length,
+            problematic: data.filter((a) => a.status === "problematic").length,
+          })
       
-      // Reload data
-      const data = await getApplications()
-      setApplicants(data)
-      
-      // Recalculate stats
-      setStats({
-        total: data.length,
-        exported: data.filter((a) => a.status === "exported").length,
-        pending: data.filter((a) => a.status === "pending").length,
-        problematic: data.filter((a) => a.status === "problematic").length,
-      })
-      
-      alert('已重置所有已導出申請')
-    } catch (error) {
-      console.error("Failed to reset applications:", error)
-      alert('重置失敗')
-    } finally {
-      setLoading(false)
-    }
+          setNotification('已重置所有已導出申請')
+        } catch (error) {
+          console.error("Failed to reset applications:", error)
+          setNotification('重置失敗')
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
 
   if (loading) {
@@ -335,6 +356,27 @@ export default function AdminDashboardPage() {
             selectedCount={selectedCount}
             pdfResults={pdfResults}
             onClose={handleCloseStep4}
+          />
+        )}
+
+        {/* Confirm Dialog */}
+        {confirmDialog && (
+          <ConfirmDialog
+            title={confirmDialog.title}
+            message={confirmDialog.message}
+            type="reset"
+            confirmText="確認"
+            cancelText="取消"
+            onConfirm={confirmDialog.onConfirm}
+            onCancel={() => setConfirmDialog(null)}
+          />
+        )}
+
+        {/* Notification Dialog */}
+        {notification && (
+          <NotificationDialog
+            message={notification}
+            onClose={() => setNotification(null)}
           />
         )}
     </PageLayout>
