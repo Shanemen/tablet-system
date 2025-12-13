@@ -27,24 +27,12 @@ function hasSimplifiedChars(text: string): boolean {
   return simplifiedCharsRegex.test(text)
 }
 
-// Smart detection: text-first + locale fallback
+// Simple detection: convert any Chinese text to ensure font compatibility
 function needsConversion(text: string): boolean {
-  // 1. CORE LOGIC: Detect simplified characters (most reliable)
-  // Regardless of user location/system, convert if simplified chars detected
-  if (hasSimplifiedChars(text)) {
-    return true // Simplified chars found, must convert
-  }
-  
-  // 2. PERFORMANCE OPTIMIZATION: Simplified locale users
-  // Even if text appears traditional, may have mixed usage, convert for safety
-  const locale = navigator.language.toLowerCase()
-  const isSimplifiedLocale = locale.startsWith('zh-cn') || locale === 'zh' || locale === 'zh-hans'
-  if (isSimplifiedLocale) {
-    return true
-  }
-  
-  // 3. OTHER CASES: Traditional system + pure traditional text, or English users
-  return false
+  // If text contains any Chinese characters, convert to traditional
+  // This ensures NotoSerifTC font can render all characters correctly
+  // OpenCC handles traditional→traditional as a no-op, so it's safe
+  return /[\u4e00-\u9fff]/.test(text)
 }
 
 // Lazy-load opencc-js converter (only downloads when needed)
