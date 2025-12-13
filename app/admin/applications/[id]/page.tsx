@@ -20,7 +20,7 @@ import { getApplicationById, markAsProblematic, markAsExported } from './actions
 import { getTabletTypeLabel, TabletTypeValue } from '@/lib/tablet-types-config'
 
 export default function ApplicationDetailPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const applicationId = Number(params.id)
   

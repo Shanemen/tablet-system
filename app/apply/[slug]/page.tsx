@@ -45,9 +45,9 @@ import { TabletTypeValue } from '@/lib/tablet-types-config'
 type Step = 'applicant-info' | 'application-details' | 'fill-form' | 'preview-confirm'
 
 export default function ApplicationFormPage() {
-  const params = useParams()
+  const params = useParams<{ slug: string }>()
   const router = useRouter()
-  const slug = params.slug as string
+  const slug = params.slug
   
   const [ceremony, setCeremony] = useState<Ceremony | null>(null)
   const [loading, setLoading] = useState(true)

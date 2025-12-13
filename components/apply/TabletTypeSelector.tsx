@@ -131,7 +131,7 @@ export function TabletTypeSelector({
         <Button
           onClick={onBack}
           variant="outline"
-          className="h-14 text-lg font-semibold order-2 sm:order-1"
+          className="btn-secondary-elder w-full sm:w-auto order-2 sm:order-1"
         >
           <ArrowLeft className="mr-2 h-5 w-5" />
           返回
@@ -141,7 +141,7 @@ export function TabletTypeSelector({
         {totalCount > 0 && (
           <Button
             onClick={onViewCart}
-            className="btn-primary-elder flex-1 order-1 sm:order-2"
+            className="btn-primary-elder w-full sm:w-auto sm:flex-1 order-1 sm:order-2"
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
             查看清單並提交 ({totalCount} 位)

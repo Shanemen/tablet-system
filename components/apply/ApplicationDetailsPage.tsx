@@ -199,7 +199,7 @@ export function ApplicationDetailsPage({
         {totalCount > 0 && (
           <Button
             onClick={onPreview}
-            className="btn-primary-elder w-full sm:flex-1 bg-green-600 hover:bg-green-700"
+            className="btn-primary-elder w-full sm:w-auto sm:flex-1 bg-green-600 hover:bg-green-700"
           >
             <Eye className="mr-2 h-5 w-5" />
             預覽並確認（{totalCount}位）

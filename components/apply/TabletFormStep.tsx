@@ -417,14 +417,14 @@ export function TabletFormStep({
         <div className="flex flex-col sm:flex-row gap-4">
           <Button
             onClick={handleGeneratePreview}
-            className="btn-primary-elder flex-1"
+            className="btn-primary-elder w-full sm:w-auto sm:flex-1"
           >
             預覽牌位
           </Button>
           <Button
             onClick={onBackToMenu}
             variant="ghost"
-            className="btn-secondary-elder"
+            className="btn-secondary-elder w-full sm:w-auto"
           >
             返回選單
           </Button>
@@ -587,14 +587,14 @@ export function TabletFormStep({
       <div className="flex flex-col sm:flex-row gap-4">
         <Button
           onClick={handleContinueAdding}
-          className="btn-primary-elder flex-1"
+          className="btn-primary-elder w-full sm:w-auto sm:flex-1"
         >
           繼續添加{getTabletTypeLabel(tabletType)}
         </Button>
         <Button
           onClick={onBackToMenu}
           variant="ghost"
-          className="btn-secondary-elder"
+          className="btn-secondary-elder w-full sm:w-auto"
         >
           返回選單
         </Button>

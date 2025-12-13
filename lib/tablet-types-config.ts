@@ -81,7 +81,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   {
     value: 'deceased',
     label: '往生蓮位',
-    description: '超薦一年內去世的往生者',
+    description: '超薦過去的親友',
     detailedDescription:
       '超薦去世一年內的往生者。 若是同姓氏的家屬去世已超過一年，可歸入「歷代祖先」',
     fields: [
@@ -156,7 +156,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：李美華',
-        maxLength: 8,
+        maxLength: 50,
         validation: {
           pattern: /^(?!.*闔家)(?!.*公司)(?!.*團體).+$/,
           message: '冤親債主牌位不可使用「闔家」、「公司」、「團體」等字眼',
@@ -178,7 +178,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
         type: 'text',
         required: true,
         placeholder: '例如：故兒妙音',
-        maxLength: 8,
+        maxLength: 50,
       },
       {
         name: 'father_name',

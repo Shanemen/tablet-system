@@ -207,7 +207,7 @@
   }
   
   .form-input {
-    @apply w-full text-lg md:text-lg py-3 h-auto;
+    @apply w-full text-lg md:text-lg py-3 h-auto border-2 border-border text-[#212121];
   }
   
   .form-help-text {

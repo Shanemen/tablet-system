@@ -146,7 +146,7 @@ export function PreviewConfirmStep({ onBack, onConfirm }: PreviewConfirmStepProp
           <Button
             onClick={handleConfirm}
             disabled={submitting}
-            className="btn-primary-elder w-full sm:flex-1 bg-green-600 hover:bg-green-700"
+            className="btn-primary-elder w-full sm:w-auto sm:flex-1 bg-green-600 hover:bg-green-700"
           >
             {submitting ? (
               <>
