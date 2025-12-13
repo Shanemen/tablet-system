@@ -159,16 +159,28 @@ function renderVerticalText(
   )
 }
 
+/**
+ * Get background color based on style and tablet type
+ * - B&W mode: Always white (for temples that print on colored paper)
+ * - Color mode: Red for longevity, Yellow for all other types (for digital projectors)
+ */
+function getBackgroundColor(style: string, isLongevity: boolean): string {
+  if (style !== 'color') return '#ffffff'  // B&W mode (default)
+  return isLongevity ? '#D8474D' : '#EDC730'  // Red for longevity, yellow for others
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || '長生祿位'
     const name = searchParams.get('name') || 'TEST'
+    const style = searchParams.get('style') || 'bw'  // 'bw' (default) or 'color'
 
     // Debug: Log parameters
     if (process.env.NODE_ENV === 'development') {
       console.log('[OG Image] Type:', type)
       console.log(`[OG Image] Name: "${name}"`)
+      console.log(`[OG Image] Style: "${style}"`)
     }
 
     // Determine template type
@@ -208,6 +220,7 @@ export async function GET(request: NextRequest) {
     // Get template configuration
     const config = getTemplateConfig(templateId)
     const textColor = '#000000'
+    const bgColor = getBackgroundColor(style, isLongevity)
 
     // Load SVG template with pre-rendered text
     const svgUrl = `${request.nextUrl.origin}/${svgFilename}`
@@ -253,7 +266,7 @@ export async function GET(request: NextRequest) {
             width: '100%',
             display: 'flex',
             position: 'relative',
-            backgroundColor: '#ffffff',
+            backgroundColor: bgColor,
           }}
         >
           {/* SVG Background */}

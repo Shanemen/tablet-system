@@ -266,6 +266,7 @@ export default function ApplicationFormPage() {
         <TabletFormStep
           tabletType={selectedTabletType}
           onBackToMenu={handleBackToMenu}
+          imageStyle={ceremony?.temple?.image_style || 'bw'}
         />
       )}
     </PageLayout>

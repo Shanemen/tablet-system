@@ -26,11 +26,17 @@ function getAvatarForEmail(email: string): string {
   return `/avatars/${avatar}`
 }
 
-interface SidebarProps {
-  userEmail: string
+interface TempleInfo {
+  name_zh: string
+  logo_url?: string | null
 }
 
-export function Sidebar({ userEmail }: SidebarProps) {
+interface SidebarProps {
+  userEmail: string
+  templeInfo?: TempleInfo | null
+}
+
+export function Sidebar({ userEmail, templeInfo }: SidebarProps) {
   const pathname = usePathname()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   
@@ -66,8 +72,29 @@ export function Sidebar({ userEmail }: SidebarProps) {
 
   return (
     <div className="flex h-screen w-64 flex-col bg-card border-r border-border">
-      {/* Logo */}
+      {/* Header: Temple Branding + System Title */}
       <div className="p-6">
+        {/* Temple Branding - shown above system title */}
+        {templeInfo && (
+          <div className="mb-4 pb-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              {templeInfo.logo_url && (
+                <Image 
+                  src={templeInfo.logo_url} 
+                  alt={templeInfo.name_zh} 
+                  width={40} 
+                  height={40}
+                  className="rounded-md object-contain"
+                />
+              )}
+              <p className="text-sm font-medium text-foreground leading-tight">
+                {templeInfo.name_zh}
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {/* System Title */}
         <h1 className="text-xl font-bold text-primary">牌位管理系統</h1>
       </div>
 

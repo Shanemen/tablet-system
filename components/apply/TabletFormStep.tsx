@@ -31,6 +31,7 @@ import { createClient } from '@/lib/supabase/client'
 interface TabletFormStepProps {
   tabletType: TabletTypeValue
   onBackToMenu: () => void
+  imageStyle?: 'bw' | 'color'  // Temple's image style preference
 }
 
 type FormState = 'filling' | 'previewing' | 'confirmed'
@@ -38,6 +39,7 @@ type FormState = 'filling' | 'previewing' | 'confirmed'
 export function TabletFormStep({
   tabletType,
   onBackToMenu,
+  imageStyle = 'bw',  // Default to B&W (print on colored paper)
 }: TabletFormStepProps) {
   const config = getTabletTypeConfig(tabletType)
   const [formState, setFormState] = useState<FormState>('filling')
@@ -172,6 +174,7 @@ export function TabletFormStep({
       const apiUrl = new URL('/api/og/tablet', window.location.origin)
       apiUrl.searchParams.set('name', honoreeText)
       apiUrl.searchParams.set('type', tabletType)
+      apiUrl.searchParams.set('style', imageStyle)  // Temple-specific image style
       if (petitionerText) {
         apiUrl.searchParams.set('applicant', petitionerText)
       }
@@ -439,6 +442,7 @@ export function TabletFormStep({
     const apiUrl = new URL('/api/og/tablet', window.location.origin)
     apiUrl.searchParams.set('name', convertedTexts.honoree)
     apiUrl.searchParams.set('type', tabletType)
+    apiUrl.searchParams.set('style', imageStyle)  // Temple-specific image style
     if (convertedTexts.petitioner) {
       apiUrl.searchParams.set('applicant', convertedTexts.petitioner)
     }

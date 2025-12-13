@@ -4,6 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { unstable_noStore as noStore } from 'next/cache'
 
+export interface TempleConfig {
+  id: number
+  name_zh: string
+  image_style: 'bw' | 'color'
+}
+
 export interface Ceremony {
   id: number
   name_zh: string
@@ -16,6 +22,8 @@ export interface Ceremony {
   status: string
   show_donation: boolean
   donation_url: string | null
+  temple_id?: number
+  temple?: TempleConfig | null  // Joined temple data
 }
 
 /**
@@ -216,6 +224,7 @@ export async function updateCeremony(ceremonyId: number, formData: FormData) {
 
 /**
  * Get ceremony by slug (for public application form)
+ * Includes temple configuration for image style
  */
 export async function getCeremonyBySlug(slug: string): Promise<Ceremony | null> {
   noStore() // Disable caching
@@ -225,14 +234,18 @@ export async function getCeremonyBySlug(slug: string): Promise<Ceremony | null> 
   const decodedSlug = decodeURIComponent(slug)
   console.log('[getCeremonyBySlug] Looking for slug:', decodedSlug)
   
+  // Join with temples table to get image_style
   const { data, error } = await supabase
     .from('ceremony')
-    .select('*')
+    .select(`
+      *,
+      temple:temples(id, name_zh, image_style)
+    `)
     .eq('slug', decodedSlug)
     .eq('status', 'active')
     .single()
   
-  console.log('[getCeremonyBySlug] Result - data:', data?.id, data?.name_zh, 'error:', error?.message)
+  console.log('[getCeremonyBySlug] Result - data:', data?.id, data?.name_zh, 'temple:', data?.temple, 'error:', error?.message)
   
   if (error) {
     console.error('Error fetching ceremony by slug:', error)
