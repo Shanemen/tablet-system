@@ -118,7 +118,7 @@ export function ApplicationDetailsPage({
                 variant="outline"
                 className="h-12 px-4 text-base"
               >
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-5 w-5 mr-2" />
                 編輯
               </Button>
             </div>
