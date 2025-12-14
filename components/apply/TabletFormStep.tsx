@@ -497,7 +497,7 @@ export function TabletFormStep({
               key={`${convertedTexts.honoree}-${convertedTexts.petitioner}`}
               src={apiUrl.toString()}
               alt="牌位預覽"
-              className={`max-w-full h-auto rounded-lg shadow-lg transition-opacity duration-300 ${
+              className={`max-w-full h-auto rounded-xl shadow-lg transition-opacity duration-300 ${
                 isImageLoading ? 'opacity-0' : 'opacity-100'
               }`}
               style={{ maxHeight: '75vh' }}

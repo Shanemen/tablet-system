@@ -274,9 +274,8 @@ export async function GET(request: NextRequest) {
             width: '100%',
             display: 'flex',
             position: 'relative',
-            // Match container background and border radius with SVG (rx="20") for seamless rounded corners
+            // Full rectangle background - SVG's <rect rx="20"> provides the visual rounded corners
             backgroundColor: bgColor,
-            borderRadius: 20,
           }}
         >
           {/* SVG Background */}
