@@ -235,11 +235,12 @@ export async function GET(request: NextRequest) {
       console.warn('Could not fetch SVG:', e)
     }
 
-    // Dynamically replace SVG background color
-    // The SVG has a <rect fill="#fff" rx="20"> as the first element (white background with rounded corners)
-    // Replace it with the appropriate color based on style and tablet type
+    // Dynamically replace ALL white fills in SVG with the background color
+    // This includes: background rect, text overlay rectangles, and decorative dots
+    // BW mode: all white stays white (invisible on white background)
+    // Color mode: all white becomes red/yellow (invisible on colored background)
     if (svgContent) {
-      svgContent = svgContent.replace('fill="#fff"', `fill="${bgColor}"`)
+      svgContent = svgContent.replaceAll('fill="#fff"', `fill="${bgColor}"`)
     }
 
     const svgDataUri = svgContent 
