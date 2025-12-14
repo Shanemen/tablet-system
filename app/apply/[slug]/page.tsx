@@ -58,6 +58,10 @@ export default function ApplicationFormPage() {
   const [currentStep, setCurrentStep] = useState<Step>('applicant-info')
   const [selectedTabletType, setSelectedTabletType] = useState<TabletTypeValue | null>(null)
   
+  // Ceremony info visibility state
+  // First page: expanded by default, other pages: collapsed by default
+  const [showCeremonyInfo, setShowCeremonyInfo] = useState(true)
+  
   // Message state
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   
@@ -82,6 +86,12 @@ export default function ApplicationFormPage() {
       }
     }
   }, [ceremony, slug])
+
+  // Reset ceremony info visibility when step changes
+  // First page: expanded, other pages: collapsed
+  useEffect(() => {
+    setShowCeremonyInfo(currentStep === 'applicant-info')
+  }, [currentStep])
   
   const loadCeremony = async () => {
     setLoading(true)
@@ -212,20 +222,27 @@ export default function ApplicationFormPage() {
     )
   }
 
-  // Determine header variant based on current step
-  // Full: first page (applicant-info)
-  // Compact: other pages (application-details, fill-form)
-  const headerVariant = currentStep === 'applicant-info' ? 'full' : 'compact'
+  // Toggle ceremony info visibility
+  const handleCeremonyToggle = () => {
+    setShowCeremonyInfo(!showCeremonyInfo)
+  }
 
   // Main Application Form
   return (
     <>
-      {/* Temple Banner - Fixed at top */}
-      <TempleBanner temple={ceremony?.temple} />
+      {/* Temple Banner - Fixed at top with ceremony toggle */}
+      <TempleBanner 
+        temple={ceremony?.temple}
+        showCeremonyToggle={true}
+        isCeremonyExpanded={showCeremonyInfo}
+        onCeremonyToggle={handleCeremonyToggle}
+      />
       
       <PageLayout narrow>
-        {/* Ceremony Header - Full on first/last page, Compact on middle pages */}
-        <CeremonyHeader ceremony={ceremony} variant={headerVariant} />
+        {/* Ceremony Header - Collapsible, shown based on showCeremonyInfo state */}
+        {showCeremonyInfo && (
+          <CeremonyHeader ceremony={ceremony} variant="full" />
+        )}
 
       {/* Error/Success Message */}
           {message && (
