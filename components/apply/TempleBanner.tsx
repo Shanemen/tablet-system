@@ -76,7 +76,7 @@ export function TempleBanner({
           {showCeremonyToggle && (
             <button
               onClick={onCeremonyToggle}
-              className={`flex items-center gap-1 text-sm sm:text-base font-medium ${textClass} hover:opacity-80 transition-opacity`}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-sm sm:text-base font-medium ${textClass} transition-colors`}
             >
               {isCeremonyExpanded ? (
                 <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
