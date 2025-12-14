@@ -235,6 +235,13 @@ export async function GET(request: NextRequest) {
       console.warn('Could not fetch SVG:', e)
     }
 
+    // Dynamically replace SVG background color
+    // The SVG has a <rect fill="#fff" rx="20"> as the first element (white background with rounded corners)
+    // Replace it with the appropriate color based on style and tablet type
+    if (svgContent) {
+      svgContent = svgContent.replace('fill="#fff"', `fill="${bgColor}"`)
+    }
+
     const svgDataUri = svgContent 
       ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
       : null
@@ -266,7 +273,7 @@ export async function GET(request: NextRequest) {
             width: '100%',
             display: 'flex',
             position: 'relative',
-            backgroundColor: bgColor,
+            // Background color is now set in SVG's <rect> element to preserve rounded corners
           }}
         >
           {/* SVG Background */}
