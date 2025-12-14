@@ -7,24 +7,7 @@ import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Calendar, Users, LogOut } from 'lucide-react'
 import { logout } from '@/app/admin/login/actions'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
-
-// Manual avatar assignments - add users here!
-// Available: boba, cheesecake, daffodil, fairy-jar, grapefruit, hyacinth, 
-//            latte, lily-pad, lotus, pearl, pine, pinwheel, tea, tomato
-const USER_AVATARS: Record<string, string> = {
-  'shanemen@gmail.com': 'pearl.png',
-  // Add more users here:
-  // 'another@example.com': 'lotus.png',
-}
-
-// Default avatar for users not in the list
-const DEFAULT_AVATAR = 'lotus.png'
-
-// Get avatar image path for a user
-function getAvatarForEmail(email: string): string {
-  const avatar = USER_AVATARS[email.toLowerCase()] || DEFAULT_AVATAR
-  return `/avatars/${avatar}`
-}
+import { getAvatarPath } from '@/lib/utils/theme-helpers'
 
 interface TempleInfo {
   name_zh: string
@@ -33,10 +16,12 @@ interface TempleInfo {
 
 interface SidebarProps {
   userEmail: string
+  /** Avatar filename from database (e.g., 'pearl.png'). Falls back to 'lotus.png' if not provided. */
+  userAvatar?: string | null
   templeInfo?: TempleInfo | null
 }
 
-export function Sidebar({ userEmail, templeInfo }: SidebarProps) {
+export function Sidebar({ userEmail, userAvatar, templeInfo }: SidebarProps) {
   const pathname = usePathname()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   
@@ -67,8 +52,8 @@ export function Sidebar({ userEmail, templeInfo }: SidebarProps) {
     },
   ]
 
-  // Get avatar image for this user
-  const avatarSrc = getAvatarForEmail(userEmail)
+  // Get avatar path from database value (with default fallback)
+  const avatarSrc = getAvatarPath(userAvatar)
 
   return (
     <div className="flex h-screen w-64 flex-col bg-card border-r border-border">
@@ -77,20 +62,21 @@ export function Sidebar({ userEmail, templeInfo }: SidebarProps) {
         {/* Temple Branding - shown above system title */}
         {templeInfo && (
           <div className="mb-4 pb-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              {templeInfo.logo_url && (
-                <Image 
-                  src={templeInfo.logo_url} 
-                  alt={templeInfo.name_zh} 
-                  width={40} 
-                  height={40}
-                  className="rounded-md object-contain"
-                />
-              )}
+            {templeInfo.logo_url ? (
+              // Logo image (already contains temple name)
+              <Image 
+                src={templeInfo.logo_url} 
+                alt={templeInfo.name_zh} 
+                width={200} 
+                height={50}
+                className="object-contain"
+              />
+            ) : (
+              // Text fallback when no logo
               <p className="text-sm font-medium text-foreground leading-tight">
                 {templeInfo.name_zh}
               </p>
-            </div>
+            )}
           </div>
         )}
         
@@ -170,4 +156,3 @@ export function Sidebar({ userEmail, templeInfo }: SidebarProps) {
     </div>
   )
 }
-

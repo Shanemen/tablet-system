@@ -30,6 +30,7 @@ import { ApplicationDetailsPage } from '@/components/apply/ApplicationDetailsPag
 import { TabletFormStep } from '@/components/apply/TabletFormStep'
 import { PreviewConfirmStep } from '@/components/apply/PreviewConfirmStep'
 import { CeremonyHeader } from '@/components/apply/CeremonyHeader'
+import { TempleBanner } from '@/components/apply/TempleBanner'
 
 // Utils
 import {
@@ -218,9 +219,13 @@ export default function ApplicationFormPage() {
 
   // Main Application Form
   return (
-    <PageLayout narrow>
-      {/* Ceremony Header - Full on first/last page, Compact on middle pages */}
-      <CeremonyHeader ceremony={ceremony} variant={headerVariant} />
+    <>
+      {/* Temple Banner - Fixed at top */}
+      <TempleBanner temple={ceremony?.temple} />
+      
+      <PageLayout narrow>
+        {/* Ceremony Header - Full on first/last page, Compact on middle pages */}
+        <CeremonyHeader ceremony={ceremony} variant={headerVariant} />
 
       {/* Error/Success Message */}
           {message && (
@@ -270,5 +275,6 @@ export default function ApplicationFormPage() {
         />
       )}
     </PageLayout>
+    </>
   )
 }

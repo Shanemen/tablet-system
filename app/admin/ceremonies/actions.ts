@@ -4,10 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { unstable_noStore as noStore } from 'next/cache'
 
+import type { TempleThemeConfig } from '@/lib/types/temple'
+
 export interface TempleConfig {
   id: number
   name_zh: string
   image_style: 'bw' | 'color'
+  logo_url?: string | null
+  theme_config?: TempleThemeConfig | null
 }
 
 export interface Ceremony {
@@ -74,11 +78,27 @@ export async function getCurrentCeremony(): Promise<Ceremony | null> {
 export async function createCeremony(formData: FormData) {
   const supabase = await createClient()
   
+  // Get current user's temple_id
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { error: '請先登錄' }
+  }
+  
+  const { data: userTemple } = await supabase
+    .from('admin_user_temple')
+    .select('temple_id')
+    .eq('user_id', user.id)
+    .single()
+  
+  if (!userTemple?.temple_id) {
+    return { error: '用戶未分配道場' }
+  }
+  
   const nameZh = formData.get('name_zh') as string
   const startAt = formData.get('start_at') as string
   
   // Generate slug for the application form link
-  let slug = generateSlug(nameZh, startAt)
+  let slug = generateSlug(startAt)
   
   // Ensure uniqueness
   const { data: existing } = await supabase
@@ -103,7 +123,7 @@ export async function createCeremony(formData: FormData) {
     donation_url: formData.get('donation_url') as string || null,
     status: 'active' as const, // Directly create as active
     slug: slug,
-    temple_id: 1, // Default temple_id
+    temple_id: userTemple.temple_id, // Use user's temple_id
   }
   
   const { data, error } = await supabase
@@ -121,24 +141,23 @@ export async function createCeremony(formData: FormData) {
 }
 
 /**
- * Generate slug from ceremony name and date
+ * Generate simple, reliable slug from date + random code
+ * Example: "20251220-k7x9m2"
+ * 
+ * Benefits:
+ * - No Chinese characters = no URL encoding issues
+ * - Short and simple
+ * - Impossible to guess (security)
+ * - Never conflicts
  */
-function generateSlug(nameZh: string, startAt: string): string {
-  // Extract date part (YYYY-MM-DD)
+function generateSlug(startAt: string): string {
+  // Extract date part (YYYYMMDD)
   const dateStr = startAt.split('T')[0].replace(/-/g, '')
   
-  // Convert Chinese name to slug-friendly format
-  // Simple approach: use date + simplified name
-  const nameSlug = nameZh
-    .trim() // Remove leading/trailing spaces first
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\u4e00-\u9fff-]/g, '')
-    .replace(/-+$/, '') // Remove trailing dashes
-    .replace(/^-+/, '') // Remove leading dashes
-    .toLowerCase()
-    .substring(0, 30)
+  // Generate 6-character random alphanumeric code
+  const randomCode = Math.random().toString(36).substring(2, 8)
   
-  return `${dateStr}-${nameSlug}`.toLowerCase()
+  return `${dateStr}-${randomCode}`
 }
 
 /**
@@ -161,7 +180,7 @@ export async function activateCeremony(ceremonyId: number) {
   // Generate slug if not exists
   let slug = ceremony.slug
   if (!slug) {
-    slug = generateSlug(ceremony.name_zh, ceremony.start_at)
+    slug = generateSlug(ceremony.start_at)
     
     // Ensure uniqueness by checking if slug exists
     const { data: existing } = await supabase
@@ -234,25 +253,35 @@ export async function getCeremonyBySlug(slug: string): Promise<Ceremony | null> 
   const decodedSlug = decodeURIComponent(slug)
   console.log('[getCeremonyBySlug] Looking for slug:', decodedSlug)
   
-  // Join with temples table to get image_style
-  const { data, error } = await supabase
+  // First get the ceremony (simple query, no join)
+  const { data: ceremony, error } = await supabase
     .from('ceremony')
-    .select(`
-      *,
-      temple:temples(id, name_zh, image_style)
-    `)
+    .select('*')
     .eq('slug', decodedSlug)
     .eq('status', 'active')
-    .single()
+    .maybeSingle()
   
-  console.log('[getCeremonyBySlug] Result - data:', data?.id, data?.name_zh, 'temple:', data?.temple, 'error:', error?.message)
+  console.log('[getCeremonyBySlug] Ceremony result:', ceremony?.id, ceremony?.name_zh, 'error:', error?.message)
   
-  if (error) {
+  if (error || !ceremony) {
     console.error('Error fetching ceremony by slug:', error)
     return null
   }
   
-  return data
+  // Then get temple info separately (if temple_id exists)
+  if (ceremony.temple_id) {
+    const { data: temple } = await supabase
+      .from('temples')
+      .select('id, name_zh, image_style, logo_url, theme_config')
+      .eq('id', ceremony.temple_id)
+      .maybeSingle()
+    
+    if (temple) {
+      return { ...ceremony, temple } as Ceremony
+    }
+  }
+  
+  return ceremony
 }
 
 /**
