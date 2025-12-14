@@ -239,9 +239,15 @@ export default function ApplicationFormPage() {
       />
       
       <PageLayout narrow>
-        {/* Ceremony Header - Collapsible, shown based on showCeremonyInfo state */}
-        {showCeremonyInfo && (
+        {/* Ceremony Header - Full card when expanded, compact name when collapsed */}
+        {showCeremonyInfo ? (
           <CeremonyHeader ceremony={ceremony} variant="full" />
+        ) : (
+          <div className="mb-6">
+            <h1 className="text-xl sm:text-2xl font-bold text-primary">
+              {ceremony.name_zh}
+            </h1>
+          </div>
         )}
 
       {/* Error/Success Message */}
