@@ -235,11 +235,11 @@ export default function ApplicationDetailPage() {
                     
                     return (
                       <div key={index} className="space-y-3 flex flex-col items-center">
-                        <div className="relative bg-gray-100 rounded-lg overflow-hidden shadow-md border border-gray-200 transition-transform hover:scale-105">
+                        <div className="relative transition-transform hover:scale-105">
                           <img 
                             src={imageUrl} 
                             alt={`Tablet for ${tablet.display_name}`} 
-                            className="h-[400px] w-auto object-contain"
+                            className="h-[400px] w-auto object-contain rounded-xl shadow-lg"
                           />
                         </div>
                         <p className="font-medium text-lg">{tablet.display_name}</p>
