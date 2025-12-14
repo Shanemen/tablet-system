@@ -178,7 +178,7 @@
 @layer utilities {
   /* Page Layout */
   .page-container {
-    @apply min-h-screen bg-background p-6 sm:p-8;
+    @apply min-h-screen bg-background px-6 sm:px-8 pb-6 sm:pb-8 pt-2;
   }
   
   .page-content {

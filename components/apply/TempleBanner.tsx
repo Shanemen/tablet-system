@@ -46,7 +46,7 @@ export function TempleBanner({
   const { bgClass, textClass } = getBannerClasses(temple.theme_config)
 
   return (
-    <div className={`w-full ${bgClass} border-b border-border py-3 px-4 sm:px-6 mb-6`}>
+    <div className={`w-full ${bgClass} border-b border-border py-3 px-4 sm:px-6 mb-4`}>
       <div className="max-w-3xl mx-auto flex items-center justify-between">
         {/* Logo - Left aligned */}
         <div className="flex-shrink-0">
@@ -68,7 +68,7 @@ export function TempleBanner({
         {/* Right side - Title and Toggle */}
         <div className="flex items-center gap-2 sm:gap-4">
           {/* 牌位申請表 title */}
-          <span className={`text-sm sm:text-base font-medium ${textClass}`}>
+          <span className="text-sm sm:text-base font-medium text-muted">
             牌位申請表
           </span>
 

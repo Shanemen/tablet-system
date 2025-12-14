@@ -75,22 +75,20 @@ export function ApplicationDetailsPage({
 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Title with View button */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <h2 className="text-lg text-muted-foreground font-normal mb-2">
-            申請詳情：已添加 {totalCount} 位
-          </h2>
-        </div>
+      <div className="flex items-center gap-4">
+        <h2 className="text-lg text-muted-foreground font-normal">
+          申請詳情：已添加 {totalCount} 位
+        </h2>
         
         {totalCount > 0 && (
           <Button
             onClick={onPreview}
             variant="ghost"
-            className="flex items-center gap-2 bg-primary/10 text-primary h-12 px-4 text-base rounded-lg hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-2 bg-primary/10 text-primary h-10 px-3 text-sm rounded-lg hover:bg-primary/20 transition-colors"
           >
-            <Eye className="h-5 w-5" />
+            <Eye className="h-4 w-4" />
             <span className="font-semibold">查看</span>
           </Button>
         )}

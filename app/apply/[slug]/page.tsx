@@ -243,7 +243,7 @@ export default function ApplicationFormPage() {
         {showCeremonyInfo ? (
           <CeremonyHeader ceremony={ceremony} variant="full" />
         ) : (
-          <div className="mb-6">
+          <div className="mb-4">
             <h1 className="text-xl sm:text-2xl font-bold text-primary">
               {ceremony.name_zh}
             </h1>
