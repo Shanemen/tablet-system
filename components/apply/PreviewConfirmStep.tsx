@@ -58,15 +58,13 @@ export function PreviewConfirmStep({ onBack, onConfirm }: PreviewConfirmStepProp
   }
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="space-y-8">
-        {/* Title */}
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-primary">請仔細檢查確認無誤後提交</h1>
-    
-          <div className="text-lg font-semibold text-foreground">
-            總計：{totalCount} 位
-          </div>
+    <div>
+      <div className="space-y-6">
+        {/* Title - same layout as ApplicationDetailsPage */}
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg text-muted-foreground font-normal">
+            請仔細檢查確認無誤後提交：總計 {totalCount} 位
+          </h2>
         </div>
 
         {/* Preview Images Grouped by Type */}
