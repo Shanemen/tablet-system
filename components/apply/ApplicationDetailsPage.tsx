@@ -16,7 +16,7 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, CheckCircle, Loader2, Eye } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, CheckCircle, Loader2, Eye, Pencil } from 'lucide-react'
 import {
   getTabletTypeOptions,
   TabletTypeValue,
@@ -120,6 +120,7 @@ export function ApplicationDetailsPage({
                 variant="outline"
                 className="h-12 px-4 text-base"
               >
+                <Pencil className="h-4 w-4" />
                 編輯
               </Button>
             </div>
