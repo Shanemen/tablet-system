@@ -274,8 +274,9 @@ export async function GET(request: NextRequest) {
             width: '100%',
             display: 'flex',
             position: 'relative',
-            // Match container background with SVG background to eliminate anti-aliasing seams at rounded corners
+            // Match container background and border radius with SVG (rx="20") for seamless rounded corners
             backgroundColor: bgColor,
+            borderRadius: 20,
           }}
         >
           {/* SVG Background */}
