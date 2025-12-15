@@ -22,6 +22,14 @@ const TEXT_CLASS_MAP: Record<NonNullable<TempleThemeConfig['banner_text']>, stri
   'primary': 'text-primary'
 }
 
+/** Button background classes for dark vs light banner backgrounds */
+const BUTTON_CLASS_MAP: Record<NonNullable<TempleThemeConfig['banner_bg']>, string> = {
+  'primary': 'bg-white/20 hover:bg-white/30',  // Dark background → light button
+  'card': 'bg-primary/10 hover:bg-primary/20', // Light background → primary button
+  'white': 'bg-primary/10 hover:bg-primary/20',
+  'muted': 'bg-primary/10 hover:bg-primary/20'
+}
+
 /** Default theme values when not specified */
 const DEFAULT_BANNER_BG: NonNullable<TempleThemeConfig['banner_bg']> = 'card'
 const DEFAULT_BANNER_TEXT: NonNullable<TempleThemeConfig['banner_text']> = 'foreground'
@@ -30,22 +38,24 @@ const DEFAULT_BANNER_TEXT: NonNullable<TempleThemeConfig['banner_text']> = 'fore
  * Get Tailwind classes for the temple banner based on theme config
  * 
  * @param themeConfig - Theme configuration from the temples table
- * @returns Object with bgClass and textClass for the banner
+ * @returns Object with bgClass, textClass, and buttonClass for the banner
  * 
  * @example
- * const { bgClass, textClass } = getBannerClasses(temple?.theme_config)
- * // bgClass: 'bg-primary', textClass: 'text-primary-foreground'
+ * const { bgClass, textClass, buttonClass } = getBannerClasses(temple?.theme_config)
+ * // bgClass: 'bg-primary', textClass: 'text-primary-foreground', buttonClass: 'bg-white/20 hover:bg-white/30'
  */
 export function getBannerClasses(themeConfig?: TempleThemeConfig | null): {
   bgClass: string
   textClass: string
+  buttonClass: string
 } {
   const bgKey = themeConfig?.banner_bg ?? DEFAULT_BANNER_BG
   const textKey = themeConfig?.banner_text ?? DEFAULT_BANNER_TEXT
   
   return {
     bgClass: BG_CLASS_MAP[bgKey],
-    textClass: TEXT_CLASS_MAP[textKey]
+    textClass: TEXT_CLASS_MAP[textKey],
+    buttonClass: BUTTON_CLASS_MAP[bgKey]
   }
 }
 

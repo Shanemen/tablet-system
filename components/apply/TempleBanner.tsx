@@ -43,7 +43,7 @@ export function TempleBanner({
   if (!temple) return null
 
   // Get theme classes from database config (with defaults)
-  const { bgClass, textClass } = getBannerClasses(temple.theme_config)
+  const { bgClass, textClass, buttonClass } = getBannerClasses(temple.theme_config)
 
   return (
     <div className={`w-full ${bgClass} border-b border-border py-3 px-4 sm:px-6 mb-4`}>
@@ -68,7 +68,7 @@ export function TempleBanner({
         {/* Right side - Title and Toggle */}
         <div className="flex items-center gap-2 sm:gap-4">
           {/* 牌位申請表 title */}
-          <span className="text-sm sm:text-base font-medium text-muted">
+          <span className={`text-sm sm:text-base font-medium ${textClass} opacity-80`}>
             牌位申請表
           </span>
 
@@ -76,7 +76,7 @@ export function TempleBanner({
           {showCeremonyToggle && (
             <button
               onClick={onCeremonyToggle}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-sm sm:text-base font-medium ${textClass} transition-colors`}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${buttonClass} text-sm sm:text-base font-medium ${textClass} transition-colors`}
             >
               {isCeremonyExpanded ? (
                 <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
