@@ -276,7 +276,10 @@ export default function AdminDashboardPage() {
           {/* Header */}
           <PageHeader 
             title="牌位管理" 
-            subtitle="当前法会：2024年3月15日 三時繫念法會"
+            subtitle={currentCeremony 
+              ? `当前法会：${new Date(currentCeremony.start_at).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })} ${currentCeremony.name_zh}`
+              : undefined
+            }
           />
 
             {/* Search Bar */}
