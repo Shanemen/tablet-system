@@ -86,19 +86,25 @@ export default function LoginPage() {
           }}
         />
         <div className="absolute inset-0 bg-black/10" /> {/* Light overlay */}
-        <Header />
-        <Card className="relative w-full max-w-md p-8 shadow-2xl bg-white/95 backdrop-blur-sm">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-primary mb-4">
-              牌位管理系統
-            </h1>
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <span>驗證中...</span>
-            </div>
+      <Header />
+      <Card className="relative w-full max-w-md p-8 shadow-2xl bg-white/95 backdrop-blur-sm">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-primary mb-4">
+            牌位管理系統
+          </h1>
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span>驗證中...</span>
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
+      {/* Footer */}
+      <footer className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-xs text-primary/80">
+          © {new Date().getFullYear()} Made with Metta 🪷
+        </p>
+      </footer>
+    </div>
     )
   }
 
@@ -187,6 +193,12 @@ export default function LoginPage() {
           </p>
         </div>
       </Card>
+      {/* Footer */}
+      <footer className="absolute bottom-4 left-0 right-0 text-center">
+        <p className="text-xs text-primary/80">
+          © {new Date().getFullYear()} Made with Metta 🪷
+        </p>
+      </footer>
     </div>
   )
 }
