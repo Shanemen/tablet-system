@@ -171,6 +171,26 @@
   animation: cardBackgroundPulse 2.5s ease-in-out;
 }
 
+/* 背景浮动动画 - 模拟水面波动 */
+@keyframes float {
+  0%, 100% {
+    transform: scale(1.05) translateY(0) translateX(0);
+  }
+  25% {
+    transform: scale(1.05) translateY(-4px) translateX(2px);
+  }
+  50% {
+    transform: scale(1.05) translateY(0) translateX(4px);
+  }
+  75% {
+    transform: scale(1.05) translateY(4px) translateX(2px);
+  }
+}
+
+.animate-breathe {
+  animation: float 15s ease-in-out infinite;
+}
+
 /* ============================================================================
    Design System Utilities - Elderly-Friendly Typography & Spacing
    ============================================================================ */

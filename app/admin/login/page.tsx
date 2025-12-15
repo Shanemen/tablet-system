@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Raleway } from 'next/font/google'
 import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
+import { DiamondPlus } from 'lucide-react'
+
+const raleway = Raleway({ 
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  adjustFontFallback: false
+})
 
 export default function LoginPage() {
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
@@ -53,10 +61,33 @@ export default function LoginPage() {
   }
 
   // Show loading state while checking authentication
+  // Header component
+  const Header = () => (
+    <header className="absolute top-0 left-0 right-0 z-10 py-4 px-6">
+      <div className="flex items-center justify-center gap-2">
+        <DiamondPlus className="h-6 w-6 text-primary" />
+        <span className={`text-lg font-semibold text-primary ${raleway.className}`}>
+          Online Tablet System
+        </span>
+      </div>
+    </header>
+  )
+
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-8 shadow-xl">
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated Background */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-breathe"
+          style={{ 
+            backgroundImage: 'url(/backgrounds/lotus_pond.png)',
+            filter: 'blur(2px)',
+            transform: 'scale(1.05)'
+          }}
+        />
+        <div className="absolute inset-0 bg-black/10" /> {/* Light overlay */}
+        <Header />
+        <Card className="relative w-full max-w-md p-8 shadow-2xl bg-white/95 backdrop-blur-sm">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-primary mb-4">
               牌位管理系統
@@ -72,8 +103,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 shadow-xl">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-breathe"
+        style={{ 
+          backgroundImage: 'url(/backgrounds/lotus_pond.png)',
+          filter: 'blur(2px)',
+          transform: 'scale(1.05)' // Prevent blur edge artifacts
+        }}
+      />
+      <div className="absolute inset-0 bg-black/10" /> {/* Light overlay */}
+      <Header />
+      <Card className="relative w-full max-w-md p-8 shadow-2xl bg-white/95 backdrop-blur-sm">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary mb-2">
