@@ -270,7 +270,7 @@ export function TabletFormStep({
               id={field.name}
               checked={isChecked}
               onChange={(e) => handleFieldChange(field.name, e.target.checked ? '1' : '0')}
-              className="w-6 h-6 rounded border-2 border-input cursor-pointer accent-primary"
+              className="w-6 h-6 rounded border-2 border-muted-foreground bg-white cursor-pointer appearance-none checked:bg-primary checked:border-primary checked:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%206L9%2017l-5-5%22%2F%3E%3C%2Fsvg%3E')] checked:bg-center checked:bg-no-repeat"
             />
             <div className="flex-1">
               <span className="text-lg text-muted-foreground">

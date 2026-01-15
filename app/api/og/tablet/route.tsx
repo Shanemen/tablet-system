@@ -59,22 +59,56 @@ function renderVerticalText(
           transform: 'rotate(90deg)',
         }}
       >
-          {lines.map((line, index) => (
-            <div
-              key={index}
-              style={{
-                fontSize,
-                fontWeight: 400,
-                fontFamily: 'Noto Serif TC',
-                color,
-                textAlign: 'center',
-                whiteSpace: 'nowrap',
-                lineHeight: lines.length > 1 ? `${fontSize * 1.1}px` : 'normal',
-              }}
-            >
-              {line}
-            </div>
-          ))}
+          {lines.map((line, index) => {
+            // Check if this line ends with "闔家" - need to counter-rotate these characters
+            const hasFamilySuffix = line.endsWith('闔家')
+            const mainPart = hasFamilySuffix ? line.slice(0, -2) : line
+            const familySuffix = hasFamilySuffix ? '闔家' : ''
+            
+            return (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: lines.length > 1 ? `${fontSize * 1.1}px` : 'normal',
+                }}
+              >
+                {/* Main text (English name) - stays rotated with container */}
+                {mainPart && (
+                  <span
+                    style={{
+                      fontSize,
+                      fontWeight: 400,
+                      fontFamily: 'Noto Serif TC',
+                      color,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {mainPart}
+                  </span>
+                )}
+                {/* "闔家" suffix - counter-rotate to appear upright */}
+                {hasFamilySuffix && familySuffix.split('').map((char, charIndex) => (
+                  <div
+                    key={`family-${charIndex}`}
+                    style={{
+                      fontSize,
+                      fontWeight: 400,
+                      fontFamily: 'Noto Serif TC',
+                      color,
+                      display: 'flex',
+                      transform: 'rotate(-90deg)',
+                    }}
+                  >
+                    {char}
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
     )

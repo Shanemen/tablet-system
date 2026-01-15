@@ -11,11 +11,11 @@ const TABLET_TYPE_LABELS: Record<string, string> = {
   'deceased': '往生蓮位',
   'ancestors': '歷代祖先',
   'karmic-creditors': '冤親債主',
-  'aborted-spirits': '嬰靈排位',
+  'aborted-spirits': '嬰靈牌位',
   'land-deity': '地基主',
   // Legacy naming support
   'karmic_creditors': '冤親債主',
-  'aborted_spirits': '嬰靈排位',
+  'aborted_spirits': '嬰靈牌位',
   'land_deity': '地基主',
 }
 

@@ -168,7 +168,7 @@ export const TABLET_TYPES: TabletTypeConfig[] = [
   },
   {
     value: 'aborted-spirits',
-    label: '嬰靈排位',
+    label: '嬰靈牌位',
     description: '超薦墮胎或夭折之胎兒',
     detailedDescription: '超薦墮胎或夭折之胎兒。有取名請寫「故兒○○○」。未取名者可寫「故兒妙音」或「李姓嬰孩菩薩」。若有多位，則註明數量，如「李姓二位嬰孩菩薩」',
     fields: [
