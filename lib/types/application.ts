@@ -10,6 +10,7 @@ export interface Applicant {
   id: number
   name: string
   phone: string
+  email?: string
   tablet: string
   tabletNames: string[]
   tabletDetails: TabletName[] // Full details including image_url for each tablet

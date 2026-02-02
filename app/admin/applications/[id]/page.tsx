@@ -161,6 +161,10 @@ export default function ApplicationDetailPage() {
               <span className="font-medium text-foreground">{application.phone}</span>
             </p>
             <p>
+              <span className="text-muted-foreground">電郵：</span>
+              <span className="font-medium text-foreground">{application.email || '-'}</span>
+            </p>
+            <p>
               <span className="text-muted-foreground">牌位總數：</span>
               <span className="font-medium text-foreground">{application.total} 位</span>
             </p>

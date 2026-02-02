@@ -19,6 +19,7 @@ async function getApplicationsFromSupabase(): Promise<Applicant[]> {
       id,
       applicant_name,
       phone,
+      email,
       tablet_type,
       status,
       application_name (
@@ -87,6 +88,7 @@ async function getApplicationsFromSupabase(): Promise<Applicant[]> {
       id: app.id,
       name: app.applicant_name,
       phone: app.phone,
+      email: app.email || undefined,
       tablet: tablet || '無牌位',
       tabletNames,
       tabletDetails, // Include image URLs for PDF export

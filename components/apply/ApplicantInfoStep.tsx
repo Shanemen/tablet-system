@@ -24,7 +24,8 @@ interface ApplicantInfoStepProps {
 export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepProps) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({})
+  const [email, setEmail] = useState('')
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({})
 
   // Load saved data on mount
   useEffect(() => {
@@ -32,11 +33,12 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
     if (saved) {
       setName(saved.name)
       setPhone(saved.phone)
+      setEmail(saved.email || '')
     }
   }, [])
 
   const validate = (): boolean => {
-    const newErrors: { name?: string; phone?: string } = {}
+    const newErrors: { name?: string; phone?: string; email?: string } = {}
 
     if (!name.trim()) {
       newErrors.name = '請輸入您的姓名'
@@ -48,13 +50,20 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
       newErrors.phone = '請輸入有效的電話號碼'
     }
 
+    // Email is required and must be valid format
+    if (!email.trim()) {
+      newErrors.email = '請輸入您的電郵地址'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = '請輸入有效的電郵地址'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleNext = () => {
     if (validate()) {
-      saveApplicantInfo({ name: name.trim(), phone: phone.trim() }, ceremonySlug)
+      saveApplicantInfo({ name: name.trim(), phone: phone.trim(), email: email.trim() }, ceremonySlug)
       onNext()
     }
   }
@@ -122,9 +131,34 @@ export function ApplicantInfoStep({ ceremonySlug, onNext }: ApplicantInfoStepPro
                 {errors.phone}
               </p>
             )}
-          <p className="text-base text-muted-foreground">
-            僅在申請有問題時聯繫您
-          </p>
+          </div>
+
+          {/* Email Field */}
+          <div className="space-y-3">
+            <label htmlFor="applicant-email" className="form-label">
+              電郵地址 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              id="applicant-email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (errors.email) setErrors({ ...errors, email: undefined })
+              }}
+              placeholder="例如：example@email.com"
+              className="form-input"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'email-error' : undefined}
+            />
+            {errors.email && (
+              <p id="email-error" className="text-red-600 text-base" role="alert">
+                {errors.email}
+              </p>
+            )}
+            <p className="text-base text-muted-foreground">
+              僅在申請有問題時聯繫您
+            </p>
           </div>
         </div>
 

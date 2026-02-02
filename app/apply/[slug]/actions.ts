@@ -28,14 +28,14 @@ export interface ApplicationFormData {
 export async function submitMultiTypeApplication(
   ceremonyId: number,
   slug: string,
-  applicantInfo: { name: string; phone: string } | null,
+  applicantInfo: { name: string; phone: string; email?: string } | null,
   tablets: any[]
 ): Promise<{ success?: string; applicationId?: number; error?: string }> {
   const supabase = await createClient()
 
   // Validation
-  if (!applicantInfo || !applicantInfo.name || !applicantInfo.phone) {
-    return { error: '請填寫申請人信息' }
+  if (!applicantInfo || !applicantInfo.name || !applicantInfo.phone || !applicantInfo.email) {
+    return { error: '請填寫完整的申請人信息（姓名、電話、電郵）' }
   }
 
   if (tablets.length === 0) {
@@ -52,6 +52,7 @@ export async function submitMultiTypeApplication(
       ceremony_id: ceremonyId,
       applicant_name: applicantInfo.name,
       phone: applicantInfo.phone,
+      email: applicantInfo.email || null,
       tablet_type: primaryTabletType, // Primary type for compatibility
       status: 'pending',
     })

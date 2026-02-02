@@ -19,6 +19,7 @@ import { convertToTraditional } from './chinese-converter-client'
 export interface ApplicantInfo {
   name: string
   phone: string
+  email: string
 }
 
 export interface TabletItem {
@@ -249,7 +250,7 @@ export function isCartForCeremony(ceremonySlug: string): boolean {
  */
 export function hasApplicantInfo(): boolean {
   const info = getApplicantInfo()
-  return !!(info?.name && info?.phone)
+  return !!(info?.name && info?.phone && info?.email)
 }
 
 /**
