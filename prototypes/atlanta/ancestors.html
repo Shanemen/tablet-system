@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlanta 祖先牌位 — Layout Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ===================================================================
+     祖先牌位 — coords in the real 320 x 848 template space.
+     Center 3 zones: 佛力超薦 / [surname] / 氏歷代祖先往生蓮位 (8-char bottom,
+     so fixed text is a bit smaller than other types).
+     Surname: 1-2 chars single column; 4 chars (愛新覺羅) => 2×2;
+     Latin => horizontal. Rare long surname => whole center shrinks.
+     Left margin = descendant (陽上者): 陽上 / relationship+name / 叩薦.
+  =================================================================== */
+  :root {
+    --ink: #2b2620;
+    --band-x: 80px; --band-width: 160px; --band-top: 195px; --band-bottom: 716px;
+
+    --fixed-size: 32px;      /* 佛力超薦 / 氏歷代祖先往生蓮位 — smaller (long 8-char bottom) */
+    --fixed-weight: 500;
+    --gap-fixed-name: 12px;
+    --mid-min: 14px;
+
+    /* Left margin (same rules as 往生蓮位; 敬薦 -> 叩薦) */
+    --left-x: 30px; --left-size: 20px;
+    --yang-top: 215px; --jian-top: 676px; --left-gap: 8px;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; background: #f6cf57;
+    font-family: "Noto Serif TC", serif; color: #2b2620; }
+  h1 { font-weight: 600; font-size: 22px; margin: 0 0 4px; }
+  .sub { opacity: .8; font-size: 13px; margin: 0 0 20px; }
+  .row { margin-bottom: 28px; }
+  .row-title { font-size: 13px; opacity: .75; margin: 0 0 10px; font-weight: 500; }
+  .gallery { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .cell { width: 256px; }
+  .cell .caption { text-align: center; font-size: 12px; opacity: .8; margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .tablet-scale { transform: scale(0.8); transform-origin: top left; width: 320px; height: 848px; }
+  .tablet { position: relative; width: 320px; height: 848px;
+    background: #fff url("./frame-blank.svg") center / 320px 848px no-repeat;
+    border-radius: 20px; overflow: hidden; }
+
+  .band { position: absolute; left: var(--band-x); top: var(--band-top);
+    width: var(--band-width); height: calc(var(--band-bottom) - var(--band-top)); }
+  .fixed { position: absolute; left: 0; width: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    font-weight: var(--fixed-weight); line-height: 1; color: var(--ink); }
+  .fixed.top { top: 0; }
+  .fixed.bottom { bottom: 0; }
+  .name-box { position: absolute; left: 0; width: 100%;
+    display: flex; align-items: center; justify-content: center; color: var(--ink); }
+
+  .cn-cols { display: flex; flex-direction: row-reverse; align-items: center; }
+  .cn-col { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+  .cn-col > span { display: block; text-align: center; }
+  .latin { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+  .latin > span { display: block; white-space: nowrap; }
+
+  .vcol { position: absolute; display: flex; flex-direction: column; align-items: center;
+    line-height: 1; color: var(--ink); transform: translateX(-50%); }
+  .vcol > span { display: block; text-align: center; }
+  .pet-en { position: absolute; white-space: nowrap; color: var(--ink);
+    transform: translate(-50%, -50%) rotate(90deg); transform-origin: center; }
+</style>
+</head>
+<body>
+  <h1>祖先牌位 — Atlanta Layout Mockup</h1>
+  <p class="sub">Center: 佛力超薦 / [surname] / 氏歷代祖先往生蓮位 · surname always ONE column; rare long ones (愛新覺羅) just shrink to fit · left = descendant (陽上 / 后裔 / 叩薦) · no production code touched</p>
+  <div id="app"></div>
+
+<script>
+const CFG = { fixedTop: "佛力超薦", fixedBottom: "氏歷代祖先往生蓮位", yang: "陽上", jian: "叩薦" };
+function isLatin(s){ return /[A-Za-z]/.test(s); }
+function px(v){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(v)); }
+
+function vcolHtml(text, x, top, fontSize){
+  const chars = text.split("").map(c => `<span style="width:${fontSize}px">${c}</span>`).join("");
+  return `<div class="vcol" style="left:${x}px;top:${top}px;font-size:${fontSize}px">${chars}</div>`;
+}
+
+function honoreeNode(surname, midH, midW, fixedSize){
+  if (isLatin(surname)) {
+    const lines = surname.trim().split(/\s+/);
+    const longest = Math.max(...lines.map(l => l.length));
+    let fs = Math.min(fixedSize, midH / (lines.length * 1.15), (midW - 16) / (longest * 0.60));
+    fs = Math.max(px("--mid-min"), fs);
+    return `<div class="latin" style="font-size:${fs}px">` + lines.map(l => `<span>${l}</span>`).join("") + `</div>`;
+  }
+  // Chinese surname: ALWAYS one column, rendered at the UNIFORM center size (= fixedSize),
+  // so the surname is never disproportionately small — the whole center shrank together.
+  return `<div class="cn-cols"><div class="cn-col" style="font-size:${fixedSize}px">` +
+    surname.split("").map(ch => `<span style="width:${fixedSize}px">${ch}</span>`).join("") + `</div></div>`;
+}
+
+function leftMargin(petT, petN){
+  const lx = px("--left-x"), ls = px("--left-size");
+  const yangTop = px("--yang-top"), jianTop = px("--jian-top"), gap = px("--left-gap");
+  const yang = vcolHtml(CFG.yang, lx, yangTop, ls);
+  const jian = vcolHtml(CFG.jian, lx, jianTop, ls);
+  const zoneTop = yangTop + CFG.yang.length * ls + gap;
+  const zoneBottom = jianTop - gap;
+  const zoneCenter = (zoneTop + zoneBottom) / 2;
+  const combined = (petT + " " + petN).trim();
+  let block;
+  if (isLatin(combined)) {
+    const span = zoneBottom - zoneTop;
+    const fs = Math.max(8, Math.min(ls, span / (combined.length * 0.55)));
+    block = `<div class="pet-en" style="left:${lx}px;top:${zoneCenter}px;font-size:${fs}px">${combined}</div>`;
+  } else {
+    const innerGap = 6, tH = petT.length * ls, nH = petN.length * ls;
+    const blockTop = zoneCenter - (tH + innerGap + nH) / 2;
+    block = vcolHtml(petT, lx, blockTop, ls) + vcolHtml(petN, lx, blockTop + tH + innerGap, ls);
+  }
+  return yang + block + jian;
+}
+
+function makeTablet(surname, petT, petN){
+  const bandH = px("--band-bottom") - px("--band-top");
+  const base = px("--fixed-size"); // 32 — the LOCKED size for common 1-2 char surnames (no变来变去)
+  // The whole center (佛力超薦 + surname + 氏歷代祖先往生蓮位) uses ONE uniform size.
+  // Capped at 32, so 1-2 char surnames always render at 32; only the rare long surname
+  // (愛新覺羅 ~31 / 清江布買買提 ~28) shrinks the whole center proportionally to fit.
+  const fixedSize = isLatin(surname)
+    ? base
+    : Math.max(px("--mid-min"), Math.min(base, (bandH - 24) / (CFG.fixedTop.length + surname.length + CFG.fixedBottom.length)));
+  const gap = px("--gap-fixed-name");
+  const topH = CFG.fixedTop.length * fixedSize, botH = CFG.fixedBottom.length * fixedSize;
+  const nameTop = topH + gap, nameBottom = botH + gap;
+  const midH = bandH - nameTop - nameBottom;
+  const midW = px("--band-width");
+
+  const topFixed = `<div class="fixed top" style="font-size:${fixedSize}px">` + CFG.fixedTop.split("").map(c=>`<span>${c}</span>`).join("") + `</div>`;
+  const botFixed = `<div class="fixed bottom" style="font-size:${fixedSize}px">` + CFG.fixedBottom.split("").map(c=>`<span>${c}</span>`).join("") + `</div>`;
+  const nameBox = `<div class="name-box" style="top:${nameTop}px;bottom:${nameBottom}px">${honoreeNode(surname, midH, midW, fixedSize)}</div>`;
+  const band = `<div class="band">${topFixed}${nameBox}${botFixed}</div>`;
+
+  return `<div class="tablet-scale"><div class="tablet">${band}${leftMargin(petT, petN)}</div></div>`;
+}
+
+const CN = [
+  {cap:"One char 龍 / 後裔 龍承恩", surname:"龍", petT:"後裔", petN:"龍承恩"},
+  {cap:"Two chars 歐陽 / 後裔 歐陽志強", surname:"歐陽", petT:"後裔", petN:"歐陽志強"},
+  {cap:"Four chars 愛新覺羅 (shrunk)", surname:"愛新覺羅", petT:"後裔", petN:"愛新覺羅啟"},
+  {cap:"Six chars 清江布買買提 (shrunk more)", surname:"清江布買買提", petT:"後裔", petN:"清江布買承"},
+];
+const LATIN = [
+  {cap:"English Williamson", surname:"Williamson", petT:"Descendant", petN:"John Williamson"},
+  {cap:"Vietnamese Minh", surname:"Minh", petT:"Hậu duệ", petN:"Trần Văn Nam"},
+];
+const cell = c => `<div class="cell"><div class="caption">${c.cap}</div>${makeTablet(c.surname, c.petT, c.petN)}</div>`;
+document.getElementById("app").innerHTML =
+  `<div class="row-title">Surname variants — Chinese (one column; long surnames shrink) · English / Vietnamese on the next line</div>` +
+  `<div class="gallery">` + CN.map(cell).join("") +
+  `<div style="flex-basis:100%;height:0"></div>` + // force a line break before English/Vietnamese
+  LATIN.map(cell).join("") + `</div>`;
+</script>
+</body>
+</html>
