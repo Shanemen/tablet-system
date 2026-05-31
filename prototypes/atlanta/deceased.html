@@ -91,7 +91,7 @@
   <div id="app"></div>
 
 <script>
-const CFG = { fixedTop: "佛力超薦", fixedBottom: "往生蓮位", yang: "陽上", cheng: "稱謂", jian: "敬薦" };
+const CFG = { fixedTop: "佛力超薦", fixedBottom: "往生蓮位", yang: "陽上", jian: "敬薦" };
 function isLatin(s){ return /[A-Za-z]/.test(s); }
 function px(v){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(v)); }
 
@@ -121,36 +121,36 @@ function centerMiddle(title, name, midH, midW, fixedSize){
       c.split("").map(ch => `<span style="width:${fs}px">${ch}</span>`).join("") + `</div>`).join("") + `</div>`;
 }
 
-// Left margin petitioner (陽上者). Chinese: 稱謂 label + vertical name.
-// Latin/Vietnamese: relationship is embedded in the string -> one rotated line, fit to height.
-function leftMargin(pet){
+// Left margin petitioner (陽上者) = relationship (稱謂) + name, vertically centered between 陽上 and 敬薦.
+// Chinese: 稱謂 + name stacked as two vertical groups. Latin/Vietnamese: one rotated line, fit to height.
+function leftMargin(petT, petN){
   const lx = px("--left-x"), ls = px("--left-size");
   const yangTop = px("--yang-top"), jianTop = px("--jian-top"), gap = px("--left-gap");
   const yang = vcolHtml(CFG.yang, lx, yangTop, ls);
   const jian = vcolHtml(CFG.jian, lx, jianTop, ls);
 
-  const zoneTop = yangTop + CFG.yang.length * ls + gap; // right under 陽上 (no big gap)
+  const zoneTop = yangTop + CFG.yang.length * ls + gap;
   const zoneBottom = jianTop - gap;
+  const zoneCenter = (zoneTop + zoneBottom) / 2; // petitioner block vertically CENTERED in the zone
 
-  const zoneCenter = (zoneTop + zoneBottom) / 2; // petitioner block is vertically CENTERED in the zone
+  const combined = (petT + " " + petN).trim();
   let block;
-  if (isLatin(pet)) {
+  if (isLatin(combined)) {
     const span = zoneBottom - zoneTop;
-    let fs = ls;
-    const fit = span / (pet.length * 0.55); // rotated: text length runs down the column
-    fs = Math.max(8, Math.min(ls, fit));
-    block = `<div class="pet-en" style="left:${lx}px;top:${zoneCenter}px;font-size:${fs}px">${pet}</div>`;
+    const fit = span / (combined.length * 0.55); // rotated: text length runs down the column
+    const fs = Math.max(8, Math.min(ls, fit));
+    block = `<div class="pet-en" style="left:${lx}px;top:${zoneCenter}px;font-size:${fs}px">${combined}</div>`;
   } else {
     const innerGap = 6;
-    const chengH = CFG.cheng.length * ls, nameH = pet.length * ls;
-    const blockTop = zoneCenter - (chengH + innerGap + nameH) / 2;
-    block = vcolHtml(CFG.cheng, lx, blockTop, ls) +
-            vcolHtml(pet, lx, blockTop + chengH + innerGap, ls);
+    const tH = petT.length * ls, nH = petN.length * ls;
+    const blockTop = zoneCenter - (tH + innerGap + nH) / 2;
+    block = vcolHtml(petT, lx, blockTop, ls) +
+            vcolHtml(petN, lx, blockTop + tH + innerGap, ls);
   }
   return yang + block + jian;
 }
 
-function makeTablet(title, name, pet){
+function makeTablet(title, name, petT, petN){
   const bandH = px("--band-bottom") - px("--band-top");
   const fixedSize = px("--fixed-size");
   const gap = px("--gap-fixed-name");
@@ -164,30 +164,30 @@ function makeTablet(title, name, pet){
   const nameBox = `<div class="name-box" style="top:${nameTop}px;bottom:${nameBottom}px">${centerMiddle(title, name, midH, midW, fixedSize)}</div>`;
   const band = `<div class="band">${topFixed}${nameBox}${botFixed}</div>`;
 
-  return `<div class="tablet-scale"><div class="tablet">${band}${leftMargin(pet)}</div></div>`;
+  return `<div class="tablet-scale"><div class="tablet">${band}${leftMargin(petT, petN)}</div></div>`;
 }
 
 const ROWS = [
-  { title: "Chinese — 称谓 (own column) + 名字", cases: [
-    {cap:"先父 + 張三", title:"先父", name:"張三", pet:"梁某某"},
-    {cap:"姑父 + 歐陽蘭君", title:"姑父", name:"歐陽蘭君", pet:"梁某某"},
-    {cap:"曾祖父 + 清江布買提", title:"曾祖父", name:"清江布買提", pet:"梁某某"},
-    {cap:"外曾祖父 + 李華", title:"外曾祖父", name:"李華", pet:"梁某某"},
+  { title: "Chinese — center 称谓+名字 (own columns) · left = real 陽上者 (relationship + name)", cases: [
+    {cap:"先父 張三 / 孝子 張學峰", title:"先父", name:"張三", petT:"孝子", petN:"張學峰"},
+    {cap:"姑父 歐陽蘭君 / 姪女 李佩玉", title:"姑父", name:"歐陽蘭君", petT:"姪女", petN:"李佩玉"},
+    {cap:"曾祖父 清江布買提 / 曾孫 劉貝加", title:"曾祖父", name:"清江布買提", petT:"曾孫", petN:"劉貝加"},
+    {cap:"外曾祖父 李華 / 外曾孫 陳大文", title:"外曾祖父", name:"李華", petT:"外曾孫", petN:"陳大文"},
   ]},
-  { title: "English — center title+name (horizontal); petitioner with relationship", cases: [
-    {cap:"Mother + Taylor Smith", title:"Mother", name:"Taylor Smith", pet:"Daughter Mary Smith"},
-    {cap:"Great Grand-Mother + name", title:"Great Grand-Mother", name:"Elizabeth Alexander Smith", pet:"Great grandson Tom and daughter Mary Smith"},
+  { title: "English — center title+name (horizontal); petitioner = relationship + name", cases: [
+    {cap:"Mother Taylor Smith / Daughter Mary Smith", title:"Mother", name:"Taylor Smith", petT:"Daughter", petN:"Mary Smith"},
+    {cap:"Great Grand-Mother … / Great grandson …", title:"Great Grand-Mother", name:"Elizabeth Alexander Smith", petT:"Great grandson Tom & daughter", petN:"Mary Smith"},
   ]},
   { title: "Vietnamese — real kinship titles + Vietnamese petitioner", cases: [
-    {cap:"Mẹ (mother)", title:"Mẹ", name:"Hoàng Thảo Hương", pet:"Con gái Nguyễn Thị Mai"},
-    {cap:"Bà nội (paternal grandma)", title:"Bà nội", name:"Nguyễn Thị Lan", pet:"Cháu nội Trần Văn Nam"},
-    {cap:"Ông ngoại (maternal grandpa)", title:"Ông ngoại", name:"Trần Văn Minh", pet:"Con trai Lê Văn Hùng"},
+    {cap:"Mẹ (mother) / Con gái", title:"Mẹ", name:"Hoàng Thảo Hương", petT:"Con gái", petN:"Nguyễn Thị Mai"},
+    {cap:"Bà nội (paternal grandma) / Cháu nội", title:"Bà nội", name:"Nguyễn Thị Lan", petT:"Cháu nội", petN:"Trần Văn Nam"},
+    {cap:"Ông ngoại (maternal grandpa) / Con trai", title:"Ông ngoại", name:"Trần Văn Minh", petT:"Con trai", petN:"Lê Văn Hùng"},
   ]},
 ];
 
 document.getElementById("app").innerHTML = ROWS.map(row =>
   `<div class="row"><div class="row-title">${row.title}</div><div class="gallery">` +
-  row.cases.map(c => `<div class="cell"><div class="caption">${c.cap}</div>${makeTablet(c.title, c.name, c.pet)}</div>`).join("") +
+  row.cases.map(c => `<div class="cell"><div class="caption">${c.cap}</div>${makeTablet(c.title, c.name, c.petT, c.petN)}</div>`).join("") +
   `</div></div>`
 ).join("");
 </script>
