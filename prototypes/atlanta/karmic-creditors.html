@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlanta 冤親債主 — Layout Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ===================================================================
+     TUNABLE CONFIG — coords in the real 320 x 848 template space.
+     冤親債主: center string is ALL fixed; only the left column's
+     petitioner name is dynamic ("陽上 [name] 敬薦").
+  =================================================================== */
+  :root {
+    --ink: #2b2620;
+
+    /* Center fixed string column (vertical, single column) */
+    --center-x: 160px;       /* horizontal CENTER of the main string column (= tablet center) */
+    --center-top: 198px;     /* top of the string (just below canopy) */
+    --center-size: 36px;     /* enlarged fixed text — 11 chars must clear the lotus (~y620) */
+    --center-weight: 500;
+
+    /* Left annotation column: 陽上 (top) / name (middle) / 敬薦 (bottom)
+       Lives in the OUTER margin, LEFT of the 卍 side rail (not in the center clear zone). */
+    --left-x: 30px;          /* horizontal CENTER of the left column (outer margin) */
+    --label-size: 20px;      /* 陽上 / 敬薦 size */
+    --yang-top: 215px;       /* 陽上 top */
+    --jian-top: 446px;       /* 敬薦 top */
+    --name-size: 20px;       /* petitioner name — same 20px as 陽上/敬薦 (uniform left column) */
+    --name-min: 14px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px;
+    background: #f6cf57; /* deck yellow section bg */
+    font-family: "Noto Serif TC", serif;
+    color: #2b2620;
+  }
+  h1 { font-weight: 600; font-size: 22px; margin: 0 0 4px; }
+  .sub { opacity: .8; font-size: 13px; margin: 0 0 20px; }
+  .row-title { font-size: 13px; opacity: .75; margin: 0 0 10px; font-weight: 500; }
+  .gallery { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .cell { width: 256px; }
+  .cell .caption { text-align: center; font-size: 12px; opacity: .8; margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .tablet-scale { transform: scale(0.8); transform-origin: top left; width: 320px; height: 848px; }
+  .tablet {
+    position: relative; width: 320px; height: 848px;
+    background: #fff url("./frame-blank.svg") center / 320px 848px no-repeat;
+    border-radius: 20px; overflow: hidden;
+  }
+
+  /* a vertical single-column char stack, horizontally centered on a given x */
+  .vcol { position: absolute; display: flex; flex-direction: column; align-items: center;
+    line-height: 1; color: var(--ink); transform: translateX(-50%); }
+  .vcol > span { display: block; text-align: center; }
+
+  /* left petitioner name box (vertically centered between 陽上 and 敬薦) */
+  .name-box { position: absolute; display: flex; align-items: center; justify-content: center;
+    transform: translateX(-50%); color: var(--ink); }
+  .name-cn { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+  .name-cn > span { display: block; text-align: center; }
+  /* English petitioner in the narrow left column: rotated 90° (vertical orientation) */
+  .name-en { white-space: nowrap; transform: rotate(90deg); transform-origin: center; }
+</style>
+</head>
+<body>
+  <h1>冤親債主 — Atlanta Layout Mockup</h1>
+  <p class="sub">Center string is fully fixed (佛力超薦累劫冤親債主往生蓮位) · only the left「陽上 … 敬薦」name is dynamic · no production code touched</p>
+  <div class="row-title">Petitioner (陽上者) name variants</div>
+  <div class="gallery" id="app"></div>
+
+<script>
+const CFG = {
+  centerString: "佛力超薦累劫冤親債主往生蓮位",
+  yangLabel: "陽上",
+  jianLabel: "敬薦",
+};
+function isLatin(s){ return /[A-Za-z]/.test(s); }
+function px(v){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(v)); }
+
+function vcol(text, x, top, fontSize, weight){
+  const chars = text.split("").map(c => `<span style="width:${fontSize}px">${c}</span>`).join("");
+  return `<div class="vcol" style="left:${x}px;top:${top}px;font-size:${fontSize}px;font-weight:${weight||400}">${chars}</div>`;
+}
+
+function makeTablet(petitioner){
+  const cx = px("--center-x"), cTop = px("--center-top"), cSize = px("--center-size"), cW = px("--center-weight");
+  const lx = px("--left-x"), labelSize = px("--label-size");
+  const yangTop = px("--yang-top"), jianTop = px("--jian-top");
+
+  // center fixed string
+  const center = vcol(CFG.centerString, cx, cTop, cSize, cW);
+  // left labels
+  const yang = vcol(CFG.yangLabel, lx, yangTop, labelSize, 400);
+  const jian = vcol(CFG.jianLabel, lx, jianTop, labelSize, 400);
+
+  // petitioner name box, vertically centered between 陽上 (bottom) and 敬薦 (top)
+  const nameTop = yangTop + CFG.yangLabel.length * labelSize + 8;
+  const nameBottom = jianTop - 8;
+  const boxH = nameBottom - nameTop;
+
+  let nameNode;
+  if (isLatin(petitioner)) {
+    // narrow column -> rotate 90° (matches deck's left petitioner style)
+    let fs = px("--name-size");
+    const fit = boxH / (petitioner.length * 0.6); // rotated: text length runs along the column height
+    fs = Math.max(px("--name-min"), Math.min(fs, fit));
+    nameNode = `<div class="name-en" style="font-size:${fs}px">${petitioner}</div>`;
+  } else {
+    let fs = px("--name-size");
+    const fit = boxH / petitioner.length;
+    fs = Math.max(px("--name-min"), Math.min(fs, fit));
+    nameNode = `<div class="name-cn" style="font-size:${fs}px">` +
+      petitioner.split("").map(c => `<span style="width:${fs}px">${c}</span>`).join("") + `</div>`;
+  }
+  const nameBox = `<div class="name-box" style="left:${lx}px;top:${nameTop}px;height:${boxH}px">${nameNode}</div>`;
+
+  return `<div class="tablet-scale"><div class="tablet">${center}${yang}${nameBox}${jian}</div></div>`;
+}
+
+const CASES = [
+  {cap:"Two characters", name:"張三"},
+  {cap:"Three characters", name:"王小二"},
+  {cap:"Four characters", name:"歐陽蘭君"},
+  {cap:"English", name:"David Chen"},
+];
+
+document.getElementById("app").innerHTML = CASES.map(c =>
+  `<div class="cell"><div class="caption">${c.cap} · ${c.name}</div>${makeTablet(c.name)}</div>`
+).join("");
+</script>
+</body>
+</html>
