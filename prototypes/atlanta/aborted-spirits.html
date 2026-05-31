@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlanta 嬰靈牌位 — Layout Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ===================================================================
+     嬰靈牌位 — coords in the real 320 x 848 template space.
+     Center 3 zones: 佛力超薦 / [description] / 往生蓮位 (fixed text 36px).
+     Description: Chinese wraps at MAX 6 chars per column (overflow => next
+     column, right-to-left); Latin horizontal-stacked.
+     Left margin = BOTH parents: 陽上 / 父[name] / 母[name] / 敬薦.
+  =================================================================== */
+  :root {
+    --ink: #2b2620;
+    --band-x: 80px; --band-width: 160px; --band-top: 195px; --band-bottom: 716px;
+
+    --fixed-size: 36px;      /* 佛力超薦 / 往生蓮位 */
+    --fixed-weight: 500;
+    --gap-fixed-name: 14px;
+    --mid-min: 16px;
+    --col-max: 6;            /* description: max chars per column */
+
+    --left-x: 30px; --left-size: 20px;
+    --yang-top: 215px; --jian-top: 676px; --left-gap: 8px;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; background: #f6cf57;
+    font-family: "Noto Serif TC", serif; color: #2b2620; }
+  h1 { font-weight: 600; font-size: 22px; margin: 0 0 4px; }
+  .sub { opacity: .8; font-size: 13px; margin: 0 0 20px; }
+  .row { margin-bottom: 28px; }
+  .row-title { font-size: 13px; opacity: .75; margin: 0 0 10px; font-weight: 500; }
+  .gallery { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .cell { width: 256px; }
+  .cell .caption { text-align: center; font-size: 12px; opacity: .8; margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .tablet-scale { transform: scale(0.8); transform-origin: top left; width: 320px; height: 848px; }
+  .tablet { position: relative; width: 320px; height: 848px;
+    background: #fff url("./frame-blank.svg") center / 320px 848px no-repeat;
+    border-radius: 20px; overflow: hidden; }
+
+  .band { position: absolute; left: var(--band-x); top: var(--band-top);
+    width: var(--band-width); height: calc(var(--band-bottom) - var(--band-top)); }
+  .fixed { position: absolute; left: 0; width: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    font-size: var(--fixed-size); font-weight: var(--fixed-weight); line-height: 1; color: var(--ink); }
+  .fixed.top { top: 0; }
+  .fixed.bottom { bottom: 0; }
+  .name-box { position: absolute; left: 0; width: 100%;
+    display: flex; align-items: center; justify-content: center; color: var(--ink); }
+
+  .cn-cols { display: flex; flex-direction: row-reverse; align-items: center; }
+  .cn-col { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+  .cn-col > span { display: block; text-align: center; }
+  .latin { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+  .latin > span { display: block; white-space: nowrap; }
+
+  .vcol { position: absolute; display: flex; flex-direction: column; align-items: center;
+    line-height: 1; color: var(--ink); transform: translateX(-50%); }
+  .vcol > span { display: block; text-align: center; }
+  .pet-en { position: absolute; white-space: nowrap; color: var(--ink);
+    transform: translate(-50%, -50%) rotate(90deg); transform-origin: center; }
+</style>
+</head>
+<body>
+  <h1>嬰靈牌位 — Atlanta Layout Mockup</h1>
+  <p class="sub">Center: 佛力超薦 / [description] / 往生蓮位 (fixed 36px) · description wraps at max 6 chars/column · left = both parents 父/母 · no production code touched</p>
+  <div id="app"></div>
+
+<script>
+const CFG = { fixedTop: "佛力超薦", fixedBottom: "往生蓮位", yang: "陽上", jian: "敬薦" };
+function isLatin(s){ return /[A-Za-z]/.test(s); }
+function px(v){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(v)); }
+function vcolHtml(text, x, top, fontSize){
+  const chars = text.split("").map(c => `<span style="width:${fontSize}px">${c}</span>`).join("");
+  return `<div class="vcol" style="left:${x}px;top:${top}px;font-size:${fontSize}px">${chars}</div>`;
+}
+
+// description columns: FILL each column to max 6 chars, then overflow to the next
+// (per spec: 最多一行六字，再多放第二行). cols[0] read first => rightmost (row-reverse).
+function descCols(text){
+  const max = px("--col-max");
+  const cols = [];
+  for (let i = 0; i < text.length; i += max) cols.push(text.slice(i, i + max));
+  return cols;
+}
+
+function centerDesc(text, midH, midW, fixedSize){
+  if (isLatin(text)) {
+    const lines = text.trim().split(/\s+/);
+    const longest = Math.max(...lines.map(l => l.length));
+    let fs = Math.min(fixedSize, midH / (lines.length * 1.15), (midW - 16) / (longest * 0.60));
+    fs = Math.max(px("--mid-min"), fs);
+    return `<div class="latin" style="font-size:${fs}px">` + lines.map(l => `<span>${l}</span>`).join("") + `</div>`;
+  }
+  const cols = descCols(text);
+  const maxLen = Math.max(...cols.map(c => c.length));
+  let fs = Math.min(fixedSize, midH / maxLen, midW / (cols.length + (cols.length - 1) * 0.28));
+  fs = Math.max(px("--mid-min"), fs);
+  return `<div class="cn-cols" style="gap:${fs*0.28}px">` +
+    cols.map(c => `<div class="cn-col" style="font-size:${fs}px">` +
+      c.split("").map(ch => `<span style="width:${fs}px">${ch}</span>`).join("") + `</div>`).join("") + `</div>`;
+}
+
+// left margin = both parents, vertically centered between 陽上 and 敬薦
+function leftMargin(parents){
+  const lx = px("--left-x"), ls = px("--left-size");
+  const yangTop = px("--yang-top"), jianTop = px("--jian-top"), gap = px("--left-gap");
+  const yang = vcolHtml(CFG.yang, lx, yangTop, ls);
+  const jian = vcolHtml(CFG.jian, lx, jianTop, ls);
+  const zoneTop = yangTop + CFG.yang.length * ls + gap;
+  const zoneBottom = jianTop - gap;
+  const zoneCenter = (zoneTop + zoneBottom) / 2;
+
+  const latin = isLatin(parents[0].l + parents[0].n);
+  let block = "";
+  if (latin) {
+    // two rotated lines stacked (father upper, mother lower). Size each so its length
+    // stays under the center-to-center distance => the two lines never overlap.
+    const span = zoneBottom - zoneTop;
+    const maxLen = Math.max(...parents.map(p => (p.l + " " + p.n).trim().length));
+    const fs = Math.max(8, Math.min(ls, (span * 0.40) / (maxLen * 0.55)));
+    parents.forEach((p, i) => {
+      const s = (p.l + " " + p.n).trim();
+      const cy = zoneTop + span * (i === 0 ? 0.27 : 0.73);
+      block += `<div class="pet-en" style="left:${lx}px;top:${cy}px;font-size:${fs}px">${s}</div>`;
+    });
+  } else {
+    // two vertical groups (父+name / 母+name) stacked, centered as one block
+    const groups = parents.map(p => p.l + p.n);
+    const innerGap = 12;
+    const totalH = groups.reduce((h, g) => h + g.length * ls, 0) + innerGap * (groups.length - 1);
+    let top = zoneCenter - totalH / 2;
+    groups.forEach(g => { block += vcolHtml(g, lx, top, ls); top += g.length * ls + innerGap; });
+  }
+  return yang + block + jian;
+}
+
+function makeTablet(desc, parents){
+  const bandH = px("--band-bottom") - px("--band-top");
+  const fixedSize = px("--fixed-size");
+  const gap = px("--gap-fixed-name");
+  const topH = CFG.fixedTop.length * fixedSize, botH = CFG.fixedBottom.length * fixedSize;
+  const nameTop = topH + gap, nameBottom = botH + gap;
+  const midH = bandH - nameTop - nameBottom;
+  const midW = px("--band-width");
+
+  const topFixed = `<div class="fixed top">` + CFG.fixedTop.split("").map(c=>`<span>${c}</span>`).join("") + `</div>`;
+  const botFixed = `<div class="fixed bottom">` + CFG.fixedBottom.split("").map(c=>`<span>${c}</span>`).join("") + `</div>`;
+  const nameBox = `<div class="name-box" style="top:${nameTop}px;bottom:${nameBottom}px">${centerDesc(desc, midH, midW, fixedSize)}</div>`;
+  const band = `<div class="band">${topFixed}${nameBox}${botFixed}</div>`;
+  return `<div class="tablet-scale"><div class="tablet">${band}${leftMargin(parents)}</div></div>`;
+}
+
+const CN_PARENTS = [{l:"父", n:"王建國"}, {l:"母", n:"李秀英"}];
+const ROWS = [
+  { title: "Chinese description — max 6 chars/column, overflow to next column", cases: [
+    {cap:"吾兒妙音 (4)", desc:"吾兒妙音", parents:CN_PARENTS},
+    {cap:"王氏二位嬰靈菩薩 (8 → 2 cols)", desc:"王氏二位嬰靈菩薩", parents:CN_PARENTS},
+    {cap:"陳氏流產嬰孩陳洛山 (9 → 2 cols)", desc:"陳氏流產嬰孩陳洛山", parents:[{l:"父", n:"陳俊宏"}, {l:"母", n:"林淑芬"}]},
+  ]},
+  { title: "English / Vietnamese — horizontal", cases: [
+    {cap:"Baby Williamson", desc:"Baby Williamson", parents:[{l:"Father", n:"John Williamson"}, {l:"Mother", n:"Jane Williamson"}]},
+    {cap:"Baby Minh", desc:"Baby Minh", parents:[{l:"Cha", n:"Trần Văn Hùng"}, {l:"Mẹ", n:"Lê Thị Mai"}]},
+  ]},
+];
+
+document.getElementById("app").innerHTML = ROWS.map(row =>
+  `<div class="row"><div class="row-title">${row.title}</div><div class="gallery">` +
+  row.cases.map(c => `<div class="cell"><div class="caption">${c.cap}</div>${makeTablet(c.desc, c.parents)}</div>`).join("") +
+  `</div></div>`
+).join("");
+</script>
+</body>
+</html>
