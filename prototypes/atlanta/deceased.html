@@ -29,7 +29,6 @@
 
     --mid-size: 38px;        /* 称谓+名字 base — capped <= --fixed-size in code */
     --mid-min: 16px;
-    --name-split-threshold: 4; /* deceased name longer than this => split into 2 columns */
 
     /* Left margin column (OUTSIDE the 卍 rail) */
     --left-x: 30px;
@@ -96,12 +95,6 @@ const CFG = { fixedTop: "佛力超薦", fixedBottom: "往生蓮位", yang: "陽�
 function isLatin(s){ return /[A-Za-z]/.test(s); }
 function px(v){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(v)); }
 
-function splitName(name){
-  const t = px("--name-split-threshold");
-  if (name.length <= t) return [name];
-  const mid = Math.ceil(name.length / 2);
-  return [name.slice(0, mid), name.slice(mid)];
-}
 function vcolHtml(text, x, top, fontSize){
   const chars = text.split("").map(c => `<span style="width:${fontSize}px">${c}</span>`).join("");
   return `<div class="vcol" style="left:${x}px;top:${top}px;font-size:${fontSize}px">${chars}</div>`;
@@ -117,7 +110,7 @@ function centerMiddle(title, name, midH, midW, fixedSize){
     fs = Math.max(px("--mid-min"), Math.min(fs, fitH, fitW, fixedSize));
     return `<div class="latin" style="font-size:${fs}px">` + lines.map(l => `<span>${l}</span>`).join("") + `</div>`;
   }
-  const cols = [title, ...splitName(name)]; // title first => rightmost (read first)
+  const cols = [title, name]; // exactly 2 columns: 称谓 (right, read first) + 名字 (left). Name never splits.
   const maxLen = Math.max(...cols.map(c => c.length));
   let fs = px("--mid-size");
   const fitH = midH / maxLen;
