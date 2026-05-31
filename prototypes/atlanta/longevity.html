@@ -21,12 +21,12 @@
     --band-top: 195px;
     --band-bottom: 716px;    /* band height = 716 - 195 = 521 */
 
-    --fixed-size: 38px;      /* ENLARGED fixed text 佛光注照 / 長生祿位 — the PRIMARY element (temple's main request) */
+    --fixed-size: 32px;      /* unified default 32 across all tablet types (佛光注照 / 長生祿位) */
     --fixed-weight: 500;
     --gap-fixed-name: 14px;  /* breathing room between fixed text and name */
 
-    --name-cn-size: 38px;    /* Chinese name — HARD-CAPPED to <= --fixed-size in code (never bigger than 佛光注照) */
-    --name-latin-size: 38px; /* English/Vietnamese base size (also capped <= --fixed-size; auto-shrinks to fit) */
+    --name-cn-size: 32px;    /* Chinese name — HARD-CAPPED to <= --fixed-size (= 32), centered */
+    --name-latin-size: 32px; /* English/Vietnamese — also capped <= --fixed-size (= 32), auto-shrinks to fit */
     --name-min-size: 18px;   /* never go below this */
 
     --ink: #2b2620;          /* text color (bw print: near-black) */
