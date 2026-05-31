@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlanta 地基主 — Layout Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ===================================================================
+     地基主 — coords in the real 320 x 848 template space.
+     Center 3 zones: 佛力超薦 / [address] / 之地基主往生蓮位.
+     ADDRESS is written HORIZONTALLY for BOTH Chinese and English/Vietnamese —
+     wrapped into centered multi-line block, auto-sized to fit.
+     Bottom fixed text = 之地基主往生蓮位 (8 chars, 之地基主 BEFORE 往生蓮位),
+     so the fixed text is smaller (like 祖先) to leave room for the address.
+     Left margin = petitioner: 陽上 / 稱謂 / name / 敬薦.
+  =================================================================== */
+  :root {
+    --ink: #2b2620;
+    --band-x: 80px; --band-width: 160px; --band-top: 195px; --band-bottom: 716px;
+
+    --fixed-size: 32px;      /* 佛力超薦 / 往生蓮位 (smaller so the address has room) */
+    --fixed-weight: 500;
+    --gap-fixed-name: 14px;
+    --addr-max: 32px;        /* address default size (= fixed text); auto-shrinks only if long */
+    --addr-min: 12px;
+
+    --left-x: 30px; --left-size: 20px;
+    --yang-top: 215px; --jian-top: 676px; --left-gap: 8px;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; background: #f6cf57;
+    font-family: "Noto Serif TC", serif; color: #2b2620; }
+  h1 { font-weight: 600; font-size: 22px; margin: 0 0 4px; }
+  .sub { opacity: .8; font-size: 13px; margin: 0 0 20px; }
+  .row { margin-bottom: 28px; }
+  .row-title { font-size: 13px; opacity: .75; margin: 0 0 10px; font-weight: 500; }
+  .gallery { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .cell { width: 256px; }
+  .cell .caption { text-align: center; font-size: 12px; opacity: .8; margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .tablet-scale { transform: scale(0.8); transform-origin: top left; width: 320px; height: 848px; }
+  .tablet { position: relative; width: 320px; height: 848px;
+    background: #fff url("./frame-blank.svg") center / 320px 848px no-repeat;
+    border-radius: 20px; overflow: hidden; }
+
+  .band { position: absolute; left: var(--band-x); top: var(--band-top);
+    width: var(--band-width); height: calc(var(--band-bottom) - var(--band-top)); }
+  .fixed { position: absolute; left: 0; width: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    font-size: var(--fixed-size); font-weight: var(--fixed-weight); line-height: 1; color: var(--ink); }
+  .fixed.top { top: 0; }
+  .fixed.bottom { bottom: 0; }
+  .name-box { position: absolute; left: 0; width: 100%;
+    display: flex; align-items: center; justify-content: center; color: var(--ink); }
+
+  /* address: horizontal lines stacked & centered (works for Chinese chars and Latin words) */
+  .addr { display: flex; flex-direction: column; align-items: center; line-height: 1.28; text-align: center; }
+  .addr > span { display: block; white-space: nowrap; }
+
+  .vcol { position: absolute; display: flex; flex-direction: column; align-items: center;
+    line-height: 1; color: var(--ink); transform: translateX(-50%); }
+  .vcol > span { display: block; text-align: center; }
+  .pet-en { position: absolute; white-space: nowrap; color: var(--ink);
+    transform: translate(-50%, -50%) rotate(90deg); transform-origin: center; }
+</style>
+</head>
+<body>
+  <h1>地基主 — Atlanta Layout Mockup</h1>
+  <p class="sub">Center: 佛力超薦 / [address, HORIZONTAL multi-line for both Chinese & Latin] / 之地基主 · left = petitioner 陽上/稱謂/名/敬薦 · no production code touched</p>
+  <div id="app"></div>
+
+<script>
+const CFG = { fixedTop: "佛力超薦", suffix: "之地基主", fixedBottom: "往生蓮位", yang: "陽上", cheng: "稱謂", jian: "敬薦" };
+function isLatin(s){ return /[A-Za-z]/.test(s); }
+function px(v){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(v)); }
+function vcolHtml(text, x, top, fontSize){
+  const chars = text.split("").map(c => `<span style="width:${fontSize}px">${c}</span>`).join("");
+  return `<div class="vcol" style="left:${x}px;top:${top}px;font-size:${fontSize}px">${chars}</div>`;
+}
+
+// approximate rendered width of a line (CJK ~1em, Latin ~0.56em, space ~0.3em)
+function lineWidth(line, fs){
+  let w = 0;
+  for (const ch of line) w += /[㐀-鿿]/.test(ch) ? fs : (ch === " " ? fs * 0.3 : fs * 0.56);
+  return w;
+}
+// Wrap "[address]之地基主" into centered horizontal lines, then shrink the font until
+// every line fits the band WIDTH (no spilling past the 卍 rails) AND the block fits the height.
+function addressBlock(addr, suffix, midH, midW){
+  const W = midW - 14; // inner padding (clear of the side rails)
+  const latin = isLatin(addr);
+  const wrap = (fs) => {
+    const lines = [];
+    if (latin) {
+      // address words + 之地基主 as its own trailing token; pack by real width
+      const words = addr.trim().split(/\s+/).concat([suffix]);
+      let cur = "";
+      for (const w of words) {
+        const test = cur ? cur + " " + w : w;
+        if (!cur || lineWidth(test, fs) <= W) cur = test;
+        else { lines.push(cur); cur = w; }
+      }
+      if (cur) lines.push(cur);
+    } else {
+      // Chinese: keep digit/letter runs (+ trailing unit like 號/樓/室) and the 之地基主
+      // suffix UNBROKEN (mirrors production shouldKeepTogether). Break only between tokens.
+      const unit = /[號樓棟室層段區街路巷弄座幢]/, alnum = /[0-9０-９a-zA-Z]/;
+      const tokens = [];
+      let i = 0;
+      while (i < addr.length) {
+        if (alnum.test(addr[i])) {
+          let j = i; while (j < addr.length && alnum.test(addr[j])) j++;
+          if (j < addr.length && unit.test(addr[j])) j++; // include trailing unit (號…)
+          tokens.push(addr.slice(i, j)); i = j;
+        } else { tokens.push(addr[i]); i++; }
+      }
+      tokens.push(suffix); // 之地基主 stays together
+      const maxChars = Math.max(2, Math.floor(W / fs));
+      let cur = "";
+      for (const t of tokens) {
+        if (!cur || cur.length + t.length <= maxChars) cur += t;
+        else { lines.push(cur); cur = t; }
+      }
+      if (cur) lines.push(cur);
+    }
+    return lines;
+  };
+  const fits = (lines, fs) =>
+    lines.length * fs * 1.28 <= midH &&
+    Math.max(...lines.map(l => lineWidth(l, fs))) <= W;
+  let fs = px("--addr-max");
+  let lines = wrap(fs);
+  while (!fits(lines, fs) && fs > px("--addr-min")) { fs -= 1; lines = wrap(fs); }
+  return { fs, lines };
+}
+
+function leftMargin(petT, petN){
+  const lx = px("--left-x"), ls = px("--left-size");
+  const yangTop = px("--yang-top"), jianTop = px("--jian-top"), gap = px("--left-gap");
+  const yang = vcolHtml(CFG.yang, lx, yangTop, ls);
+  const jian = vcolHtml(CFG.jian, lx, jianTop, ls);
+  const zoneTop = yangTop + CFG.yang.length * ls + gap;
+  const zoneBottom = jianTop - gap;
+  const zoneCenter = (zoneTop + zoneBottom) / 2;
+  const combined = (petT + " " + petN).trim();
+  let block;
+  if (isLatin(combined)) {
+    const fs = Math.max(8, Math.min(ls, (zoneBottom - zoneTop) / (combined.length * 0.55)));
+    block = `<div class="pet-en" style="left:${lx}px;top:${zoneCenter}px;font-size:${fs}px">${combined}</div>`;
+  } else {
+    const innerGap = 6, tH = petT.length * ls, nH = petN.length * ls;
+    const blockTop = zoneCenter - (tH + innerGap + nH) / 2;
+    block = vcolHtml(petT, lx, blockTop, ls) + vcolHtml(petN, lx, blockTop + tH + innerGap, ls);
+  }
+  return yang + block + jian;
+}
+
+function makeTablet(addr, petT, petN){
+  const bandH = px("--band-bottom") - px("--band-top");
+  const fixedSize = px("--fixed-size");
+  const gap = px("--gap-fixed-name");
+  const topH = CFG.fixedTop.length * fixedSize, botH = CFG.fixedBottom.length * fixedSize;
+  const nameTop = topH + gap, nameBottom = botH + gap;
+  const midH = bandH - nameTop - nameBottom;
+  const midW = px("--band-width");
+
+  // middle = [address]之地基主 (horizontal, connected); 往生蓮位 stays VERTICAL at the bottom
+  const { fs, lines } = addressBlock(addr, CFG.suffix, midH, midW);
+  const addrNode = `<div class="addr" style="font-size:${fs}px">` + lines.map(l => `<span>${l}</span>`).join("") + `</div>`;
+
+  const topFixed = `<div class="fixed top">` + CFG.fixedTop.split("").map(c=>`<span>${c}</span>`).join("") + `</div>`;
+  const botFixed = `<div class="fixed bottom">` + CFG.fixedBottom.split("").map(c=>`<span>${c}</span>`).join("") + `</div>`;
+  const nameBox = `<div class="name-box" style="top:${nameTop}px;bottom:${nameBottom}px">${addrNode}</div>`;
+  const band = `<div class="band">${topFixed}${nameBox}${botFixed}</div>`;
+  return `<div class="tablet-scale"><div class="tablet">${band}${leftMargin(petT, petN)}</div></div>`;
+}
+
+const ROWS = [
+  { title: "US addresses — short → long", cases: [
+    {cap:"Short", addr:"5 Oak St, Reno NV 89501", petT:"Devotee", petN:"Mary Smith"},
+    {cap:"Medium", addr:"1810 Chanal Ave. Nashville TN 37110", petT:"Devotee", petN:"John Lee"},
+    {cap:"Long", addr:"12345 Northwest Blvd, Apt 6B, San Francisco CA 94102", petT:"Devotee", petN:"Amy Chen"},
+  ]},
+  { title: "Chinese addresses — short → long", cases: [
+    {cap:"Short 上海", addr:"上海市南京東路100號", petT:"弟子", petN:"王志明"},
+    {cap:"Medium 福州", addr:"中國福建省福州市蘭花區向陽橋路1009號", petT:"弟子", petN:"林文清"},
+    {cap:"Long 深圳", addr:"中國廣東省深圳市南山區高新南一道128號創新大廈2008室", petT:"弟子", petN:"陳家豪"},
+  ]},
+  { title: "Vietnamese addresses (mocks)", cases: [
+    {cap:"HCMC", addr:"45 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh", petT:"Phật tử", petN:"Trần Văn Nam"},
+    {cap:"Hà Nội", addr:"số 12 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội", petT:"Phật tử", petN:"Lê Thị Mai"},
+  ]},
+];
+
+document.getElementById("app").innerHTML = ROWS.map(row =>
+  `<div class="row"><div class="row-title">${row.title}</div><div class="gallery">` +
+  row.cases.map(c => `<div class="cell"><div class="caption">${c.cap}</div>${makeTablet(c.addr, c.petT, c.petN)}</div>`).join("") +
+  `</div></div>`
+).join("");
+</script>
+</body>
+</html>
