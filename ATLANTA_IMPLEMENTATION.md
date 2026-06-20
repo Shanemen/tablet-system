@@ -215,3 +215,45 @@ expect(pixelmatch(a.data, b.data, null, a.width, a.height, { threshold: 0 })).to
 - 新建模块：`lib/atlanta/{constants,config,layout,display,render}.{ts,tsx}`
 - 共享 SVG：`prototypes/atlanta/frame-blank.svg` → `public/templates/atlanta/frame.svg`
 - mockups（视觉标准答案）：`prototypes/atlanta/*.html`
+
+---
+
+# 复盘：字体动态子集首次上线失败 + 回滚（2026-06-20）
+
+> ⚠️ 重做字体前**必读**。本节记录一次真实的生产事故与教训，避免重蹈覆辙。
+
+## 发生了什么
+- 在 `font-dynamic-subset` 分支实现 Option B（完整字体 + 每请求动态子集），**本地全绿**：中文掉字修好、回归 13/13 逐像素、`x-tablet-font: dynamic` 护栏、两道场 localhost 实测通过。
+- merge 到 main → 部署生产 → 生产 OG 路由对**每个请求**（含 `name=test` 常见字）返回 **500**（未捕获错误，Next `/500` 页），**所有道场出图全挂**。
+- 用 Vercel **Instant Rollback** 回滚到 `0428974`（Atlanta 版，edge），服务恢复并验证 200。
+
+## 根因：架构冲突（edge vs nodejs + wasm）
+- `subset-font`（动态子集）依赖 harfbuzz wasm，需要 **nodejs** runtime。
+- `@vercel/og`（出图引擎 `ImageResponse`）依赖 resvg/yoga wasm，在 Vercel 上**只在 `edge` runtime 稳**；切到 nodejs 后，它**自己的 wasm 在 lambda 里加载失败** → `ImageResponse` 抛错 → 未捕获 500。
+- 为了用 subset-font 把整条路由 `runtime='edge' → 'nodejs'`，等于**把出图引擎本身弄坏了**。
+- `serverExternalPackages` 只覆盖了 `subset-font/harfbuzzjs/fontverter`，**没有（也无法简单地）解决 `@vercel/og` 在 nodejs lambda 的 wasm**。
+
+## 为什么本地/所有测试都没抓到
+- 本地 `next dev` 跑普通 node，**所有 wasm 都能加载** → nodejs runtime 下出图正常 → **虚假信心**。
+- 回归像素测试、覆盖单测、`x-tablet-font` 护栏全在 localhost 跑 —— **都无法复现 Vercel serverless lambda 的打包/wasm 环境**。
+- 这正是设计审查 **must-fix #4**（"必须在真实 Vercel 部署上验证，本地测不到 lambda 打包/wasm"）警告过的。但 preview 有**登录保护**、apply 流程在受保护 preview 上测不了 → 最终**赌生产** → outage。
+
+## 重做字体的硬约束（下次必须遵守）
+1. **绝不改 OG 路由的 runtime —— 必须留在 `edge`。** `@vercel/og` 在 Vercel 上只在 edge 稳。
+2. 因此 **subset-font / harfbuzz 这条 nodejs-only 的路在同一路由内走不通。**
+3. 可选方向（用 KISS/YAGNI 再评估，不要急着选）：
+   - **构建时子集化**：build 阶段预生成子集，运行时只查表/加载（edge 兼容，请求时不跑 wasm）。
+   - **edge 兼容的纯 JS 子集库**：能在 edge isolate 里跑、不依赖原生/fs/wasm。
+   - **扩大静态子集**：半自动扩 charset（治标，回到维护负担，但最简单）。
+   - **完整字体直接喂 @vercel/og、不子集**：edge 上加载 ~10MB 完整字体的体积/内存是否可行需实测（edge 有大小上限，很可能超）。
+   - **接受现状**：生僻字偶尔 fallback，不动（YAGNI）。
+4. **流程铁律**：重做前先解决"**如何在真实 Vercel runtime 上安全验证、又不碰生产**"。例如：临时关闭 preview 的 Deployment Protection 使其可公开访问；或建一个独立的测试 Vercel 项目/可公开访问的分支域名。**没有这个验证手段之前，绝不 merge 到 main。**
+
+## 事故时的 git / 部署状态（供清理参考）
+- 生产 = `0428974`（Atlanta 完整 + edge + 静态子集），已验证 200。
+- 字体工作保存在 `font-dynamic-subset` 分支（origin 有，未丢）。
+- **origin/main 仍 = `4a50b44`（坏版本）**，靠 Vercel Instant Rollback 在服务旧版。
+  → **切勿 push main**，除非先 `git revert` 那 4 个字体提交（`c0a368a`/`f658b9e`/`7eafc78`/`4a50b44`）。
+
+## 一句话教训
+**本地 node ≠ Vercel edge/nodejs lambda。涉及 runtime 切换 + wasm 的改动，本地全绿毫无意义，必须在真实 Vercel runtime 上验证后才能上生产。**
