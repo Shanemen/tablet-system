@@ -12,6 +12,7 @@ export interface TempleConfig {
   image_style: 'bw' | 'color'
   logo_url?: string | null
   theme_config?: TempleThemeConfig | null
+  template_variant?: 'default' | 'atlanta'
 }
 
 export interface Ceremony {
@@ -272,7 +273,7 @@ export async function getCeremonyBySlug(slug: string): Promise<Ceremony | null> 
   if (ceremony.temple_id) {
     const { data: temple } = await supabase
       .from('temples')
-      .select('id, name_zh, image_style, logo_url, theme_config')
+      .select('id, name_zh, image_style, logo_url, theme_config, template_variant')
       .eq('id', ceremony.temple_id)
       .maybeSingle()
     

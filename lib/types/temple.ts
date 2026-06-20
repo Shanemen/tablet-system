@@ -31,6 +31,8 @@ export interface TempleInfo {
   image_style: 'bw' | 'color'
   /** Theme configuration for UI customization */
   theme_config?: TempleThemeConfig | null
+  /** Tablet layout variant: 'default' (original shared configs) or 'atlanta' (custom layout) */
+  template_variant?: 'default' | 'atlanta'
 }
 
 /**
