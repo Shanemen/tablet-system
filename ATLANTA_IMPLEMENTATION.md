@@ -1,5 +1,22 @@
 # Atlanta 牌位变体 — 实施蓝图 v2.1（GO，含 5 项复审修正）
 
+## 实施进度（branch: atlanta-tablet-variant）
+
+- ✅ **Step 0** 工装：vitest + pngjs + pixelmatch；D.1 回归门（13 golden）已建并自验（相同=0 diff，不同=1571）
+- ✅ **Step 1** 迁移 `temples.template_variant` + 类型（`TempleInfo`/`TempleConfig` + select）
+- ✅ **Step 2** variant prop 流入（apply 页 → TabletFormStep，默认 'default'）
+- ✅ **Step 3** `lib/atlanta/`（constants/config/layout）纯布局引擎 + 17 单测；`export shouldKeepTogether`
+- ✅ **Step 4** 共用花纹 SVG（svgo 500KB→141KB）→ `public/templates/atlanta/frame.svg`
+- ✅ **Step 5** 路由 atlanta 分支（提前 return）+ `lib/atlanta/render.tsx` + URL 参数门控；6 型渲染验证（看图核对 + 3 集成测试）
+- ✅ **Step 6** 视觉校准：6 型 × 中/英全部贴合样板，无需调常量
+- ⏳ **Step 8** 字体 Option B + runtime edge→nodejs（**待用户确认** —— 见文末）
+
+**当前质量门**：typecheck 干净 · D.2 单元 17/17 · 视觉 16/16（13 回归 + 3 集成）· 默认道场逐像素不变。
+**当前状态**：atlanta 6 型功能完整、对常见输入（固定字 + 常见姓名）渲染忠实，**对其他道场零影响**。
+现有 723 字子集已覆盖全部固定字；与默认道场一样，仅罕见生僻字会缺字（Step 8 解决）。
+
+
+
 > 本文是 production 实现的执行依据。由 ultracode 多 agent 流程产出：recon → 设计 → 对抗审查（NO-GO）→ 修正设计 → 对抗复审。
 > 所有声明已对照真实 `file:line` 验证。代码/标识符/路径用英文，说明用中文。
 > 分支：`atlanta-tablet-variant`。**铁律：默认道场（temple ≠ atlanta）渲染产物逐像素不变。**
