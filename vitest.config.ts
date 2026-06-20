@@ -8,10 +8,6 @@ import path from 'node:path'
 export default defineConfig({
   test: {
     environment: 'node',
-    // Run tests in forked child processes, not worker threads. The harfbuzz wasm used by
-    // subset-font is flaky under vitest's default thread pool (occasional dropped glyphs);
-    // plain node processes are stable (verified 520/520) and match the prod runtime.
-    pool: 'forks',
     include: ['tests/**/*.test.ts'],
     // Real unit tests (lib/atlanta layout functions) land in Step 3; until then
     // `npm test` (which excludes the env-gated visual tests) has nothing to run.

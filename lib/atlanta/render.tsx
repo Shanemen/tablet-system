@@ -3,24 +3,17 @@ import type { NextRequest } from 'next/server'
 import type { TabletTypeValue } from '@/lib/tablet-types-config'
 import { INK } from './constants'
 import { layoutAtlantaTablet, type AtlantaEl, type AtlantaInputs } from './layout'
-import { getSubsetFont } from '@/lib/fonts/dynamic-subset'
 
 // Atlanta render path: turns the pure layout IR into Satori JSX + ImageResponse.
 // Independent of the default render path. Atlanta is ALWAYS black-and-white (printed on
 // colored paper), so the shared decoration SVG is used as-is with NO recolor.
 //
-// Font: atlanta renders ALL text via the font (fixed strings + dynamic), so the per-request
-// subset is built from every glyph in the assembled layout. Registered at 400 AND 500 (same
-// buffer; 500 is satori faux-bold for the fixed text).
+// Font note: until Step 8 (dynamic per-request subsetting from a full font + nodejs runtime),
+// this registers the existing subset OTF for BOTH weight 400 and 500. True 500-weight and full
+// glyph coverage for rare user input arrive with Step 8.
 
 const FRAME_PATH = '/templates/atlanta/frame.svg'
-
-/** Collect every character the layout will render, so the subset includes fixed + dynamic glyphs. */
-function collectText(elements: AtlantaEl[]): string {
-  return elements
-    .map((el) => (el.kind === 'vcol' ? el.chars.join('') : el.kind === 'hlines' ? el.lines.join('') : el.text))
-    .join('')
-}
+const FONT_PATH = '/fonts/NotoSerifTC-Subset.otf'
 
 function readParams(type: TabletTypeValue, p: URLSearchParams): AtlantaInputs {
   return {
@@ -147,13 +140,12 @@ export async function renderAtlantaTablet(
     console.warn('Atlanta frame fetch failed:', e)
   }
 
-  // Font: per-request dynamic subset covering every glyph the layout renders (fixed + dynamic).
+  // Font (subset OTF for now; Step 8 swaps to dynamic full-font subset).
   let fontData: ArrayBuffer
-  let fontSource: 'dynamic' | 'fallback'
   try {
-    const r = await getSubsetFont(origin, collectText(layout.elements))
-    fontData = r.data
-    fontSource = r.source
+    const r = await fetch(`${origin}${FONT_PATH}`)
+    if (!r.ok) throw new Error(`font ${r.status}`)
+    fontData = await r.arrayBuffer()
   } catch (e: any) {
     return new Response(`Atlanta font load failed: ${e.message}`, { status: 500 })
   }
@@ -174,7 +166,6 @@ export async function renderAtlantaTablet(
         { name: 'Noto Serif TC', data: fontData, weight: 400, style: 'normal' },
         { name: 'Noto Serif TC', data: fontData.slice(0), weight: 500, style: 'normal' },
       ],
-      headers: { 'x-tablet-font': fontSource },
     }
   )
 }

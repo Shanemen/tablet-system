@@ -9,12 +9,8 @@ import {
   type ChineseFontResult
 } from '@/lib/active-areas-config'
 import { renderAtlantaTablet } from '@/lib/atlanta/render'
-import { getSubsetFont } from '@/lib/fonts/dynamic-subset'
 
-// nodejs runtime: required for per-request font subsetting (subset-font + fontverter).
-// The render engine (@vercel/og bundled satori+resvg WASM) is the same as on edge, so output
-// for already-covered characters is unchanged; only the font data source differs.
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 /**
  * Render vertical text character by character
@@ -307,17 +303,20 @@ export async function GET(request: NextRequest) {
       ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
       : null
 
-    // Font: per-request dynamic subset of the FULL font, covering exactly the dynamic text this
-    // tablet renders (the name + applicant; fixed text is baked into the SVG, NOT font-rendered).
-    // This eliminates character fallout for any user-typed name without changing layout/rotation.
-    const dynamicText =
-      (isLandDeity ? `${name}之地基主` : name) + (searchParams.get('applicant') || '')
+    // Load Chinese font (Noto Serif TC subset)
+    // Using OTF format for better compatibility with @vercel/og
+    const fontUrl = `${request.nextUrl.origin}/fonts/NotoSerifTC-Subset.otf`
     let fontData: ArrayBuffer
-    let fontSource: 'dynamic' | 'fallback'
     try {
-      const r = await getSubsetFont(request.nextUrl.origin, dynamicText)
-      fontData = r.data
-      fontSource = r.source
+      const fontResponse = await fetch(fontUrl)
+      if (!fontResponse.ok) {
+        throw new Error(`Font fetch failed: ${fontResponse.status} ${fontResponse.statusText}`)
+      }
+      fontData = await fontResponse.arrayBuffer()
+      console.log(`Font loaded: ${fontData.byteLength} bytes (${(fontData.byteLength / 1024).toFixed(2)} KB)`)
+      if (fontData.byteLength === 0) {
+        throw new Error('Font file is empty!')
+      }
     } catch (e: any) {
       console.error('Font loading error:', e)
       return new Response(`Font loading failed: ${e.message}`, { status: 500 })
@@ -386,8 +385,6 @@ export async function GET(request: NextRequest) {
             style: 'normal',
           },
         ],
-        // Flags whether the dynamic subset ran ('dynamic') or silently degraded ('fallback').
-        headers: { 'x-tablet-font': fontSource },
       }
     )
   } catch (e: any) {
