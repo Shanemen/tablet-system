@@ -295,6 +295,7 @@ export default function ApplicationFormPage() {
           tabletType={selectedTabletType}
           onBackToMenu={handleBackToMenu}
           imageStyle={ceremony?.temple?.image_style || 'bw'}
+          templateVariant={ceremony?.temple?.template_variant || 'default'}
         />
       )}
     </PageLayout>

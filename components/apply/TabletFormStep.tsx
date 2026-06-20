@@ -32,6 +32,7 @@ interface TabletFormStepProps {
   tabletType: TabletTypeValue
   onBackToMenu: () => void
   imageStyle?: 'bw' | 'color'  // Temple's image style preference
+  templateVariant?: 'default' | 'atlanta'  // Temple's tablet layout variant
 }
 
 type FormState = 'filling' | 'previewing' | 'confirmed'
@@ -40,6 +41,7 @@ export function TabletFormStep({
   tabletType,
   onBackToMenu,
   imageStyle = 'bw',  // Default to B&W (print on colored paper)
+  templateVariant = 'default',  // Default = original shared layout; 'atlanta' = custom
 }: TabletFormStepProps) {
   const config = getTabletTypeConfig(tabletType)
   const [formState, setFormState] = useState<FormState>('filling')
