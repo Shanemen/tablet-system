@@ -664,8 +664,9 @@ function fillTopToBottomHelper(text: string, maxCharsPerColumn: number): string[
 
 /**
  * Check if two characters should be kept together (number/letter + unit)
+ * Exported for reuse by the Atlanta land-deity address wrapper (additive; default path unaffected).
  */
-function shouldKeepTogether(char1: string, char2: string | undefined): boolean {
+export function shouldKeepTogether(char1: string, char2: string | undefined): boolean {
   if (!char2) return false
   
   // Check if char1 is number or letter, and char2 is a unit
