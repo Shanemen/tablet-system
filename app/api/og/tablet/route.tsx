@@ -313,8 +313,11 @@ export async function GET(request: NextRequest) {
     const dynamicText =
       (isLandDeity ? `${name}之地基主` : name) + (searchParams.get('applicant') || '')
     let fontData: ArrayBuffer
+    let fontSource: 'dynamic' | 'fallback'
     try {
-      fontData = await getSubsetFont(request.nextUrl.origin, dynamicText)
+      const r = await getSubsetFont(request.nextUrl.origin, dynamicText)
+      fontData = r.data
+      fontSource = r.source
     } catch (e: any) {
       console.error('Font loading error:', e)
       return new Response(`Font loading failed: ${e.message}`, { status: 500 })
@@ -383,6 +386,8 @@ export async function GET(request: NextRequest) {
             style: 'normal',
           },
         ],
+        // Flags whether the dynamic subset ran ('dynamic') or silently degraded ('fallback').
+        headers: { 'x-tablet-font': fontSource },
       }
     )
   } catch (e: any) {

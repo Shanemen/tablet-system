@@ -149,8 +149,11 @@ export async function renderAtlantaTablet(
 
   // Font: per-request dynamic subset covering every glyph the layout renders (fixed + dynamic).
   let fontData: ArrayBuffer
+  let fontSource: 'dynamic' | 'fallback'
   try {
-    fontData = await getSubsetFont(origin, collectText(layout.elements))
+    const r = await getSubsetFont(origin, collectText(layout.elements))
+    fontData = r.data
+    fontSource = r.source
   } catch (e: any) {
     return new Response(`Atlanta font load failed: ${e.message}`, { status: 500 })
   }
@@ -171,6 +174,7 @@ export async function renderAtlantaTablet(
         { name: 'Noto Serif TC', data: fontData, weight: 400, style: 'normal' },
         { name: 'Noto Serif TC', data: fontData.slice(0), weight: 500, style: 'normal' },
       ],
+      headers: { 'x-tablet-font': fontSource },
     }
   )
 }

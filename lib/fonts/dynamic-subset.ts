@@ -51,16 +51,24 @@ export async function subsetForText(fullFont: Buffer, text: string): Promise<Buf
   return subsetFont(fullFont, distinct, { targetFormat: 'truetype' })
 }
 
+export interface SubsetResult {
+  data: ArrayBuffer
+  /** 'dynamic' = real per-request subset of the full font; 'fallback' = the old static subset
+   *  (a degraded mode that still tofus rare chars — must NOT happen in normal operation). */
+  source: 'dynamic' | 'fallback'
+}
+
 /** Runtime entry: returns a tiny per-request subset of the full font covering `text`.
- *  Falls back to the static subset OTF on any failure so the route never hard-fails. */
-export async function getSubsetFont(origin: string, text: string): Promise<ArrayBuffer> {
+ *  Falls back to the static subset OTF on any failure so the route never hard-fails. The
+ *  `source` lets the route flag silent fallback (a header) so a test can catch it. */
+export async function getSubsetFont(origin: string, text: string): Promise<SubsetResult> {
   try {
     const full = await loadFullFont(origin)
     const out = await subsetForText(full, text)
-    return out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer
+    return { data: out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer, source: 'dynamic' }
   } catch (e) {
     console.error('[dynamic-subset] falling back to static subset:', e)
     const res = await fetch(`${origin}${FALLBACK_FONT_PATH}`)
-    return res.arrayBuffer()
+    return { data: await res.arrayBuffer(), source: 'fallback' }
   }
 }
