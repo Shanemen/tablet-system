@@ -37,6 +37,46 @@ interface TabletFormStepProps {
 
 type FormState = 'filling' | 'previewing' | 'confirmed'
 
+// Build the variant-gated Atlanta query params from RAW (un-joined) form fields, each converted
+// to Traditional individually. Only called when templateVariant === 'atlanta', so default-temple
+// URLs are byte-for-byte unchanged. The Atlanta renderer needs structured fields (稱謂/surname/
+// father/mother separate columns) that getPreviewText/getPetitionerText would otherwise glue away.
+async function buildAtlantaParams(
+  type: TabletTypeValue,
+  fd: Record<string, string>
+): Promise<Record<string, string>> {
+  const conv = async (s?: string) => (s ? await convertToTraditional(s) : '')
+  const out: Record<string, string> = {}
+  switch (type) {
+    case 'longevity':
+      out.name = await conv(fd.name) // RAW name; renderer owns 闔家 placement
+      if (fd.is_family === 'true' || fd.is_family === '1') out.family = '1'
+      break
+    case 'deceased':
+      out.name = await conv(fd.name) // deceased name only (un-joined from 稱謂)
+      out.title = await conv(fd.deceased_title)
+      out.pet_title = await conv(fd.petitioner_title)
+      out.pet_name = await conv(fd.petitioner_name)
+      break
+    case 'ancestors':
+      out.surname = await conv(fd.surname)
+      out.descendant = await conv(fd.descendant_name)
+      break
+    case 'aborted-spirits':
+      out.name = await conv(fd.name) // 嬰靈 description
+      out.father = await conv(fd.father_name)
+      out.mother = await conv(fd.mother_name)
+      break
+    case 'land-deity':
+      out.address = await conv(fd.address)
+      out.applicant_name = await conv(fd.applicant_name)
+      break
+    case 'karmic-creditors':
+      break // name + applicant already suffice
+  }
+  return out
+}
+
 export function TabletFormStep({
   tabletType,
   onBackToMenu,
@@ -50,6 +90,8 @@ export function TabletFormStep({
   const [existingTablets, setExistingTablets] = useState<TabletItem[]>([])
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [convertedTexts, setConvertedTexts] = useState<{ honoree: string; petitioner: string }>({ honoree: '', petitioner: '' })
+  // Atlanta-only: structured gated params computed async in handlePreview, read by the preview render.
+  const [atlantaParams, setAtlantaParams] = useState<Record<string, string>>({})
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
   const [isImageLoading, setIsImageLoading] = useState(true)
 
@@ -130,6 +172,8 @@ export function TabletFormStep({
         honoree: traditionalText,
         petitioner: traditionalPetitioner
       })
+      // Atlanta: precompute structured gated params so the (synchronous) preview render can use them.
+      setAtlantaParams(templateVariant === 'atlanta' ? await buildAtlantaParams(tabletType, formData) : {})
     } catch (error) {
       console.error('转换失败:', error)
       // Fallback: use original text if conversion fails
@@ -179,6 +223,12 @@ export function TabletFormStep({
       apiUrl.searchParams.set('style', imageStyle)  // Temple-specific image style
       if (petitionerText) {
         apiUrl.searchParams.set('applicant', petitionerText)
+      }
+      // Atlanta: append variant-gated structured params (default-temple URLs unchanged).
+      if (templateVariant === 'atlanta') {
+        const ap = await buildAtlantaParams(tabletType, formData)
+        for (const [k, v] of Object.entries(ap)) apiUrl.searchParams.set(k, v)
+        apiUrl.searchParams.set('variant', 'atlanta')
       }
 
       // 1. 获取生成的图片
@@ -447,6 +497,11 @@ export function TabletFormStep({
     apiUrl.searchParams.set('style', imageStyle)  // Temple-specific image style
     if (convertedTexts.petitioner) {
       apiUrl.searchParams.set('applicant', convertedTexts.petitioner)
+    }
+    // Atlanta: append precomputed variant-gated params (default-temple URLs unchanged).
+    if (templateVariant === 'atlanta') {
+      for (const [k, v] of Object.entries(atlantaParams)) apiUrl.searchParams.set(k, v)
+      apiUrl.searchParams.set('variant', 'atlanta')
     }
 
     // Build combined confirmation text with commas

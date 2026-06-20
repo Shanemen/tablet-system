@@ -1,13 +1,14 @@
 import { ImageResponse } from '@vercel/og'
 import { NextRequest } from 'next/server'
-import { 
-  getTemplateConfig, 
+import {
+  getTemplateConfig,
   calculateFontSize,
   calculateEnglishFont,
   isEnglishText,
   type ActiveArea,
-  type ChineseFontResult 
+  type ChineseFontResult
 } from '@/lib/active-areas-config'
+import { renderAtlantaTablet } from '@/lib/atlanta/render'
 
 export const runtime = 'edge'
 
@@ -224,6 +225,27 @@ export async function GET(request: NextRequest) {
     const isDeceased = type === '往生蓮位' || type === 'deceased'
     const isAbortedSpirits = type === '嬰靈排位' || type === 'aborted-spirits'
     const isLandDeity = type === '地基主' || type === 'land-deity'
+
+    // Atlanta variant: independent render path (decoration-only SVG + all text real-time).
+    // Returns BEFORE the default logic below, so the default path is byte-for-byte unchanged.
+    if (searchParams.get('variant') === 'atlanta') {
+      const atlantaType = isLongevity
+        ? 'longevity'
+        : isKarmicCreditors
+          ? 'karmic-creditors'
+          : isAncestors
+            ? 'ancestors'
+            : isDeceased
+              ? 'deceased'
+              : isAbortedSpirits
+                ? 'aborted-spirits'
+                : isLandDeity
+                  ? 'land-deity'
+                  : null
+      if (atlantaType) {
+        return renderAtlantaTablet(request, atlantaType, searchParams)
+      }
+    }
     
     // Map type to template ID and SVG file
     let templateId: string
