@@ -114,12 +114,15 @@ describe('layoutAtlantaTablet integration', () => {
     expect(vcols(l.elements).some((e) => e.centerX === LEFT.x && e.chars.join('') === '叩薦')).toBe(true)
   })
 
-  it('karmic: single fixed center column at y=198, size 32, weight 500, no 3-zone band', () => {
+  it('karmic: single fixed center column fills the band BIGGER than 32, weight 500, centered, no 3-zone band', () => {
     const l = layoutAtlantaTablet('karmic-creditors', { applicant: '王小二' })
     const center = vcols(l.elements).find((e) => e.chars.join('') === '佛力超薦累劫冤親債主往生蓮位')
     expect(center).toBeDefined()
-    expect(center!.top).toBe(198)
-    expect(center!.fontSize).toBe(FIXED_SIZE)
+    // grander than the unified 32, capped at 38, fits the band (clears canopy & lotus)
+    expect(center!.fontSize).toBeGreaterThan(FIXED_SIZE)
+    expect(center!.fontSize).toBeLessThanOrEqual(38)
+    expect(center!.top).toBeGreaterThanOrEqual(198)
+    expect(center!.top + center!.chars.length * center!.fontSize).toBeLessThanOrEqual(716) // clears lotus
     expect(center!.weight).toBe(FIXED_WEIGHT)
     expect(center!.centerX).toBe(CENTER_X)
   })

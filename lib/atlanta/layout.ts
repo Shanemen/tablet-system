@@ -400,9 +400,17 @@ export function layoutAtlantaTablet(type: TabletTypeValue, inputs: AtlantaInputs
       break
     }
     case 'karmic': {
-      // Center is a single fixed vertical column; NO 3-zone band.
+      // Center is a single fixed vertical column; NO 3-zone band. The whole column is fixed
+      // text (no dynamic middle to balance), so size it to FILL the band (canopy ~198 -> above
+      // lotus ~712), vertically centered & capped, making it read bigger and grander than the
+      // unified 32 used elsewhere.
       const s = cfg.centerString || ''
-      elements.push(vcol(s, CENTER_X, 198, FIXED_SIZE, FIXED_WEIGHT))
+      const top0 = 198
+      const bottom0 = 712
+      const maxSize = 38
+      const size = Math.floor(Math.min(maxSize, (bottom0 - top0) / s.length))
+      const startTop = top0 + ((bottom0 - top0) - s.length * size) / 2
+      elements.push(vcol(s, CENTER_X, startTop, size, FIXED_WEIGHT))
       elements.push(...leftLabels(cfg))
       const applicant = inputs.applicant || ''
       if (isLatin(applicant)) elements.push(leftLatinSingle(applicant, 0.6))
