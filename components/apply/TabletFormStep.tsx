@@ -37,6 +37,12 @@ interface TabletFormStepProps {
 
 type FormState = 'filling' | 'previewing' | 'confirmed'
 
+// Cache-buster for the OG image route. @vercel/og serves rendered PNGs with a 1-year
+// immutable CDN cache keyed by URL, so a font/template change does NOT reach an already-
+// cached URL. Bump this whenever the font subset or render output changes — every OG URL
+// then becomes a new cache key and re-renders fresh for all users. Current: CJK subset 3,500.
+const OG_ASSET_VERSION = '3500'
+
 // Build the variant-gated Atlanta query params from RAW (un-joined) form fields, each converted
 // to Traditional individually. Only called when templateVariant === 'atlanta', so default-temple
 // URLs are byte-for-byte unchanged. The Atlanta renderer needs structured fields (稱謂/surname/
@@ -221,6 +227,7 @@ export function TabletFormStep({
       apiUrl.searchParams.set('name', honoreeText)
       apiUrl.searchParams.set('type', tabletType)
       apiUrl.searchParams.set('style', imageStyle)  // Temple-specific image style
+      apiUrl.searchParams.set('fv', OG_ASSET_VERSION)  // bust stale CDN-cached renders
       if (petitionerText) {
         apiUrl.searchParams.set('applicant', petitionerText)
       }
@@ -495,6 +502,7 @@ export function TabletFormStep({
     apiUrl.searchParams.set('name', convertedTexts.honoree)
     apiUrl.searchParams.set('type', tabletType)
     apiUrl.searchParams.set('style', imageStyle)  // Temple-specific image style
+    apiUrl.searchParams.set('fv', OG_ASSET_VERSION)  // bust stale CDN-cached renders
     if (convertedTexts.petitioner) {
       apiUrl.searchParams.set('applicant', convertedTexts.petitioner)
     }
