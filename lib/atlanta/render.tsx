@@ -14,6 +14,7 @@ import { layoutAtlantaTablet, type AtlantaEl, type AtlantaInputs } from './layou
 
 const FRAME_PATH = '/templates/atlanta/frame.svg'
 const FONT_PATH = '/fonts/NotoSerifTC-Subset.otf'
+const LATIN_FONT_PATH = '/fonts/NotoSerif-LatinVi.ttf'
 
 function readParams(type: TabletTypeValue, p: URLSearchParams): AtlantaInputs {
   return {
@@ -59,6 +60,7 @@ function renderElement(el: AtlantaEl, i: number) {
               fontSize: el.fontSize,
               lineHeight: 1,
               fontWeight: el.weight,
+              fontFamily: 'Noto Serif TC, Noto Serif',
               color: INK,
             }}
           >
@@ -93,6 +95,7 @@ function renderElement(el: AtlantaEl, i: number) {
               fontSize: el.fontSize,
               lineHeight: el.lineHeight,
               fontWeight: el.weight,
+              fontFamily: 'Noto Serif TC, Noto Serif',
               color: INK,
             }}
           >
@@ -115,6 +118,7 @@ function renderElement(el: AtlantaEl, i: number) {
         whiteSpace: 'nowrap',
         fontSize: el.fontSize,
         fontWeight: el.weight,
+        fontFamily: 'Noto Serif TC, Noto Serif',
         color: INK,
       }}
     >
@@ -150,6 +154,16 @@ export async function renderAtlantaTablet(
     return new Response(`Atlanta font load failed: ${e.message}`, { status: 500 })
   }
 
+  // Latin/Vietnamese font for non-CJK glyphs (satori falls back by glyph coverage).
+  let latinFontData: ArrayBuffer
+  try {
+    const r = await fetch(`${origin}${LATIN_FONT_PATH}`)
+    if (!r.ok) throw new Error(`latin font ${r.status}`)
+    latinFontData = await r.arrayBuffer()
+  } catch (e: any) {
+    return new Response(`Atlanta latin font load failed: ${e.message}`, { status: 500 })
+  }
+
   return new ImageResponse(
     (
       <div style={{ height: '100%', width: '100%', display: 'flex', position: 'relative', backgroundColor: '#ffffff' }}>
@@ -165,6 +179,8 @@ export async function renderAtlantaTablet(
       fonts: [
         { name: 'Noto Serif TC', data: fontData, weight: 400, style: 'normal' },
         { name: 'Noto Serif TC', data: fontData.slice(0), weight: 500, style: 'normal' },
+        { name: 'Noto Serif', data: latinFontData, weight: 400, style: 'normal' },
+        { name: 'Noto Serif', data: latinFontData.slice(0), weight: 500, style: 'normal' },
       ],
     }
   )
