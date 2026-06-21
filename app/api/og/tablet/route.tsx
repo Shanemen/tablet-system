@@ -83,7 +83,7 @@ function renderVerticalText(
                     style={{
                       fontSize,
                       fontWeight: 400,
-                      fontFamily: 'Noto Serif TC',
+                      fontFamily: 'Noto Serif TC, Noto Serif',
                       color,
                       whiteSpace: 'nowrap',
                     }}
@@ -98,7 +98,7 @@ function renderVerticalText(
                     style={{
                       fontSize,
                       fontWeight: 400,
-                      fontFamily: 'Noto Serif TC',
+                      fontFamily: 'Noto Serif TC, Noto Serif',
                       color,
                       display: 'flex',
                       transform: 'rotate(-90deg)',
@@ -175,7 +175,7 @@ function renderVerticalText(
                     style={{
                       fontSize,
                       fontWeight: 400,
-                      fontFamily: 'Noto Serif TC',
+                      fontFamily: 'Noto Serif TC, Noto Serif',
                       color,
                       lineHeight: `${lineHeight}px`,
                       textAlign: 'center',
@@ -322,6 +322,25 @@ export async function GET(request: NextRequest) {
       return new Response(`Font loading failed: ${e.message}`, { status: 500 })
     }
 
+    // Load Latin/Vietnamese font (Noto Serif subset) for non-CJK glyphs.
+    // Satori falls back to this font for any glyph the CJK subset does not cover.
+    const latinFontUrl = `${request.nextUrl.origin}/fonts/NotoSerif-LatinVi.ttf`
+    let latinFontData: ArrayBuffer
+    try {
+      const latinFontResponse = await fetch(latinFontUrl)
+      if (!latinFontResponse.ok) {
+        throw new Error(`Font fetch failed: ${latinFontResponse.status} ${latinFontResponse.statusText}`)
+      }
+      latinFontData = await latinFontResponse.arrayBuffer()
+      console.log(`Latin font loaded: ${latinFontData.byteLength} bytes (${(latinFontData.byteLength / 1024).toFixed(2)} KB)`)
+      if (latinFontData.byteLength === 0) {
+        throw new Error('Latin font file is empty!')
+      }
+    } catch (e: any) {
+      console.error('Latin font loading error:', e)
+      return new Response(`Latin font loading failed: ${e.message}`, { status: 500 })
+    }
+
     return new ImageResponse(
       (
         <div
@@ -381,6 +400,12 @@ export async function GET(request: NextRequest) {
           {
             name: 'Noto Serif TC',
             data: fontData,
+            weight: 400,
+            style: 'normal',
+          },
+          {
+            name: 'Noto Serif',
+            data: latinFontData,
             weight: 400,
             style: 'normal',
           },
