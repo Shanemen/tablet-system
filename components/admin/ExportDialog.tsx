@@ -4,16 +4,10 @@ import { useState } from "react"
 import { X, Loader, Check, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { SelectedCount } from "@/lib/types/application"
+import { SelectedCount, ExportPlanItem, PDFResult } from "@/lib/types/application"
 
-// PDF Result type
-export interface PDFResult {
-  type: string
-  typeName: string
-  pdfBase64: string
-  count: number
-  pageCount: number
-}
+// Re-export so existing importers (e.g. dashboard page) keep working
+export type { PDFResult }
 
 // Step 2 - Export Confirmation
 interface ExportConfirmationProps {
@@ -99,17 +93,17 @@ export function ExportConfirmation({ selectedCount, ceremonyName = '法會', onC
 // Step 3 - Generation Progress
 interface ExportProgressProps {
   progress: number
+  plan: ExportPlanItem[]
+  completedTypes: Set<string>
+  activeType: string | null
 }
 
-export function ExportProgress({ progress }: ExportProgressProps) {
-  const files = [
-    { name: '長生祿位', count: 300 },
-    { name: '往生蓮位', count: 800 },
-    { name: '歷代祖先', count: 150 },
-    { name: '冤親債主', count: 100 },
-    { name: '墮胎嬰靈', count: 50 },
-    { name: '地基主', count: 30 }
-  ]
+export function ExportProgress({ progress, plan, completedTypes, activeType }: ExportProgressProps) {
+  // Real totals derived from the selected applications
+  const totalTablets = plan.reduce((sum, item) => sum + item.count, 0)
+  const doneTablets = plan
+    .filter(item => completedTypes.has(item.type))
+    .reduce((sum, item) => sum + item.count, 0)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -131,53 +125,61 @@ export function ExportProgress({ progress }: ExportProgressProps) {
                 <span className="text-primary font-bold">{progress}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-primary h-full transition-all duration-300 rounded-full" 
-                  style={{ width: `${progress}%` }} 
+                <div
+                  className="bg-primary h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
 
-            {/* Individual File Progress */}
+            {/* Per-type Progress (real data) */}
             <div className="bg-muted p-4 rounded-lg space-y-2">
               <div className="text-base font-medium text-foreground mb-3">當前進度：</div>
-              {files.map((item, i) => {
-                const itemProgress = Math.max(0, progress - (i * 17))
-                const isCompleted = itemProgress >= 100
-                const isInProgress = itemProgress > 0 && itemProgress < 100
+              {plan.length === 0 ? (
+                <div className="flex items-center gap-2 text-base text-muted-foreground">
+                  <Loader size={16} className="animate-spin text-primary" />
+                  正在準備...
+                </div>
+              ) : (
+                plan.map((item) => {
+                  const isCompleted = completedTypes.has(item.type)
+                  const isInProgress = !isCompleted && activeType === item.type
 
-                return (
-                  <div key={i} className="flex items-center justify-between text-base">
-                    <div className="flex items-center gap-2">
-                      {isCompleted ? (
-                        <Check size={16} className="text-primary" />
-                      ) : isInProgress ? (
-                        <Loader size={16} className="animate-spin text-primary" />
-                      ) : (
-                        <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
-                      )}
-                      <span className={
-                        isCompleted ? 'text-primary' :
-                        isInProgress ? 'text-primary font-medium' :
-                        'text-muted-foreground'
-                      }>
-                        {item.name}
+                  return (
+                    <div key={item.type} className="flex items-center justify-between text-base">
+                      <div className="flex items-center gap-2">
+                        {isCompleted ? (
+                          <Check size={16} className="text-primary" />
+                        ) : isInProgress ? (
+                          <Loader size={16} className="animate-spin text-primary" />
+                        ) : (
+                          <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
+                        )}
+                        <span className={
+                          isCompleted ? 'text-primary' :
+                          isInProgress ? 'text-primary font-medium' :
+                          'text-muted-foreground'
+                        }>
+                          {item.typeName}
+                        </span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {isCompleted ? `${item.count}個 ✓` :
+                         isInProgress ? `生成中… (${item.count}個)` :
+                         `${item.count}個 等待中`}
                       </span>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {isCompleted ? `${item.count}個` :
-                       isInProgress ? `${Math.floor(item.count * itemProgress / 100)}/${item.count}` :
-                       '等待中'}
-                    </span>
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
 
-            {/* Estimated Time */}
-            <div className="text-center text-base text-muted-foreground">
-              預計剩餘時間：{Math.max(0, Math.ceil((100 - progress) / 50))} 分鐘
-            </div>
+            {/* Real tablet completion count */}
+            {totalTablets > 0 && (
+              <div className="text-center text-base text-muted-foreground">
+                已生成 {doneTablets}/{totalTablets} 個牌位
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -300,6 +302,11 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
                       <div className="text-base text-muted-foreground">
                         {result.count}個牌位 • {result.pageCount}頁 • {getFileSize(result.pdfBase64)} • {PAPER_TYPE_MAP[result.type]}打印
                       </div>
+                      {result.skippedCount > 0 && (
+                        <div className="text-sm text-[#770002] mt-0.5">
+                          ⚠️ {result.skippedCount} 張缺圖已跳過
+                        </div>
+                      )}
                     </div>
                   </div>
                   <Button 

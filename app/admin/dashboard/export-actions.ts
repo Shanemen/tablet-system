@@ -2,6 +2,7 @@
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import { createClient } from "@/lib/supabase/server"
+import { ExportPlanItem, PDFResult } from "@/lib/types/application"
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -16,14 +17,6 @@ interface TabletDetail {
 
 interface GroupedTablets {
   [key: string]: TabletDetail[]
-}
-
-interface PDFResult {
-  type: string
-  typeName: string
-  pdfBase64: string
-  count: number
-  pageCount: number
 }
 
 // ============================================================================
@@ -57,6 +50,10 @@ const AVAILABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
 const TABLET_WIDTH = (AVAILABLE_WIDTH - (TABLETS_PER_PAGE - 1) * HORIZONTAL_SPACING) / TABLETS_PER_PAGE
 const TABLET_HEIGHT = TABLET_WIDTH * (848 / 320)  // Maintain original 320:848 aspect ratio
 
+// Image fetching tuning
+const IMAGE_FETCH_TIMEOUT_MS = 20000 // abort a single image after 20s so one bad URL can't hang the whole export
+const IMAGE_FETCH_CONCURRENCY = 12   // cap parallel downloads so large types (e.g. 800 tablets) don't overwhelm storage/memory
+
 // Tablet type name mapping
 const TABLET_TYPE_NAMES: Record<string, string> = {
   'longevity': '長生祿位',
@@ -71,24 +68,73 @@ const TABLET_TYPE_NAMES: Record<string, string> = {
   'land-deity': '地基主'
 }
 
+// Canonical display order so the export plan / progress UI is stable
+const TYPE_DISPLAY_ORDER = [
+  'longevity', 'long-living',
+  'deceased',
+  'ancestors',
+  'karmic_creditors', 'karmic-creditors',
+  'aborted_spirits', 'aborted-spirits',
+  'land_deity', 'land-deity'
+]
+
+function typeRank(type: string): number {
+  const idx = TYPE_DISPLAY_ORDER.indexOf(type)
+  return idx === -1 ? TYPE_DISPLAY_ORDER.length : idx
+}
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
 /**
- * Fetch image from URL and return as ArrayBuffer
+ * Fetch image from URL and return as ArrayBuffer.
+ * Aborts after IMAGE_FETCH_TIMEOUT_MS so a single slow/hanging URL can't stall
+ * the entire export.
  */
 async function fetchImageAsBuffer(url: string): Promise<ArrayBuffer> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS)
   try {
-    const response = await fetch(url)
+    const response = await fetch(url, { signal: controller.signal })
     if (!response.ok) {
       throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`)
     }
     return await response.arrayBuffer()
-  } catch (error) {
-    console.error(`Error fetching image from ${url}:`, error)
-    throw error
+  } finally {
+    clearTimeout(timer) // clear on both success and failure to avoid leaking timers
   }
+}
+
+/**
+ * Download all images in parallel with a bounded concurrency, preserving order.
+ * A null entry means that tablet had no image_url or the fetch failed/timed out —
+ * the caller skips it rather than failing the whole type.
+ */
+async function fetchImageBuffers(
+  urls: (string | null)[],
+  limit = IMAGE_FETCH_CONCURRENCY
+): Promise<(ArrayBuffer | null)[]> {
+  const results: (ArrayBuffer | null)[] = new Array(urls.length).fill(null)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < urls.length) {
+      const i = cursor++
+      const url = urls[i]
+      if (!url) continue
+      try {
+        results[i] = await fetchImageAsBuffer(url)
+      } catch (error) {
+        console.error(`[Export] Failed to fetch image at index ${i} (${url}):`, error)
+        results[i] = null
+      }
+    }
+  }
+
+  const workerCount = Math.min(limit, urls.length)
+  await Promise.all(Array.from({ length: workerCount }, worker))
+  return results
 }
 
 /**
@@ -96,7 +142,7 @@ async function fetchImageAsBuffer(url: string): Promise<ArrayBuffer> {
  */
 function groupTabletsByType(tablets: TabletDetail[]): GroupedTablets {
   const grouped: GroupedTablets = {}
-  
+
   for (const tablet of tablets) {
     const type = tablet.tablet_type
     if (!grouped[type]) {
@@ -104,7 +150,7 @@ function groupTabletsByType(tablets: TabletDetail[]): GroupedTablets {
     }
     grouped[type].push(tablet)
   }
-  
+
   return grouped
 }
 
@@ -121,11 +167,11 @@ async function addPageNumber(
   const text = `${pageNum}/${totalPages}`
   const fontSize = 10
   const textWidth = font.widthOfTextAtSize(text, fontSize)
-  
+
   // Position: bottom right, safe from trim (at least 5mm from trim line)
   const x = PAGE_WIDTH - BLEED_SIZE - (8 * MM_TO_POINTS) - textWidth  // 8mm from trim edge
   const y = BLEED_SIZE + (5 * MM_TO_POINTS)  // 5mm above trim line (safe zone)
-  
+
   page.drawText(text, {
     x,
     y,
@@ -145,43 +191,47 @@ async function createPDFForType(
 ): Promise<PDFResult> {
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  
+
+  // Download every image for this type up front, in parallel (bounded), preserving order.
+  const imageBuffers = await fetchImageBuffers(tablets.map(t => t.image_url))
+
+  let skippedCount = 0
+
   // Calculate total pages needed
   const totalPages = Math.ceil(tablets.length / TABLETS_PER_PAGE)
-  
+
   // Process tablets in batches of TABLETS_PER_PAGE
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
     const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
     const startIdx = pageIndex * TABLETS_PER_PAGE
     const endIdx = Math.min(startIdx + TABLETS_PER_PAGE, tablets.length)
-    const pageTablets = tablets.slice(startIdx, endIdx)
-    
+
     // Add each tablet to the page (single row, horizontal)
-    for (let i = 0; i < pageTablets.length; i++) {
-      const tablet = pageTablets[i]
-      
-      // Skip if no image URL
-      if (!tablet.image_url) {
-        console.warn(`Tablet "${tablet.display_name}" has no image_url, skipping`)
+    for (let i = startIdx; i < endIdx; i++) {
+      const tablet = tablets[i]
+      const imageBuffer = imageBuffers[i]
+
+      // Skip if image missing or its download failed/timed out
+      if (!imageBuffer) {
+        console.warn(`[Export] Tablet "${tablet.display_name}" has no usable image, skipping`)
+        skippedCount++
         continue
       }
-      
+
       try {
-        // Fetch and embed image
-        const imageBuffer = await fetchImageAsBuffer(tablet.image_url)
-        
         // Detect image type (PNG or JPG)
         let image
-        if (tablet.image_url.toLowerCase().includes('.png')) {
+        if (tablet.image_url?.toLowerCase().includes('.png')) {
           image = await pdfDoc.embedPng(imageBuffer)
         } else {
           image = await pdfDoc.embedJpg(imageBuffer)
         }
-        
+
         // Calculate position (single row, horizontal layout)
-        const x = MARGIN_LEFT + (i * (TABLET_WIDTH + HORIZONTAL_SPACING))
+        const col = i - startIdx
+        const x = MARGIN_LEFT + (col * (TABLET_WIDTH + HORIZONTAL_SPACING))
         const y = (PAGE_HEIGHT - TABLET_HEIGHT) / 2  // Vertically centered
-        
+
         // Draw image
         page.drawImage(image, {
           x,
@@ -190,100 +240,122 @@ async function createPDFForType(
           height: TABLET_HEIGHT,
         })
       } catch (error) {
-        console.error(`Error embedding image for tablet "${tablet.display_name}":`, error)
-        // Continue with other tablets
+        console.error(`[Export] Error embedding image for tablet "${tablet.display_name}":`, error)
+        skippedCount++
       }
     }
-    
+
     // Add page number
     await addPageNumber(page, pageIndex + 1, totalPages, font)
   }
-  
+
   // Save PDF as base64
   const pdfBytes = await pdfDoc.save()
   const pdfBase64 = Buffer.from(pdfBytes).toString('base64')
-  
+
   const tabletTypeName = TABLET_TYPE_NAMES[type] || type
-  
+
   return {
     type,
     typeName: `${ceremonyName}_${tabletTypeName}`,
     pdfBase64,
     count: tablets.length,
-    pageCount: totalPages
+    pageCount: totalPages,
+    skippedCount
   }
 }
 
 // ============================================================================
-// MAIN EXPORT FUNCTION
+// EXPORT ACTIONS
+//
+// The export is driven step-by-step from the client so the progress UI can show
+// real, per-type progress instead of a fake timer:
+//   1) getExportPlan()           -> real tablet types + counts for the selection
+//   2) exportSingleType() (xN)   -> one PDF per type, called once per plan item
+//   3) markApplicationsGenerated -> flip status after all PDFs succeed
 // ============================================================================
 
 /**
- * Export tablets to PDF, grouped by type
- * 
- * @param applicationIds - Array of application IDs to export
- * @param ceremonyName - Name of the ceremony (for PDF filename)
- * @returns Array of PDF results (one per tablet type)
+ * Return the real export plan for the selected applications: one entry per tablet
+ * type that actually has tablets, with its real count. Used to render the progress
+ * panel (no more hardcoded 300/800/... placeholders).
  */
-export async function exportTabletsToPDF(
-  applicationIds: number[],
-  ceremonyName: string = '法會'
-): Promise<PDFResult[]> {
+export async function getExportPlan(applicationIds: number[]): Promise<ExportPlanItem[]> {
   const supabase = await createClient()
-  
-  console.log(`[Export] Starting export for ${applicationIds.length} applications`)
-  
-  // Fetch all tablets for the selected applications
+
   const { data: tablets, error } = await supabase
     .from('application_name')
     .select('display_name, image_url, tablet_type, application_id')
     .in('application_id', applicationIds)
-  
+
   if (error) {
-    console.error('[Export] Error fetching tablets:', error)
+    console.error('[Export] Error fetching tablets for plan:', error)
     throw new Error(`Failed to fetch tablets: ${error.message}`)
   }
-  
+
   if (!tablets || tablets.length === 0) {
     throw new Error('No tablets found for the selected applications')
   }
-  
-  console.log(`[Export] Found ${tablets.length} tablets`)
-  
-  // Group tablets by type
-  const groupedTablets = groupTabletsByType(tablets as TabletDetail[])
-  console.log(`[Export] Grouped into ${Object.keys(groupedTablets).length} types`)
-  
-  // Create PDF for each type
-  const results: PDFResult[] = []
-  
-  for (const [type, typeTablets] of Object.entries(groupedTablets)) {
-    console.log(`[Export] Creating PDF for ${type} (${typeTablets.length} tablets)`)
-    
-    try {
-      const result = await createPDFForType(type, typeTablets, ceremonyName)
-      results.push(result)
-      console.log(`[Export] ✓ Created PDF for ${type}: ${result.pageCount} pages`)
-    } catch (error) {
-      console.error(`[Export] ✗ Failed to create PDF for ${type}:`, error)
-      // Continue with other types
-    }
+
+  const grouped = groupTabletsByType(tablets as TabletDetail[])
+
+  return Object.entries(grouped)
+    .map(([type, typeTablets]) => ({
+      type,
+      typeName: TABLET_TYPE_NAMES[type] || type,
+      count: typeTablets.length
+    }))
+    .sort((a, b) => typeRank(a.type) - typeRank(b.type))
+}
+
+/**
+ * Generate the PDF for a single tablet type. Called once per plan item so the
+ * client can update progress as each type finishes.
+ */
+export async function exportSingleType(
+  applicationIds: number[],
+  type: string,
+  ceremonyName: string = '法會'
+): Promise<PDFResult> {
+  const supabase = await createClient()
+
+  const { data: tablets, error } = await supabase
+    .from('application_name')
+    .select('display_name, image_url, tablet_type, application_id')
+    .in('application_id', applicationIds)
+    .eq('tablet_type', type)
+
+  if (error) {
+    console.error(`[Export] Error fetching tablets for type ${type}:`, error)
+    throw new Error(`Failed to fetch tablets: ${error.message}`)
   }
-  
-  console.log(`[Export] Export complete: ${results.length} PDFs generated`)
-  
-  // Update application status to 'generated' after successful export
-  const { error: updateError } = await supabase
+
+  if (!tablets || tablets.length === 0) {
+    throw new Error(`No tablets found for type ${type}`)
+  }
+
+  console.log(`[Export] Creating PDF for ${type} (${tablets.length} tablets)`)
+  const result = await createPDFForType(type, tablets as TabletDetail[], ceremonyName)
+  console.log(`[Export] ✓ Created PDF for ${type}: ${result.pageCount} pages, ${result.skippedCount} skipped`)
+  return result
+}
+
+/**
+ * Flip the selected applications to 'generated' status. Called after all PDFs
+ * have been generated successfully.
+ */
+export async function markApplicationsGenerated(applicationIds: number[]): Promise<void> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
     .from('application')
     .update({ status: 'generated' })
     .in('id', applicationIds)
-  
-  if (updateError) {
-    console.error('[Export] Failed to update status:', updateError)
-    // Don't throw - PDFs were created successfully
-  } else {
-    console.log(`[Export] Updated ${applicationIds.length} applications to 'generated' status`)
+
+  if (error) {
+    console.error('[Export] Failed to update status:', error)
+    throw new Error(`Failed to update status: ${error.message}`)
   }
-  
-  return results
+
+  console.log(`[Export] Updated ${applicationIds.length} applications to 'generated' status`)
 }
