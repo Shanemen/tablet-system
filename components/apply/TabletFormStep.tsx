@@ -40,8 +40,8 @@ type FormState = 'filling' | 'previewing' | 'confirmed'
 // Cache-buster for the OG image route. @vercel/og serves rendered PNGs with a 1-year
 // immutable CDN cache keyed by URL, so a font/template change does NOT reach an already-
 // cached URL. Bump this whenever the font subset or render output changes — every OG URL
-// then becomes a new cache key and re-renders fresh for all users. Current: CJK subset 3,500.
-const OG_ASSET_VERSION = '3500'
+// then becomes a new cache key and re-renders fresh for all users. Current: CJK subset 3,671.
+const OG_ASSET_VERSION = '3671'
 
 // Build the variant-gated Atlanta query params from RAW (un-joined) form fields, each converted
 // to Traditional individually. Only called when templateVariant === 'atlanta', so default-temple

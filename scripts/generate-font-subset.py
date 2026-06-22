@@ -1,29 +1,34 @@
 import os
-from fontTools.subset import main as subset_main
+from fontTools.ttLib import TTFont
+from fontTools.varLib import instancer
+from fontTools.subset import Subsetter
 
 # 1. Configuration
-# Use Noto Serif TC WOFF2 font file (from fontsource)
-INPUT_FONT = "NotoSerifTC-Regular.woff2"
+# SOURCE FONT = the FULL Noto Serif TC (variable, ~20,748 glyphs, ~16MB).
+#   - It is the raw material we cut glyphs FROM. It is build-time only: NOT shipped,
+#     NOT committed to git (see .gitignore). Download it once and place it here:
+#       https://raw.githubusercontent.com/google/fonts/main/ofl/notoseriftc/NotoSerifTC%5Bwght%5D.ttf
+#       -> save as NotoSerifTC-Full.ttf at the repo root.
+#   - We use the FULL font (not the old 6,606-glyph NotoSerifTC-Regular.woff2 slice) so that
+#     any name/address char in subset-cjk-chars.txt can actually be cut out.
+INPUT_FONT = "NotoSerifTC-Full.ttf"
 OUTPUT_FONT = "public/fonts/NotoSerifTC-Subset.otf"
+INSTANCE_WEIGHT = 400  # cut the Regular instance; render registers 400 + 500 from this same data
 
-# 2. Character Source (Traditional Chinese ONLY)
-# Input is normalized to Traditional Chinese via opencc before render, so we
-# only ever need Traditional. The full curated set (3,500 Traditional CJK +
-# needed CJK punctuation, including all Atlanta fixed liturgical strings) was
-# produced in scripts/build-cjk-charset.py and frozen to this file.
+# 2. Character Source (Traditional Chinese ONLY) — the SINGLE SOURCE OF TRUTH.
+# Input is normalized to Traditional via opencc before render, so we only ever need Traditional.
+# To add chars: edit scripts/subset-cjk-chars.txt directly, then run this script.
+# (Do NOT run scripts/build-cjk-charset.py — it is a stale one-off and would clobber this file.)
 CHARSET_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "subset-cjk-chars.txt")
 
 
 def load_chars():
-    """Read the frozen Traditional-only character set."""
+    """Read the Traditional-only character set (single source of truth)."""
     if not os.path.exists(CHARSET_FILE):
-        raise FileNotFoundError(
-            f"Character set file '{CHARSET_FILE}' not found. "
-            f"Run scripts/build-cjk-charset.py to regenerate it."
-        )
+        raise FileNotFoundError(f"Character set file '{CHARSET_FILE}' not found.")
     with open(CHARSET_FILE, encoding="utf-8") as f:
         raw = f.read()
-    # Defensive: strip any stray whitespace/newlines and dedupe.
+    # Defensive: strip stray whitespace/newlines and dedupe.
     chars = "".join(sorted(set(raw.replace("\n", "").replace(" ", "").replace("\t", ""))))
     return chars
 
@@ -38,36 +43,32 @@ print("=" * 50)
 
 
 def check_font():
-    """Check if input font exists"""
     if not os.path.exists(INPUT_FONT):
         raise FileNotFoundError(
-            f"Input font '{INPUT_FONT}' not found. "
-            f"Please download Noto Serif TC and place it as {INPUT_FONT}"
+            f"Source font '{INPUT_FONT}' not found. Download the FULL Noto Serif TC and place it "
+            f"at the repo root as {INPUT_FONT} (see the header comment for the URL). "
+            f"It is gitignored on purpose (16MB, build-time only)."
         )
-    size = os.path.getsize(INPUT_FONT)
-    print(f"Using font: {INPUT_FONT} ({size/1024/1024:.2f} MB)")
+    print(f"Using source font: {INPUT_FONT} ({os.path.getsize(INPUT_FONT)/1024/1024:.2f} MB)")
 
 
 def generate_subset():
-    with open('subset_chars.txt', 'w', encoding='utf-8') as f:
-        f.write(unique_chars)
+    os.makedirs(os.path.dirname(OUTPUT_FONT), exist_ok=True)
+    font = TTFont(INPUT_FONT)
+
+    # If the source is a variable font, pin it to the Regular weight first so the
+    # output is a plain static face (matches the previously shipped subset exactly).
+    if "fvar" in font:
+        print(f"Variable font detected -> instantiating at wght={INSTANCE_WEIGHT}")
+        font = instancer.instantiateVariableFont(font, {"wght": INSTANCE_WEIGHT}, inplace=False)
 
     print("Generating subset...")
-    os.makedirs(os.path.dirname(OUTPUT_FONT), exist_ok=True)
-
-    args = [
-        INPUT_FONT,
-        f"--text-file=subset_chars.txt",
-        f"--output-file={OUTPUT_FONT}",
-        "--layout-features=*",
-        "--flavor=",  # No flavor = TTF/OTF depending on input/conversion
-    ]
-
-    subset_main(args)
+    ss = Subsetter()
+    ss.options.layout_features = ["*"]
+    ss.populate(text=unique_chars)
+    ss.subset(font)
+    font.save(OUTPUT_FONT)
     print(f"Subset generated at {OUTPUT_FONT}")
-
-    if os.path.exists('subset_chars.txt'):
-        os.remove('subset_chars.txt')
 
 
 if __name__ == "__main__":
@@ -75,9 +76,7 @@ if __name__ == "__main__":
         check_font()
         generate_subset()
         print("\n✅ Font subset generation complete!")
-        print(f"Output: {OUTPUT_FONT}")
         if os.path.exists(OUTPUT_FONT):
-            size = os.path.getsize(OUTPUT_FONT)
-            print(f"Size: {size/1024:.2f} KB")
+            print(f"Output: {OUTPUT_FONT}  ({os.path.getsize(OUTPUT_FONT)/1024:.2f} KB)")
     except Exception as e:
         print(f"\n❌ Failed: {e}")

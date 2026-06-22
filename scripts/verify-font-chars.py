@@ -43,9 +43,12 @@ ATLANTA_FIXED = [
 CJK_NAME_SAMPLES = "王李張劉陳楊黃趙吳徐孫朱馬胡郭林何高羅鄭梁謝宋唐許韓馮鄧曹彭曾蕭歐陽諸葛皇甫令狐唯弘華正法師闔嬰靈菩薩"
 
 # Simplified-only chars that must be ABSENT (their Traditional forms must be PRESENT).
+# NOTE: 于 is intentionally NOT here — it is a valid Traditional surname (于 is itself,
+# NOT simplified-of-於) and is deliberately included in the subset. opencc cn->tw wrongly
+# maps the surname 于 -> 於, which the renderer's converter special-cases back to 于.
 SIMPLIFIED_FORBIDDEN = {
     "长": "長", "赵": "趙", "产": "產", "万": "萬",
-    "于": "於", "后": "後", "丰": "豐", "云": "雲",
+    "后": "後", "丰": "豐", "云": "雲",
 }
 
 # --- Latin / Vietnamese expectations ----------------------------------------
