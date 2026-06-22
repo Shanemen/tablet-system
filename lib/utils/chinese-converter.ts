@@ -12,6 +12,14 @@ const s2t = converter
  */
 export function convertToTraditional(text: string): string {
   if (!text) return text
-  return s2t(text)
+  return fixSurnameVariants(s2t(text))
+}
+
+// opencc cn->tw maps the surname 于 -> 於 (it prefers the preposition variant). Every value
+// converted here is a name / address / liturgical string where 于 is the intended surname and
+// 於 never appears legitimately, so restore 于. (于 is in the font subset; 於 would render the
+// wrong surname.) Keep in sync with the client converter (lib/utils/chinese-converter-client.ts).
+function fixSurnameVariants(s: string): string {
+  return s.replace(/於/g, '于')
 }
 
