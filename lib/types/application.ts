@@ -33,6 +33,23 @@ export interface SelectedCount {
 
 export type ApplicationStatus = "exported" | "pending" | "problematic"
 
+// One row in the export plan: a tablet type with its real tablet count
+export interface ExportPlanItem {
+  type: string
+  typeName: string
+  count: number
+}
+
+// Result of generating one PDF (one per tablet type)
+export interface PDFResult {
+  type: string
+  typeName: string
+  pdfBase64: string
+  count: number
+  pageCount: number
+  skippedCount: number // tablets skipped due to missing/failed image
+}
+
 // Status configuration for UI display
 export const statusConfig = {
   exported: { label: "已下載", color: "text-slate-700 bg-muted" },

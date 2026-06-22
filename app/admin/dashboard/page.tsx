@@ -9,9 +9,9 @@ import { ApplicationTable } from "@/components/admin/ApplicationTable"
 import { ExportConfirmation, ExportProgress, ExportCompletion, PDFResult } from "@/components/admin/ExportDialog"
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog"
 import { NotificationDialog } from "@/components/admin/NotificationDialog"
-import { Applicant, Stats, SelectedCount, ApplicationStatus } from "@/lib/types/application"
+import { Applicant, Stats, SelectedCount, ApplicationStatus, ExportPlanItem } from "@/lib/types/application"
 import { getApplications } from "./actions"
-import { exportTabletsToPDF } from "./export-actions"
+import { getExportPlan, exportSingleType, markApplicationsGenerated } from "./export-actions"
 import { resetApplicationsToPending, resetAllExportedToPending } from "./test-actions"
 import { getCurrentCeremony, type Ceremony } from "../ceremonies/actions"
 import { convertToTraditional } from "@/lib/utils/chinese-converter-client"
@@ -37,6 +37,9 @@ export default function AdminDashboardPage() {
   const [selectedApplicationIds, setSelectedApplicationIds] = useState<number[]>([])
   const [pdfResults, setPdfResults] = useState<PDFResult[]>([])
   const [exportError, setExportError] = useState<string | null>(null)
+  const [exportPlan, setExportPlan] = useState<ExportPlanItem[]>([])
+  const [completedTypes, setCompletedTypes] = useState<Set<string>>(new Set())
+  const [activeType, setActiveType] = useState<string | null>(null)
   
   // Statistics state
   const [stats, setStats] = useState<Stats>({
@@ -87,42 +90,74 @@ export default function AdminDashboardPage() {
     loadData()
   }, [])
 
-  // Real export process
+  // Real export process: drive generation per tablet type so progress is real.
   useEffect(() => {
-    if (step === 3 && selectedApplicationIds.length > 0) {
-      // Start export
+    if (step !== 3 || selectedApplicationIds.length === 0) return
+
+    let cancelled = false
+
+    async function runExport() {
+      // Reset progress state for this run
       setExportProgress(0)
       setExportError(null)
-      
-      // Simulate progress during export
-      const progressInterval = setInterval(() => {
-        setExportProgress(prev => Math.min(prev + 5, 90)) // Cap at 90% until real completion
-      }, 200)
-      
-      // Call actual export function
-      exportTabletsToPDF(selectedApplicationIds, currentCeremony?.name_zh || '法會')
-        .then((results) => {
-          clearInterval(progressInterval)
-          setPdfResults(results)
-          setExportProgress(100)
-          
-          // Move to completion step after a brief delay
-          setTimeout(() => {
-            setStep(4)
-          }, 500)
-        })
-        .catch((error) => {
-          clearInterval(progressInterval)
-          console.error('Export failed:', error)
-          setExportError(error.message || '導出失敗，請重試')
-          setExportProgress(0)
-          
-          // Show error and go back to step 1
-          alert(`導出失敗：${error.message || '未知錯誤'}`)
-          setStep(1)
-        })
-      
-      return () => clearInterval(progressInterval)
+      setExportPlan([])
+      setCompletedTypes(new Set())
+      setActiveType(null)
+      setPdfResults([])
+
+      try {
+        // 1) Get the real plan: which tablet types exist and how many in each
+        const plan = await getExportPlan(selectedApplicationIds)
+        if (cancelled) return
+        setExportPlan(plan)
+
+        const totalTablets = plan.reduce((sum, item) => sum + item.count, 0)
+        const results: PDFResult[] = []
+        let doneTablets = 0
+
+        // 2) Generate one PDF per type, updating progress as each finishes
+        for (const item of plan) {
+          if (cancelled) return
+          setActiveType(item.type)
+
+          const result = await exportSingleType(
+            selectedApplicationIds,
+            item.type,
+            currentCeremony?.name_zh || '法會'
+          )
+          if (cancelled) return
+
+          results.push(result)
+          doneTablets += item.count
+          setPdfResults([...results])
+          setCompletedTypes(prev => new Set(prev).add(item.type))
+          setExportProgress(totalTablets > 0 ? Math.round((doneTablets / totalTablets) * 100) : 100)
+        }
+
+        setActiveType(null)
+
+        // 3) Mark applications generated only after all PDFs succeeded
+        await markApplicationsGenerated(selectedApplicationIds)
+        if (cancelled) return
+
+        setExportProgress(100)
+        setTimeout(() => {
+          if (!cancelled) setStep(4)
+        }, 400)
+      } catch (error: any) {
+        if (cancelled) return
+        console.error('Export failed:', error)
+        setExportError(error.message || '導出失敗，請重試')
+        setExportProgress(0)
+        alert(`導出失敗：${error.message || '未知錯誤'}`)
+        setStep(1)
+      }
+    }
+
+    runExport()
+
+    return () => {
+      cancelled = true
     }
   }, [step, selectedApplicationIds])
 
@@ -215,7 +250,10 @@ export default function AdminDashboardPage() {
     setSelectedCount({ applications: 0, tablets: 0 })
     setExportProgress(0)
     setPdfResults([])
-    
+    setExportPlan([])
+    setCompletedTypes(new Set())
+    setActiveType(null)
+
     // Trigger highlight animation
     setHighlightExported(true)
     setHighlightPending(true)
@@ -324,7 +362,14 @@ export default function AdminDashboardPage() {
             onConfirm={() => setStep(3)}
           />
         )}
-        {step === 3 && <ExportProgress progress={exportProgress} />}
+        {step === 3 && (
+          <ExportProgress
+            progress={exportProgress}
+            plan={exportPlan}
+            completedTypes={completedTypes}
+            activeType={activeType}
+          />
+        )}
         {step === 4 && pdfResults.length > 0 && (
           <ExportCompletion
             selectedCount={selectedCount}
