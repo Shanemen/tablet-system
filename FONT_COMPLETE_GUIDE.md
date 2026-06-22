@@ -1,546 +1,191 @@
 # 🎨 字体完整指南 (Font Complete Guide)
 
-**最后更新**: 2024-11-23  
-**状态**: ✅ 生产就绪
+**最后更新**: 2026-06-21
+**状态**: ✅ 生产就绪（CJK 3,671 字 + 拉丁/越南文）
+
+> 本文档 2026-06-21 整篇重写，反映真实架构。术语/路径/代码保留英文。
 
 ---
 
-## 📖 目录
+## 0. 一句话心智模型：我们是「剪」字，不是「画」字
 
-- [Part 1: 字体优化](#part-1-字体优化)
-- [Part 2: 简繁体转换](#part-2-简繁体转换)
-- [Part 3: 使用指南](#part-3-使用指南)
+牌位渲染用的字体是从一个**完整源字体**里**剪（subset）出我们需要的字**拼成的小字体。我们**不创造字形**——源字体里没有的字，剪不出来。所以「覆盖率」由两件事决定：① 我们在字符清单里列了哪些字；② 源字体本身有没有这些字形。
 
 ---
 
-# Part 1: 字体优化
+## 1. 运行时架构（出图时发生什么）
 
-## ✅ 优化成果
+### 1.1 OG 路由固定 `runtime='edge'`（铁律，勿改）
 
-**问题已解决**: "唯"字等字符显示粗细不一的问题已彻底解决！
+`app/api/og/tablet/route.tsx:13` → `export const runtime = 'edge'`。
 
-### 最终结果
+**为什么必须留在 edge**：出图引擎 `@vercel/og`（`ImageResponse`）依赖 resvg/yoga wasm，在 Vercel 上**只在 edge runtime 稳定**。曾经为了用 `subset-font`（动态子集）把 runtime 切到 nodejs，导致 @vercel/og 的 wasm 在 lambda 加载失败、**每个请求 500**、全站出图挂掉，靠 Instant Rollback 才恢复。**结论：字体走「构建期静态子集 + 运行时 fetch」，绝不在请求里跑 wasm 子集化、绝不切 nodejs。**
+
+### 1.2 两个字体，都在 edge 运行时 fetch
+
+路由用 `fetch(${origin}/fonts/...)` 拉字体喂给 `ImageResponse`：
+
+| 字体文件 | 覆盖 | 字数 | 大小 |
+|---|---|---|---|
+| `public/fonts/NotoSerifTC-Subset.otf` | 繁体 CJK（牌位主体） | **3,671** | ~1.62 MB |
+| `public/fonts/NotoSerif-LatinVi.ttf` | ASCII + 越南文变音 | 785 | ~96 KB |
+
+两者都注册进 `ImageResponse.fonts`（`route.tsx:399` / `lib/atlanta/render.tsx`）：
+`{ name: 'Noto Serif TC', ... }` + `{ name: 'Noto Serif', ... }`，`fontFamily: 'Noto Serif TC, Noto Serif'`。satori 按字形覆盖**逐字 fallback**：CJK 用 TC，拉丁/越南文用 Noto Serif。Atlanta 路径额外注册 weight 400 + 500。
+
+### 1.3 简繁转换发生在「客户端」，不在路由里
+
+⚠️ 常见误解：路由不做简繁转换。真实数据流：
 
 ```
-字符集定义：  925 个精选字符（简繁体双覆盖）
-实际字体包含：723 个字符（繁体）
-文件大小：    295.88 KB
-验证结果：    ✅ 所有 148 个测试字符通过
+用户输入「陈小华」(简体)
+   ↓  TabletFormStep.tsx 调 convertToTraditional()（client 版，见 §2）
+   ↓  得到「陳小華」(繁体)
+   ↓  拼进 OG URL: /api/og/tablet?name=陳小華&...&fv=3671
+   ↓  route.tsx 收到的已经是繁体，直接喂 satori 渲染
+   ↓  牌位 PNG（繁体，字体统一）
 ```
 
-### 字符集分类
-
-| 分类 | 数量 | 内容 |
-|------|------|------|
-| **核心业务字** | 55个 | 佛光注照、長生祿位、往生蓮位等 |
-| **百家姓** | 480个 | 完整百家姓 + 复姓（欧阳、上官、诸葛等）|
-| **人名用字** | 386个 | 男女高频人名用字 |
-| **美好寓意字** | 95个 | 福禄寿喜、吉祥如意等 |
-| **特殊字符** | 38个 | 宗教用字、少数民族常用字 |
-
-### 对比说明
-
-#### ❌ 优化前
-```
-字符数量: 3867 个（冗余）
-文件大小: 298 KB
-问题: "唯"字等常用字缺失
-结果: 部分字符回退到系统字体，粗细不一
-
-示例：
-"上弘下唯法师"
-     ↑↑
-   粗黑体（回退）
-```
-
-#### ✅ 优化后
-```
-字符数量: 925 个（精选）
-实际包含: 723 个（繁体）
-文件大小: 295.88 KB
-优点: 覆盖所有常用姓名
-结果: 字体统一，显示一致
-
-示例：
-"上弘下唯法师"
-全部使用 Noto Serif TC ✅
-```
+字体只装繁体（用户的简体在到达路由前已被转成繁体）。
 
 ---
 
-# Part 2: 简繁体转换
+## 2. 简繁转换
 
-## 🔄 核心问题
+**唯一在用的转换器**：`lib/utils/chinese-converter-client.ts`
+- **异步、懒加载**：opencc-js 约 300KB，仅在检测到含简体时才 `import('opencc-js')`，避免拖累不需要转换的用户（zh-TW / 英文输入）。
+- 配置 `Converter({ from: 'cn', to: 'tw' })`（≈ s2tw）。
+- 使用方：`TabletFormStep.tsx`、`lib/utils/application-storage.ts`、`app/admin/dashboard/page.tsx`。
+- （旧的同步 server 版 `lib/utils/chinese-converter.ts` 已删除——无人引用的死代码。）
 
-### 问题说明
-
-**字体特性**: Noto Serif TC 是**繁体中文字体**，不包含简体字。
-
-**用户场景**: 用户可能输入简体名字（如"张伟"、"刘华"）
-
-**问题后果**:
-1. 简体字符无法显示
-2. 回退到系统字体
-3. 导致字体粗细不一
-
-### 解决方案
-
-**✅ 已实施**: OG Image API 实时转换（方案 B）
-
-在 OG Image 生成时自动将简体转换为繁体，确保字体正确渲染。
-
-## 📝 技术实现
-
-### 1. 安装依赖
-
-```bash
-npm install opencc-js
-```
-
-### 2. 创建转换工具
-
-**文件**: `lib/utils/chinese-converter.ts`
-
-```typescript
-import { Converter } from 'opencc-js'
-
-// 创建简体转繁体转换器（台湾繁体）
-const converter = Converter({ from: 'cn', to: 'tw' })
-const s2t = converter
-
-/**
- * 将简体中文转换为繁体中文（台湾标准）
- * 用于 OG Image 渲染，确保字体正确显示
- */
-export function convertToTraditional(text: string): string {
-  if (!text) return text
-  return s2t(text)
-}
-```
-
-### 3. 集成到 OG Image API
-
-**文件**: `app/api/og/tablet/route.tsx`
-
-```typescript
-import { convertToTraditional } from '@/lib/utils/chinese-converter'
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const nameInput = searchParams.get('name') || 'TEST'
-  
-  // 🔄 实时转换简体为繁体
-  const name = convertToTraditional(nameInput)
-  
-  // 开发环境日志
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[OG Image] Input: "${nameInput}" → Converted: "${name}"`)
-  }
-  
-  // ... 后续渲染逻辑
-}
-```
-
-## 🔀 工作流程
-
-### 完整数据流
-
-```
-用户输入
-   ↓
-陈小华（简体）
-   ↓
-表单显示：陈小华（保持原样）
-   ↓
-数据库存储：陈小华（保持原样）
-   ↓
-API 调用：/api/og/tablet?name=陈小华
-   ↓
-🔄 自动转换：陈小华 → 陳小華
-   ↓
-Satori 渲染：陳小華（繁体）
-   ↓
-牌位图片：陳小華 ✅
-字体统一，显示完美
-```
-
-### 技术优势
-
-| 特性 | 说明 |
-|------|------|
-| ✅ 前端零修改 | 用户输入体验不变 |
-| ✅ 数据库零修改 | 无需迁移数据或添加字段 |
-| ✅ 实时转换 | 每次生成图片时自动转换 |
-| ✅ 性能优秀 | opencc-js 转换速度 < 1ms |
-| ✅ Edge Runtime 兼容 | 完全兼容 Vercel Edge |
-
-## 🧪 测试验证
-
-### 测试用例
-
-| 输入 | 转换结果 | 状态 |
-|------|----------|------|
-| 陈小华（简体） | 陳小華（繁体） | ✅ 通过 |
-| 刘德华（简体） | 劉德華（繁体） | ✅ 通过 |
-| 張偉（繁体） | 張偉（保持不变） | ✅ 通过 |
-
-### 服务器日志示例
-
-```bash
-[OG Image] Type: longevity
-[OG Image] Input: "陈小华" → Converted: "陳小華"
-Font loaded: 302976 bytes (295.88 KB)
-GET /api/og/tablet?name=陈小华&type=longevity 200 in 256ms
-```
+### 姓氏转换陷阱（重要）
+opencc cn→tw 会把某些**姓氏**转成偏好异体，渲染出错字：
+- `于`（姓）→ 被误转成 `於`（介词）。转换器已在转换后**还原 `于`**（`fixSurnameVariants`：`於`→`于`）。本 app 全是名字/地址，`於` 不会合法出现，故安全。
+- `钟`（姓）正确繁体是 `鍾`，opencc 默认给 `鐘`（钟表）。两个字形都在子集里，但如遇相关问题需注意。
+- 加新姓氏字时，务必确认 opencc 给的是不是姓氏正确的那个繁体形。
 
 ---
 
-# Part 3: 使用指南
-
-## 🚀 快速开始
-
-### 1. 测试页面
-
-#### 字体子集测试页
-访问：`http://localhost:3000/font-test`
-
-测试内容：
-- ✅ 核心业务字显示
-- ✅ 常见姓氏（单姓、复姓）
-- ✅ 男女常见名字
-- ✅ "唯"字粗细一致性
-- ✅ 垂直排版效果
-- ✅ 少数民族用字
-
-#### OG Image 生成测试
-
-```bash
-# 测试"唯"字
-http://localhost:3000/api/og/tablet?type=長生祿位&name=上弘下唯法师
-
-# 测试复姓
-http://localhost:3000/api/og/tablet?type=長生祿位&name=欧阳震华
-
-# 测试简体转换
-http://localhost:3000/api/og/tablet?type=長生祿位&name=陈小华
-
-# 测试繁体（保持不变）
-http://localhost:3000/api/og/tablet?type=長生祿位&name=陳小華
-```
-
-### 2. 字体生成脚本
-
-#### 运行脚本
-
-```bash
-# 进入项目目录
-cd tablet-system
-
-# 重新生成字体子集
-python3 scripts/generate-font-subset.py
-```
-
-#### 脚本输出
+## 3. 字体构建流水线（怎么剪字）
 
 ```
-✅ Font downloaded successfully: NotoSerifTC-Regular.woff2 (1.29 MB)
-Total unique characters to subset: 925
-Subsetting font...
-✅ Font subset generation complete!
-Output: public/fonts/NotoSerifTC-Subset.otf
-Size: 295.88 KB
+NotoSerifTC-Full.ttf  ──(generate 脚本: 定到 wght=400 再剪)──>  public/fonts/NotoSerifTC-Subset.otf
+(完整源, 20,748 字, 16MB, gitignore)        ↑ 读取                (成品, 3,671 字, ship)
+                              scripts/subset-cjk-chars.txt  ← 唯一字符来源（SOURCE OF TRUTH）
 ```
 
-#### 验证字体
+### 3.1 源字体（原材料，不入库）
+- **完整 Noto Serif TC 可变字体**，放在 repo 根：`NotoSerifTC-Full.ttf`（20,748 字，16MB）。
+- **gitignore，不提交**（仅 build 时用、不 ship；它多大都不影响运行时）。
+- 下载：`https://raw.githubusercontent.com/google/fonts/main/ofl/notoseriftc/NotoSerifTC%5Bwght%5D.ttf` → 存为 `NotoSerifTC-Full.ttf`。
+- （历史：2026-06-21 前曾用 `NotoSerifTC-Regular.woff2`（6,606 字的 fontsource 切片）当源，它本身缺很多名字用字，已被完整字体取代。）
 
-```bash
-# 验证字体包含的字符
-python3 scripts/verify-font-chars.py
-```
+### 3.2 字符清单（唯一来源）
+- `scripts/subset-cjk-chars.txt`——一行连续字符串，3,671 个繁体字。**加字/删字只改这里。**
 
-#### 验证输出
+### 3.3 脚本
+- `scripts/generate-font-subset.py` → **只读 `subset-cjk-chars.txt`**，把完整可变字体定到 wght=400，再 subset 成 OTF。这是唯一的生成入口。
+- `scripts/verify-font-chars.py` → 验证覆盖（固定串、姓名样本、拉丁/越南文、简体泄漏黑名单）。
+- ⛔ **`scripts/build-cjk-charset.py` 绝对不要跑** ——它是一次性的旧生成器，现已失效（P2 依赖的硬编码块已删、P3 依赖的 /tmp 频率表已没），跑它会**覆盖并缩小** `subset-cjk-chars.txt`，把 3,671 字连同后加的字一起冲掉。它已加硬 guard，无 `--yes-i-really-want-to-overwrite-the-charset` 拒绝运行。这就是历史上「加了字却没用上」的坑之一。
 
-```
-Testing: 核心业务字（繁体）
-✅ All 35 characters found!
+---
 
-Testing: 常见姓氏（繁体）
-✅ All 50 characters found!
+## 4. 操作手册：加字 / 改字
 
-Testing: 关键测试字（繁体）
-✅ All 6 characters found!
+1. **编辑** `scripts/subset-cjk-chars.txt`，把新字追加进去（去重无所谓，脚本会 dedupe）。
+2. **确认源字体在位**：repo 根有 `NotoSerifTC-Full.ttf`（没有就按 §3.1 下载）。
+3. **重建**：`python3 scripts/generate-font-subset.py`
+4. **过验证闸**（缺一不可）：
+   - `python3 scripts/verify-font-chars.py` → ALL PASSED。
+   - **防静默丢字**：每个清单里的字都在新 OTF 的 cmap（源字体没有的字会被悄悄跳过——脚本里那些字会 build 不进去，需留意）。
+   - **零 drift**：`set(subset-cjk-chars.txt) == cmap(OTF)`。
+   - **零回归**：现有字的字形坐标 + advance 与旧 OTF 逐字节一致（换源/改 flag 时尤其要查，防默认道场像素变化）。
+5. **一起提交** `subset-cjk-chars.txt` + `NotoSerifTC-Subset.otf`（永不分家，防 drift）。
+6. **撞缓存**：把 `components/apply/TabletFormStep.tsx` 里的 `OG_ASSET_VERSION`（即 OG URL 的 `fv` 参数）改成新值（如字数）——见 §5。
+7. **部署**：merge 到 main 后，去 Vercel 确认 **Production 指向最新部署**（见 §5）。
 
-...
+> 注：若某个想加的字连**完整源字体**里都没有（极罕见异体/方言字），那是真加不进去，只能放弃或换更全的源。
 
-🎉 所有测试通过！字体子集完全覆盖所需字符。
-```
+---
 
-### 3. 添加新字符
+## 5. 缓存与部署（「为什么改了字还看不到」）
 
-如果发现某些名字缺字：
+字体改了线上不生效，几乎总是这三层之一：
 
-**步骤 1**: 打开字体生成脚本
-```bash
-vim scripts/generate-font-subset.py
-```
+1. **@vercel/og 的一年 CDN 缓存**：`ImageResponse` 生产环境默认 `cache-control: public, immutable, max-age=31536000`。同一套 URL 参数的出图会被边缘缓存一整年。
+   → **对策**：OG URL 带版本参数 `fv`（来自 `OG_ASSET_VERSION`）。换字体就改这个数 → URL 变 → CDN 视为新请求重渲。
+2. **Supabase 出图快照**：确认牌位时，PNG 被上传到 Supabase storage，cart/订单存的是**静态 PNG 链接**。**历史旧订单的图是当时字体的死快照，换字体不会更新它们**，只能重新生成。
+3. **Vercel 部署没更新 / 被 rollback 钉住**：Vercel 从 **main 部署 = 生产**。但 Production 可能被 **Instant Rollback 钉在旧部署**上，新 commit 即使 build 成功也不服务。
+   → **对策**：merge 后去 Vercel → Deployments → 最新 main 部署 → `•••` → **Promote to Production**。
 
-**步骤 2**: 在对应分类中添加字符
+**验证线上真换了**：`curl https://<域名>/fonts/NotoSerifTC-Subset.otf` 用 fontTools 看 glyph 数 / 关键字在不在；别只看 git。
 
-```python
-# 例如：添加新的姓氏
-SURNAMES = """
-赵钱孙李周吴郑王...
-你的新姓氏在这里
-"""
+---
 
-# 或添加新的名字用字
-NAME_CHARS = """
-伟刚勇毅俊峰强军...
-你的新字在这里
-"""
-```
+## 6. 故障排除
 
-**步骤 3**: 重新生成字体
-```bash
-python3 scripts/generate-font-subset.py
-```
+**症状：某个字渲染成黑体（fallback）**，按序排查：
+1. 这个字（**繁体形**）在 `NotoSerifTC-Subset.otf` 的 cmap 里吗？不在 → §4 加字。
+2. 在字体里却还黑？多半是**缓存/快照**（§5）：是不是在看旧订单的 Supabase PNG？线上是不是还没 promote？同 URL 撞 CDN 缓存？用 `&fv=随便改个值` 强制新渲染验证。
+3. 用户打的是简体？确认 client 转换有跑（§2）。
 
-**步骤 4**: 重启开发服务器
-```bash
-npm run dev
-```
+**症状：姓氏「于」显示成「於」** → §2 的姓氏陷阱（转换器已修；确认线上跑的是含修复的版本）。
 
-## 📂 文件结构
+**症状：默认道场牌位像素变了** → 多半换源/改 subset flag 引入了字形变化，跑 §4 的零回归对比。
 
-### 关键文件
+---
+
+## 7. 选型说明（仍然成立）
+
+**为什么 Noto Serif TC**：庄重碑刻感适合牌位；开源免费无版权；Google 出品字形优美；完整繁体支持；子集化效果好。
+
+**为什么只装繁体**：用户输入在 client 转成繁体后才出图，字体只需繁体；装简体是浪费（§0）。
+
+**为什么客户端转换而非路由转换**：转换在表单一次完成，路由保持纯渲染；opencc-js 懒加载只在需要时下载。
+
+---
+
+## 8. 关键文件
 
 ```
 tablet-system/
-├── public/
-│   └── fonts/
-│       └── NotoSerifTC-Subset.otf    # ✅ 生产字体（295 KB）
+├── NotoSerifTC-Full.ttf                    # 完整源字体 16MB（gitignore，不提交，build 时用）
+├── public/fonts/
+│   ├── NotoSerifTC-Subset.otf              # ✅ 生产 CJK 子集 3,671 字 (~1.62MB)
+│   ├── NotoSerif-LatinVi.ttf               # ✅ 生产 拉丁/越南文 785 字 (~96KB)
+│   └── NotoSerif-LatinVi-LICENSE.txt
 ├── scripts/
-│   ├── generate-font-subset.py       # 字体生成脚本
-│   ├── verify-font-chars.py          # 字体验证脚本
-│   └── full_chars.txt                # 完整字符列表
-├── lib/
-│   └── utils/
-│       └── chinese-converter.ts      # 简繁转换工具
-├── app/
-│   ├── api/
-│   │   └── og/
-│   │       └── tablet/
-│   │           └── route.tsx         # OG Image API (使用转换)
-│   ├── font-test/
-│   │   └── page.tsx                  # 字体测试页面
-│   └── font-preview/
-│       └── page.tsx                  # 字体预览页面
-└── FONT_COMPLETE_GUIDE.md            # 📖 本文档
+│   ├── subset-cjk-chars.txt                # ⭐ 字符 SOURCE OF TRUTH（改这里）
+│   ├── generate-font-subset.py             # 生成脚本（只读上面的 txt）
+│   ├── verify-font-chars.py                # 验证脚本
+│   └── build-cjk-charset.py                # ⛔ 废弃，别跑（有 guard）
+├── lib/utils/
+│   └── chinese-converter-client.ts         # 简繁转换（async, 含 于→于 修复）
+├── app/api/og/tablet/route.tsx             # OG 路由（edge，默认道场）
+├── lib/atlanta/render.tsx                  # OG 渲染（edge，Atlanta 变体）
+├── components/apply/TabletFormStep.tsx     # 表单（client 转换 + OG_ASSET_VERSION/fv）
+└── FONT_COMPLETE_GUIDE.md                  # 📖 本文档
 ```
 
-### 相关文件说明
-
-| 文件 | 大小 | 用途 | 是否提交 |
-|------|------|------|----------|
-| `NotoSerifTC-Subset.otf` | 295 KB | 生产字体 | ✅ 是 |
-| `NotoSerifTC-Regular.woff2` | 1.3 MB | 源字体（生成用） | ⚠️ 可选 |
-| `generate-font-subset.py` | 4 KB | 生成脚本 | ✅ 是 |
-| `chinese-converter.ts` | 1 KB | 转换工具 | ✅ 是 |
-
-**注意**: 源字体 `NotoSerifTC-Regular.woff2` 可以从 `node_modules/@fontsource/noto-serif-tc` 获取，不必提交到仓库。
-
-## 🔧 故障排除
-
-### 问题 1: 某些字符显示粗细不一
-
-**原因**: 字符不在字体子集中
-
-**解决**:
-1. 运行 `python3 scripts/verify-font-chars.py` 确认缺失字符
-2. 在 `generate-font-subset.py` 中添加缺失字符
-3. 重新生成字体
-
-### 问题 2: 简体名字转换不正确
-
-**原因**: opencc-js 未正确安装或导入
-
-**解决**:
-```bash
-# 重新安装依赖
-npm install opencc-js
-
-# 检查导入
-# lib/utils/chinese-converter.ts 应该使用 Converter（大写）
-import { Converter } from 'opencc-js'  # ✅ 正确
-import { converter } from 'opencc-js'  # ❌ 错误
-```
-
-### 问题 3: 字体文件过大
-
-**原因**: 字符集包含过多字符
-
-**解决**:
-- 当前 925 个字符 → 295 KB（已优化）
-- 如需进一步减小，检查 `scripts/generate-font-subset.py` 中的字符集定义
-- 每 100 个字符约 30-40 KB
-
-### 问题 4: Edge Runtime 超时
-
-**原因**: 字体文件加载或转换耗时过长
-
-**检查**:
-- 字体文件大小是否 < 1 MB ✅（当前 295 KB）
-- opencc-js 转换是否 < 1ms ✅（已验证）
-- 网络连接是否正常
-
-## 📊 性能指标
-
-### 字体加载性能
-
-| 指标 | 数值 |
-|------|------|
-| 字体文件大小 | 295.88 KB |
-| 加载时间（本地） | ~50ms |
-| 加载时间（Vercel Edge） | ~100ms |
-| 内存占用 | ~3 MB |
-
-### 转换性能
-
-| 操作 | 耗时 |
-|------|------|
-| 简体转繁体（单个字） | < 0.1ms |
-| 简体转繁体（10个字） | < 1ms |
-| API 总响应时间 | 150-300ms |
-
-## 🚢 生产部署
-
-### 部署检查清单
-
-- ✅ 字体文件已优化（295 KB < 1 MB）
-- ✅ 简繁转换已测试
-- ✅ 所有测试用例通过
-- ✅ Edge Runtime 兼容
-- ✅ 性能指标达标
-
-### 环境变量
-
-无需额外环境变量配置。所有功能开箱即用。
-
-### Vercel 配置
-
-字体文件自动包含在构建中，无需额外配置。
-
-```json
-// next.config.mjs - 无需修改
-{
-  "headers": [
-    {
-      "source": "/fonts/:path*",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## 📚 技术说明
-
-### 为什么选择 925 个字符？
-
-1. **核心业务覆盖**: 所有模板固定词汇
-2. **姓氏全覆盖**: 完整百家姓 + 复姓
-3. **名字高频字**: 覆盖 95%+ 的常见名字
-4. **文件大小平衡**: 295 KB 适合 Edge Runtime
-
-### 为什么不包含更多字？
-
-- 每增加 1000 个字符约增加 100-150 KB
-- 当前方案已覆盖绝大多数使用场景
-- 如需特殊字符可按需添加（迭代优化）
-
-### 为什么选择 Noto Serif TC？
-
-- ✅ **风格**: 庄重、严谨、碑刻感，适合牌位
-- ✅ **开源**: 免费使用，无版权问题
-- ✅ **质量**: Google 出品，字形优美
-- ✅ **支持**: 完整的繁体中文支持
-- ✅ **性能**: 字体子集化效果好
-
-### 为什么选择 API 转换而非前端转换？
-
-| 方案 | 优点 | 缺点 | 选择 |
-|------|------|------|------|
-| **API 转换** | 前端零修改、数据库零修改、用户无感知 | 需要 opencc-js 依赖 | ✅ 已选择 |
-| 前端转换 | 转换在输入时完成 | 需要修改所有表单、用户体验变化 | ❌ |
-| 使用简体字体 | 无需转换 | 需要两套字体（600 KB）、逻辑复杂 | ❌ |
-
-## 🎯 最佳实践
-
-### 字符集管理
-
-1. **按需添加**: 只添加实际需要的字符
-2. **定期验证**: 运行验证脚本确保覆盖
-3. **版本控制**: 记录每次字符集变更
-
-### 性能优化
-
-1. **字体缓存**: 浏览器自动缓存字体文件
-2. **预加载**: 关键路径字体预加载
-3. **监控**: 定期检查字体加载性能
-
-### 维护建议
-
-1. **每月审查**: 检查是否有新的缺字情况
-2. **用户反馈**: 收集用户报告的显示问题
-3. **测试覆盖**: 保持测试用例更新
-
-## 🆘 获取帮助
-
-### 常见问题
-
-参见上方"故障排除"章节。
-
-### 文档资源
-
-- [Noto Serif TC 官方](https://fonts.google.com/noto/specimen/Noto+Serif+TC)
-- [opencc-js 文档](https://github.com/nk2028/opencc-js)
-- [fontTools 文档](https://fonttools.readthedocs.io/)
-
-### 技术支持
-
-如有问题，请在项目中创建 Issue，包含：
-1. 问题描述
-2. 复现步骤
-3. 相关截图
-4. 环境信息
+| 文件 | 是否提交 |
+|---|---|
+| `NotoSerifTC-Subset.otf` / `NotoSerif-LatinVi.ttf` | ✅ 是（成品，要 ship） |
+| `subset-cjk-chars.txt` / `generate-font-subset.py` / `verify-font-chars.py` | ✅ 是 |
+| `NotoSerifTC-Full.ttf`（完整源） | ❌ 否（gitignore，16MB，按需下载） |
 
 ---
 
 ## 📝 更新日志
 
-### 2024-11-23
-- ✅ 完成字体优化（925字符，295 KB）
-- ✅ 实施简繁体自动转换
-- ✅ 添加字体生成和验证脚本
-- ✅ 添加测试页面
-- ✅ 创建完整文档
+### 2026-06-21
+- 文档整篇重写以反映真实架构（此前停留在 2024-11，事实大量过时）。
+- CJK 子集 3,500 → **3,671**（audit 补齐真实姓名/姓氏/地址/法事用字）。
+- 构建源切换为**完整 Noto Serif TC**（可变字体，gitignore）；旧的 6,606 字 fontsource 切片弃用。
+- 固化「`subset-cjk-chars.txt` 为唯一字符来源」；`build-cjk-charset.py` 加 guard。
+- 修复姓氏 `于→於` 渲染；删除死代码 server 版 converter。
+- 记录 `fv` 缓存破除 + Vercel promote 部署流程。
 
-### 历史版本
-- 2024-11-20: 初始字体子集（666字符）
-- 2024-11-18: 字体方案选型
-
----
-
-**🎊 字体优化和简繁转换已全部完成！**
-
-**文件修改**: < 300 行代码  
-**实施时间**: < 2 小时  
-**测试覆盖**: 100%  
-**生产就绪**: ✅ 是
-
-如有任何问题，请参考上方各章节或联系技术支持。
-
+### 历史
+- 2026-06-20: CJK 子集 768 → 3,500（edge-safe 静态子集）+ 新增拉丁/越南文字体；动态子集（nodejs）方案因生产 500 回滚废弃。
+- 2024-11-23: 初版字体优化（925 定义 / 723 字 / 295KB）+ 简繁转换。
+- 2024-11-18 ~ 11-20: 字体选型 + 初始子集。
