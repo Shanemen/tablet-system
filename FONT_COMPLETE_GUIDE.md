@@ -99,7 +99,9 @@ npm install opencc-js
 
 ### 2. 创建转换工具
 
-**文件**: `lib/utils/chinese-converter.ts`
+**文件**: `lib/utils/chinese-converter-client.ts`
+
+> 注：以下为简化示例。实际的 `chinese-converter-client.ts` 是**异步**的（懒加载 opencc-js，仅在检测到简体时下载），并在转换后把姓氏 `于`（被 opencc 误转成 `於`）还原。原同步版 `chinese-converter.ts` 已删除（无人引用）。
 
 ```typescript
 import { Converter } from 'opencc-js'
@@ -123,7 +125,7 @@ export function convertToTraditional(text: string): string {
 **文件**: `app/api/og/tablet/route.tsx`
 
 ```typescript
-import { convertToTraditional } from '@/lib/utils/chinese-converter'
+import { convertToTraditional } from '@/lib/utils/chinese-converter-client'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -325,7 +327,7 @@ tablet-system/
 │   └── full_chars.txt                # 完整字符列表
 ├── lib/
 │   └── utils/
-│       └── chinese-converter.ts      # 简繁转换工具
+│       └── chinese-converter-client.ts      # 简繁转换工具
 ├── app/
 │   ├── api/
 │   │   └── og/
@@ -345,7 +347,7 @@ tablet-system/
 | `NotoSerifTC-Subset.otf` | 295 KB | 生产字体 | ✅ 是 |
 | `NotoSerifTC-Regular.woff2` | 1.3 MB | 源字体（生成用） | ⚠️ 可选 |
 | `generate-font-subset.py` | 4 KB | 生成脚本 | ✅ 是 |
-| `chinese-converter.ts` | 1 KB | 转换工具 | ✅ 是 |
+| `chinese-converter-client.ts` | 1 KB | 转换工具 | ✅ 是 |
 
 **注意**: 源字体 `NotoSerifTC-Regular.woff2` 可以从 `node_modules/@fontsource/noto-serif-tc` 获取，不必提交到仓库。
 
@@ -370,7 +372,7 @@ tablet-system/
 npm install opencc-js
 
 # 检查导入
-# lib/utils/chinese-converter.ts 应该使用 Converter（大写）
+# lib/utils/chinese-converter-client.ts 应该使用 Converter（大写）
 import { Converter } from 'opencc-js'  # ✅ 正确
 import { converter } from 'opencc-js'  # ❌ 错误
 ```
