@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import JSZip from "jszip"
 import { X, Loader, Check, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -213,6 +214,10 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
   const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set())
   // Show close warning dialog
   const [showCloseWarning, setShowCloseWarning] = useState(false)
+  // Whether a ZIP bundle is currently being built
+  const [zipping, setZipping] = useState(false)
+
+  const datePrefix = new Date().toISOString().split('T')[0]
 
   // Handle close button click
   const handleCloseClick = () => {
@@ -224,26 +229,33 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
     }
   }
 
+  // Decode a base64 PDF into raw bytes
+  const base64ToBytes = (base64: string) => {
+    const binaryString = atob(base64)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    return bytes
+  }
+
+  // Trigger a browser download for a given blob + filename
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   // Helper function to download a single PDF
   const downloadPDF = (result: PDFResult) => {
     try {
-      // Convert base64 to blob
-      const binaryString = atob(result.pdfBase64)
-      const bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-      const blob = new Blob([bytes], { type: 'application/pdf' })
-      
-      // Create download link
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${new Date().toISOString().split('T')[0]}_${result.typeName}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+      const blob = new Blob([base64ToBytes(result.pdfBase64)], { type: 'application/pdf' })
+      triggerDownload(blob, `${datePrefix}_${result.typeName}.pdf`)
     } catch (error) {
       console.error('Download failed:', error)
       alert('下載失敗，請重試')
@@ -254,6 +266,31 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
   const handleDownload = (result: PDFResult) => {
     downloadPDF(result)
     setDownloadedFiles(prev => new Set(prev).add(result.typeName))
+  }
+
+  // Bundle every PDF into a single ZIP and download it in one click
+  const handleDownloadAll = async () => {
+    if (zipping || pdfResults.length === 0) return
+    setZipping(true)
+    try {
+      const zip = new JSZip()
+      for (const result of pdfResults) {
+        zip.file(`${datePrefix}_${result.typeName}.pdf`, base64ToBytes(result.pdfBase64))
+      }
+      const blob = await zip.generateAsync({ type: 'blob' })
+
+      // Derive a ceremony label from a result's typeName (`${ceremony}_${type}`)
+      const ceremonyLabel = (pdfResults[0]?.typeName.replace(/_[^_]*$/, '') || '法會').trim()
+      triggerDownload(blob, `${datePrefix}_${ceremonyLabel}.zip`)
+
+      // All files are now in the user's hands
+      setDownloadedFiles(new Set(pdfResults.map(r => r.typeName)))
+    } catch (error) {
+      console.error('ZIP download failed:', error)
+      alert('打包下載失敗，請重試')
+    } finally {
+      setZipping(false)
+    }
   }
 
   // Calculate file sizes (rough estimate: base64 length / 1.37 to get original size)
@@ -289,6 +326,26 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
             </p>
           </div>
 
+          {/* One-click: download every PDF as a single ZIP */}
+          <Button
+            onClick={handleDownloadAll}
+            disabled={zipping}
+            size="lg"
+            className="w-full h-14 mb-5 text-lg bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
+          >
+            {zipping ? (
+              <>
+                <Loader className="mr-2 h-5 w-5 animate-spin" />
+                打包中…
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-5 w-5" />
+                全部下載 (ZIP)
+              </>
+            )}
+          </Button>
+
           <div className="space-y-3">
             {pdfResults.map((result, i) => (
               <div key={i} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
@@ -297,7 +354,7 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
                     <FileText className="text-slate-600" size={32} />
                     <div>
                       <div className="font-semibold text-base text-foreground">
-                        {new Date().toISOString().split('T')[0]}_{result.typeName}.pdf
+                        {datePrefix}_{result.typeName}.pdf
                       </div>
                       <div className="text-base text-muted-foreground">
                         {result.count}個牌位 • {result.pageCount}頁 • {getFileSize(result.pdfBase64)} • {PAPER_TYPE_MAP[result.type]}打印
