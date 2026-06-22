@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
 """
+⚠️⚠️⚠️  DO NOT RUN THIS SCRIPT.  ⚠️⚠️⚠️
+
+This was a ONE-OFF generator used to first create scripts/subset-cjk-chars.txt.
+It is now STALE and DESTRUCTIVE:
+  - P2 greps Traditional blocks out of generate-font-subset.py, but those blocks
+    were removed long ago -> P2 now yields almost nothing.
+  - P3 needs /tmp/charfreq.csv, a temp file that no longer exists -> it fails.
+Running it would OVERWRITE subset-cjk-chars.txt with a broken, much smaller set,
+silently dropping the curated 3,500 + every char added since. (This is exactly the
+"two separate subsets, the additions were wasted" bug we are guarding against.)
+
+THE SINGLE SOURCE OF TRUTH IS scripts/subset-cjk-chars.txt.
+To add/remove characters: edit that file directly, then run scripts/generate-font-subset.py.
+A hard guard below refuses to run without an explicit override flag.
+
+----------------------------------------------------------------------
 Build the final ~3,500-character TRADITIONAL Chinese set for the CJK subset.
 
 Pipeline (priority order):
@@ -173,4 +189,14 @@ def main():
 
 
 if __name__ == "__main__":
+    import sys
+    if "--yes-i-really-want-to-overwrite-the-charset" not in sys.argv:
+        sys.exit(
+            "\n⛔ Refusing to run: this stale one-off would OVERWRITE and shrink "
+            "scripts/subset-cjk-chars.txt.\n"
+            "   The source of truth is subset-cjk-chars.txt — edit it directly, then run "
+            "scripts/generate-font-subset.py.\n"
+            "   (If you truly mean to regenerate from scratch, re-read the header, then pass "
+            "--yes-i-really-want-to-overwrite-the-charset.)\n"
+        )
     main()

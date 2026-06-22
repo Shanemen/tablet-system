@@ -25,3 +25,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Full source font for building the CJK subset (16MB, not shipped, build-time only)
+NotoSerifTC-Full.ttf

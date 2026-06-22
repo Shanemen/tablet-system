@@ -66,6 +66,14 @@ export async function convertToTraditional(text: string): Promise<string> {
   }
   
   const converter = await converterPromise
-  return converter(text)
+  return fixSurnameVariants(converter(text))
+}
+
+// opencc cn->tw maps the surname 于 -> 於 (it prefers the preposition variant). Every value
+// converted here is a name / address / liturgical string where 于 is the intended surname and
+// 於 never appears legitimately, so restore 于. (于 is in the font subset; 於 would render the
+// wrong surname.) Keep in sync with the server converter (lib/utils/chinese-converter.ts).
+function fixSurnameVariants(s: string): string {
+  return s.replace(/於/g, '于')
 }
 
