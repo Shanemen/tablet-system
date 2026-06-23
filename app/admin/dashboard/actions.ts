@@ -22,6 +22,7 @@ async function getApplicationsFromSupabase(): Promise<Applicant[]> {
       email,
       tablet_type,
       status,
+      created_at,
       application_name (
         display_name,
         image_url,
@@ -93,7 +94,8 @@ async function getApplicationsFromSupabase(): Promise<Applicant[]> {
       tabletNames,
       tabletDetails, // Include image URLs for PDF export
       total: tabletNames.length,
-      status: statusMap[app.status] || 'pending'
+      status: statusMap[app.status] || 'pending',
+      submittedAt: app.created_at // UTC; converted to temple-local date in the UI
     }
   })
   

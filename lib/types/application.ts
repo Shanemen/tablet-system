@@ -17,6 +17,7 @@ export interface Applicant {
   total: number
   status: "exported" | "pending" | "problematic"
   notes?: string // Problem notes when marked as problematic
+  submittedAt?: string // UTC timestamp of submission (application.created_at)
 }
 
 export interface Stats {
