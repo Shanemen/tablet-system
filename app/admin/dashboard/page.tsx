@@ -349,6 +349,7 @@ export default function AdminDashboardPage() {
               onExport={() => setStep(2)}
               stats={stats}
               onResetAllExported={handleResetAllExported}
+              templeId={currentCeremony?.temple_id}
             />
           </div>
         )}

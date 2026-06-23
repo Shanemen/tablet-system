@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Applicant, statusConfig, ApplicationStatus, SelectedCount, Stats } from "@/lib/types/application"
+import { formatSubmissionDate } from "@/lib/utils/temple-timezone"
 import { BatchExportSection } from "./BatchExportSection"
 
 interface ApplicationTableProps {
@@ -19,6 +20,8 @@ interface ApplicationTableProps {
   stats?: Stats
   // Reset all exported - for emergency recovery
   onResetAllExported?: () => void
+  // Current temple id, used to show submission date in temple-local time
+  templeId?: number
 }
 
 export function ApplicationTable({ 
@@ -30,7 +33,8 @@ export function ApplicationTable({
   onSelectChange,
   onExport,
   stats,
-  onResetAllExported
+  onResetAllExported,
+  templeId
 }: ApplicationTableProps) {
   const router = useRouter()
   
@@ -84,6 +88,7 @@ export function ApplicationTable({
               <th className="px-2 pt-1 pb-3 text-left text-base font-bold text-muted-foreground w-10">#</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">申請人</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">電話</th>
+              <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground whitespace-nowrap">提交時間</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">牌位詳情</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">總數</th>
               <th className="px-4 pt-1 pb-3 text-left text-base font-bold text-foreground">狀態</th>
@@ -93,7 +98,7 @@ export function ApplicationTable({
           <tbody>
             {applications.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   {searchActive ? "未找到匹配的申請" : "暫無申請"}
                 </td>
               </tr>
@@ -103,6 +108,7 @@ export function ApplicationTable({
                   <td className="px-2 py-3 text-sm text-muted-foreground">{index + 1}</td>
                   <td className="px-4 py-3 text-base text-foreground font-medium">{item.name}</td>
                   <td className="px-4 py-3 text-base text-foreground">{item.phone}</td>
+                  <td className="px-4 py-3 text-base text-foreground whitespace-nowrap">{formatSubmissionDate(item.submittedAt, templeId)}</td>
                   <td className="px-4 py-3 text-base text-foreground">{item.tablet}</td>
                   <td className="px-4 py-3 text-base text-foreground">{item.total}</td>
                   <td className="px-4 py-3">
