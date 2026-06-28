@@ -11,7 +11,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog"
 import { NotificationDialog } from "@/components/admin/NotificationDialog"
 import { Applicant, Stats, SelectedCount, ApplicationStatus, ExportPlanItem } from "@/lib/types/application"
 import { getApplications } from "./actions"
-import { getExportPlan, exportSingleType, markApplicationsGenerated } from "./export-actions"
+import { getExportPlan, exportSingleType, markApplicationsDownloaded } from "./export-actions"
 import { resetApplicationsToPending, resetAllExportedToPending } from "./test-actions"
 import { getCurrentCeremony, type Ceremony } from "../ceremonies/actions"
 import { convertToTraditional } from "@/lib/utils/chinese-converter-client"
@@ -136,10 +136,9 @@ export default function AdminDashboardPage() {
 
         setActiveType(null)
 
-        // 3) Mark applications generated only after all PDFs succeeded
-        await markApplicationsGenerated(selectedApplicationIds)
-        if (cancelled) return
-
+        // Do NOT mark as downloaded here. Generating a PDF is not the same as
+        // downloading it — applications are marked only after the user actually
+        // downloads every PDF (see ExportCompletion onAllDownloaded below).
         setExportProgress(100)
         setTimeout(() => {
           if (!cancelled) setStep(4)
@@ -376,6 +375,7 @@ export default function AdminDashboardPage() {
             selectedCount={selectedCount}
             pdfResults={pdfResults}
             onClose={handleCloseStep4}
+            onAllDownloaded={() => markApplicationsDownloaded(selectedApplicationIds)}
           />
         )}
 
