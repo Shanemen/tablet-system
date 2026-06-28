@@ -29,16 +29,20 @@ export function ExportConfirmation({ selectedCount, ceremonyName = '法會', onC
   ]
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="max-w-lg w-full">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <Card className="max-w-lg w-full max-h-[90vh] flex flex-col">
+        {/* Fixed header */}
+        <div className="p-6 pb-4 shrink-0">
+          <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-foreground">批量導出 PDF</h3>
             <Button onClick={onCancel} variant="ghost" size="sm" className="hover:bg-muted">
               <X className="h-5 w-5" />
             </Button>
           </div>
+        </div>
 
+        {/* Scrollable content */}
+        <div className="px-6 overflow-y-auto flex-1 min-h-0">
           <div className="space-y-4">
             {/* Selection Summary */}
             <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
@@ -67,17 +71,19 @@ export function ExportConfirmation({ selectedCount, ceremonyName = '法會', onC
               <div className="font-medium mb-2 text-base text-foreground">將生成以下文件：</div>
               <div className="space-y-1.5">
                 {files.map((file, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-foreground">{i + 1}. {new Date().toISOString().split('T')[0]}_{ceremonyName}_{file.name}</span>
-                    <span className="text-muted-foreground text-xs">({file.paper}打印)</span>
+                  <div key={i} className="flex items-start justify-between gap-2 text-sm">
+                    <span className="text-foreground break-all">{i + 1}. {new Date().toISOString().split('T')[0]}_{ceremonyName}_{file.name}</span>
+                    <span className="text-muted-foreground text-xs shrink-0">({file.paper}打印)</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-6">
+        {/* Fixed footer - Action Buttons */}
+        <div className="p-6 pt-4 shrink-0">
+          <div className="flex gap-3">
             <Button onClick={onCancel} variant="outline" className="flex-1 hover:bg-muted hover:text-foreground">
               取消
             </Button>
@@ -303,19 +309,20 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="max-w-2xl w-full relative">
-        {/* Close button - top right */}
-        <Button 
-          onClick={handleCloseClick} 
-          variant="ghost" 
-          size="icon" 
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <Card className="max-w-2xl w-full relative max-h-[90vh] flex flex-col">
+        {/* Close button - top right (always visible: card is capped at 90vh) */}
+        <Button
+          onClick={handleCloseClick}
+          variant="ghost"
+          size="icon"
           className="absolute top-3 right-3 hover:bg-muted z-10 h-10 w-10"
         >
           <X className="h-6 w-6" />
         </Button>
 
-        <div className="p-6">
+        {/* Fixed header: title + one-click ZIP download */}
+        <div className="p-6 pb-0 shrink-0">
           <div className="flex flex-col items-center mb-6">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-3">
               <Check className="text-primary" size={32} />
@@ -345,15 +352,18 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
               </>
             )}
           </Button>
+        </div>
 
+        {/* Scrollable file list */}
+        <div className="px-6 pb-6 overflow-y-auto flex-1 min-h-0">
           <div className="space-y-3">
             {pdfResults.map((result, i) => (
               <div key={i} className="border border-border rounded-lg p-4 hover:bg-muted transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-grow">
-                    <FileText className="text-slate-600" size={32} />
-                    <div>
-                      <div className="font-semibold text-base text-foreground">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-grow min-w-0">
+                    <FileText className="text-slate-600 shrink-0" size={32} />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-base text-foreground break-all">
                         {datePrefix}_{result.typeName}.pdf
                       </div>
                       <div className="text-base text-muted-foreground">
@@ -366,14 +376,14 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
                       )}
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     onClick={() => handleDownload(result)}
                     size="sm"
                     variant={downloadedFiles.has(result.typeName) ? "outline" : "default"}
-                    className={downloadedFiles.has(result.typeName) 
-                      ? "" 
+                    className={`shrink-0 ${downloadedFiles.has(result.typeName)
+                      ? ""
                       : "bg-primary hover:bg-primary/85 hover:shadow-md transition-all"
-                    }
+                    }`}
                   >
                     <Download className="mr-1 h-4 w-4" />
                     {downloadedFiles.has(result.typeName) ? "再次下載" : "下載"}
