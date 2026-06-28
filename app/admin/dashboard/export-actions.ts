@@ -270,9 +270,10 @@ async function createPDFForType(
 //
 // The export is driven step-by-step from the client so the progress UI can show
 // real, per-type progress instead of a fake timer:
-//   1) getExportPlan()           -> real tablet types + counts for the selection
-//   2) exportSingleType() (xN)   -> one PDF per type, called once per plan item
-//   3) markApplicationsGenerated -> flip status after all PDFs succeed
+//   1) getExportPlan()            -> real tablet types + counts for the selection
+//   2) exportSingleType() (xN)    -> one PDF per type, called once per plan item
+//   3) markApplicationsDownloaded -> flip status, but only after the user has
+//                                    actually downloaded every PDF (not at generation)
 // ============================================================================
 
 /**
@@ -344,7 +345,12 @@ export async function exportSingleType(
  * Flip the selected applications to 'generated' status. Called after all PDFs
  * have been generated successfully.
  */
-export async function markApplicationsGenerated(applicationIds: number[]): Promise<void> {
+// Mark applications as downloaded. Called only after the user has actually
+// downloaded every generated PDF (see ExportCompletion). The DB value stays
+// 'generated' (legacy) which maps to the "已下載/exported" bucket in the UI.
+export async function markApplicationsDownloaded(applicationIds: number[]): Promise<void> {
+  if (applicationIds.length === 0) return
+
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -357,5 +363,5 @@ export async function markApplicationsGenerated(applicationIds: number[]): Promi
     throw new Error(`Failed to update status: ${error.message}`)
   }
 
-  console.log(`[Export] Updated ${applicationIds.length} applications to 'generated' status`)
+  console.log(`[Export] Marked ${applicationIds.length} applications as downloaded`)
 }

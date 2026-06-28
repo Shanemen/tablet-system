@@ -199,6 +199,10 @@ interface ExportCompletionProps {
   selectedCount: SelectedCount
   pdfResults: PDFResult[]
   onClose: () => void
+  // Called once every PDF has actually been downloaded — the only moment the
+  // selected applications should be marked as downloaded. Generating alone does
+  // not count, and a partial download (close before all are fetched) does not call this.
+  onAllDownloaded?: () => void | Promise<void>
 }
 
 // Paper type mapping
@@ -215,7 +219,7 @@ const PAPER_TYPE_MAP: Record<string, string> = {
   'land-deity': '黃紙'
 }
 
-export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportCompletionProps) {
+export function ExportCompletion({ selectedCount, pdfResults, onClose, onAllDownloaded }: ExportCompletionProps) {
   // Track downloaded files
   const [downloadedFiles, setDownloadedFiles] = useState<Set<string>>(new Set())
   // Show close warning dialog
@@ -226,11 +230,15 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
   const datePrefix = new Date().toISOString().split('T')[0]
 
   // Handle close button click
-  const handleCloseClick = () => {
+  const handleCloseClick = async () => {
     const remainingCount = pdfResults.length - downloadedFiles.size
     if (remainingCount > 0) {
+      // Not everything was downloaded → warn; closing voids the batch and leaves
+      // the applications as "待處理" (onAllDownloaded is intentionally NOT called).
       setShowCloseWarning(true)
     } else {
+      // Every PDF was downloaded → now it counts as downloaded.
+      await onAllDownloaded?.()
       onClose()
     }
   }
@@ -398,9 +406,9 @@ export function ExportCompletion({ selectedCount, pdfResults, onClose }: ExportC
         {showCloseWarning && (
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-lg">
             <div className="bg-background border border-border rounded-lg p-6 mx-4 shadow-lg">
-              <h4 className="text-lg font-bold text-foreground mb-2">尚有未下載的文件</h4>
+              <h4 className="text-lg font-bold text-foreground mb-2">確定要關閉嗎？</h4>
               <p className="text-muted-foreground mb-4">
-                還有 {pdfResults.length - downloadedFiles.size} 個文件未下載。關閉後將丟失無法恢復，確定要關閉嗎？
+                尚有 {pdfResults.length - downloadedFiles.size} 個 PDF 未下載，關閉後將會被清除。本次導出的申請會保持「待處理」。
               </p>
               <div className="flex gap-3">
                 <Button 
