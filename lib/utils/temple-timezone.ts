@@ -3,6 +3,7 @@
 const TEMPLE_TIMEZONES: Record<number, string> = {
   2: 'America/Los_Angeles', // 靈山美佛寺 (LA)
   1: 'America/New_York',    // 亞特蘭大大淨宗學會 (Atlanta)
+  3: 'America/New_York',    // 美東淨宗學會 (Stratford, NJ)
 }
 
 const DEFAULT_TIMEZONE = 'America/Los_Angeles'
